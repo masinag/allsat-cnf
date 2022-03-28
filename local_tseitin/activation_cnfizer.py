@@ -1,23 +1,19 @@
 from itertools import islice
-from pprint import pformat
+
+import pysmt.operators as op
 from pysmt.shortcuts import *
 from pysmt.walkers import IdentityDagWalker, handles
-from pysmt.rewritings import nnf
-import pysmt.operators as op
+
+from local_tseitin.cnfizer import LocalTseitinCNFizer
 
 
-class LocalTseitinCNFizerActivation(IdentityDagWalker):
-    VAR_TEMPLATE = "TL{:d}"
+class LocalTseitinCNFizerActivation(LocalTseitinCNFizer, IdentityDagWalker):
     ACT_TEMPLATE = "TA{:d}"
 
-    def __init__(self, env=None, invalidate_memoization=None):
-        super().__init__(env, invalidate_memoization)
-        self.vars = 0
+    def __init__(self, env=None, invalidate_memoization=True, **kwargs):
+        LocalTseitinCNFizer.__init__(self, **kwargs)
+        IdentityDagWalker.__init__(self, env, invalidate_memoization)
         self.acts = 0
-
-    def _new_label(self):
-        self.vars += 1
-        return Symbol(LocalTseitinCNFizerActivation.VAR_TEMPLATE.format(self.vars))
 
     def _new_activation(self):
         self.acts += 1
@@ -78,7 +74,7 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
         #         a2 = arg
         #         ans = self.walk_or(None, (a1, a2), assertions, **kwargs)
         #     return ans
-                
+
         A = self._new_activation()
         S = self._new_label()
 
@@ -104,68 +100,3 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
     #     left_arg = self.walk_not(left, left_arg, assertions, **kwargs)
     #     return self.walk_or(Or(left, right),
     #                         (left_arg, right_arg), assertions, **kwargs)
-
-
-def model_to_set(model):
-    return frozenset(a if v else Not(a) for a, v in model.items())
-
-
-def is_model_in_models(model, models):
-    for m in models:
-        if m.issubset(model):
-            return True
-    return False
-
-
-def test_models(cnf_models, total_models):
-    cnf_models = list(map(model_to_set, cnf_models))
-    total_models = list(map(model_to_set, total_models))
-    for model in total_models:
-        assert is_model_in_models(model, cnf_models), \
-            "Model:\n{}\nNot found in:\n{}".format(
-                pformat(model), pformat(cnf_models))
-    print("Correct!")
-
-
-if __name__ == "__main__":
-    from wmipa import WMI
-    wmi = WMI(None)
-    cnfizer = LocalTseitinCNFizerActivation()
-    A = Symbol("A", BOOL)
-    B = Symbol("B", BOOL)
-    C = Symbol("C", BOOL)
-    D = Symbol("D", BOOL)
-    E = Symbol("E", BOOL)
-    F = Symbol("F", BOOL)
-    G = Symbol("G", BOOL)
-    H = Symbol("H", BOOL)
-
-    formula = Or(Or(Or(And(A, B), And(C, D)), And(E, F)), And(G, H))
-    print("Formula:", formula.serialize())
-
-    atoms = {A, B, C, D, E, F, G, H}
-    # total models
-    total_models = []
-    for model in wmi._get_allsat(formula, use_ta=False, atoms=atoms):
-        total_models.append(model)
-
-    print("NON-CNFIZED MODELS:")
-    n_models = 0
-    for model in wmi._get_allsat(formula, use_ta=True, atoms=atoms):
-        # print(model)
-        n_models += 1
-    print("{}/{}".format(n_models, len(total_models)))
-
-    cnf = cnfizer.convert(formula)
-    # print("CNFized:", cnf.serialize())
-    cnf_models = []
-    print("CNFIZED MODELS:")
-    n_models = 0
-    for model in wmi._get_allsat(cnf, use_ta=True, atoms=atoms):
-        # print(model)
-        cnf_models.append(model)
-        model = {a: Bool(v) for a, v in model.items()}
-        assert simplify(substitute(formula, model)).is_true()
-        n_models += 1
-    print("{}/{}".format(n_models, len(total_models)))
-    test_models(cnf_models, total_models)
