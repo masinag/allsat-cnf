@@ -58,8 +58,8 @@ class LocalTseitinCNFizerActivation(LocalTseitinCNFizer, IdentityDagWalker):
                 # (A & !S & !S_phi) -> A_phi
                 assertions.append(Or(Not(A), S, S_phi, A_phi))
         # (A & And(S_phis)) -> S
-        assertions.append(Or({Not(S_phi) for S_phi, _ in args}.
-                             union({Not(A), S})))
+        assertions.append(Or((Not(A), S) + tuple(Not(S_phi)
+                          for S_phi, _ in args)))
         # (A & S) -> And(S_phis)
         for S_phi, _ in args:
             assertions.append(Or(Not(A), Not(S), S_phi))
@@ -86,17 +86,36 @@ class LocalTseitinCNFizerActivation(LocalTseitinCNFizer, IdentityDagWalker):
                 assertions.append(Or(Not(A), S, S_phi, A_phi))
         # A -> (S <-> Or(S_phis))
         # (A & S) -> Or(S_phis)
-        assertions.append(Or({S_phi for S_phi, _ in args}.
-                             union({Not(S), Not(A)})))
+        assertions.append(
+            Or((Not(S), Not(A)) + tuple(S_phi for S_phi, _ in args)))
         # (A & Or(S_phis)) -> S
         for S_phi, _ in args:
             assertions.append(Or(Not(A), S, Not(S_phi)))
         return S, A
 
-    # def walk_implies(self, formula, args, assertions, **kwargs):
-    #     left, right = formula.args()
-    #     left_arg, right_arg = args
-    #     left = Not(left)
-    #     left_arg = self.walk_not(left, left_arg, assertions, **kwargs)
-    #     return self.walk_or(Or(left, right),
-    #                         (left_arg, right_arg), assertions, **kwargs)
+    def walk_implies(self, formula, args, assertions, **kwargs):
+        left, right = formula.args()
+        left_arg, right_arg = args
+        left = Not(left)
+        left_arg = self.walk_not(left, left_arg, assertions, **kwargs)
+        return self.walk_or(Or(left, right),
+                            (left_arg, right_arg), assertions, **kwargs)
+
+    def walk_iff(self, formula, args, assertions, **kwargs):
+        A = self._new_activation()
+        S = self._new_label()
+
+        (S_phi1, A_phi1), (S_phi2, A_phi2) = args
+        # A -> (A_phi1 & A_phi2)
+        assertions.append(Or(Not(A), A_phi1))
+        assertions.append(Or(Not(A), A_phi2))
+
+        # (A & S) -> S_phi1 -> S_phi2
+        assertions.append(Or(Not(A), Not(S), Not(S_phi1), S_phi2))
+        # (A & S) -> S_phi2 -> S_phi1
+        assertions.append(Or(Not(A), Not(S), Not(S_phi2), S_phi1))
+        # (A & !S) -> S_phi1 -> !S_phi2
+        assertions.append(Or(Not(A), S, Not(S_phi1), Not(S_phi2)))
+        # (A & !S) -> S_phi2 -> !S_phi1
+        assertions.append(Or(Not(A), S, Not(S_phi2), Not(S_phi1)))
+        return S, A

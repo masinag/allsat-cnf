@@ -35,9 +35,13 @@ def main(formula):
 
     for cname, cnfizer in cnfizers.items():
         cnf = cnfizer().convert(formula)
+        
         cnf_models = get_allsat(cnf, use_ta=True, atoms=atoms)
         print("{}: {}/{}".format(cname, len(cnf_models), len(total_models)))
 
+        if args.v:
+            print("CNF: {}".format(cnf.serialize()))
+        
         if args.v:
             pprint(cnf_models)
         check_eval_true(formula, cnf_models)
