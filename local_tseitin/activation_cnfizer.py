@@ -33,7 +33,10 @@ class LocalTseitinCNFizerActivation(LocalTseitinCNFizer, IdentityDagWalker):
     @handles(op.SYMBOL)
     @handles(op.RELATIONS)
     def walk_atom(self, formula, args, assertions, **kwargs):
-        return formula, None
+        if formula.is_symbol(REAL):
+            return formula
+        else:
+            return formula, None
 
     def walk_not(self, formula, args, assertions, **kwargs):
         S, A = args[0]
@@ -119,3 +122,4 @@ class LocalTseitinCNFizerActivation(LocalTseitinCNFizer, IdentityDagWalker):
         # (A & !S) -> S_phi2 -> !S_phi1
         assertions.append(Or(Not(A), S, Not(S_phi2), Not(S_phi1)))
         return S, A
+

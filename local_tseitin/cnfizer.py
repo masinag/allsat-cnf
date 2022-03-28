@@ -14,3 +14,13 @@ class LocalTseitinCNFizer():
 
     def convert(self, phi):
         raise NotImplemented
+
+    def is_atom(self, atom):
+        return atom.is_symbol(BOOL) or atom.is_theory_relation()
+
+    def is_literal(self, literal):
+        return self.is_atom(literal) or (literal.is_not() and self.is_atom(literal.arg(0)))
+
+    def is_cnf(self, phi):
+        if self.is_literal(phi):
+            return True

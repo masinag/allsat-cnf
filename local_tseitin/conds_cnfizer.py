@@ -59,7 +59,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         if self.verbose:
             print("".join(["--" for i in range(count)]) +
                   "local_tseitin({}, {}, {}, {})".format(formula, conds, S, pol))
-        if formula.is_symbol() or (formula.is_not() and formula.arg(0).is_symbol()):
+        if self.is_literal(formula):
             return
 
         if formula.is_not():

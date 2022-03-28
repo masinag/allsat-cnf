@@ -1,6 +1,7 @@
 from local_tseitin.utils import *
 from pysmt.shortcuts import *
 
+solver = AllSATSolver()
 # initialize bool variables
 for i in range(ord("A"), ord("Z") + 1):
     name = chr(i)
