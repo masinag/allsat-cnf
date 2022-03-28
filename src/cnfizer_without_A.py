@@ -64,6 +64,7 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
             return S
         else:
             return Not(S)
+    
 
     def local_tseitin(self, formula, conds, S, pol, assertions):
         #print("local_tseitin({}, {}, {})".format(formula, conds, S))
@@ -82,8 +83,8 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
         for tseit in self.manage_operator(formula, S, S1, S2, is_left_term and is_right_term, pol):
             assertions.append(Or({Not(S_phi) for S_phi in conds}.union(tseit)))
 
-        self.local_tseitin(formula.args()[0],conds.union({self.polarity(formula, S2), S}), S1, pol, assertions)
-        self.local_tseitin(formula.args()[1],conds.union({self.polarity(formula, S1), S}), S2, pol, assertions)
+        self.local_tseitin(formula.args()[0],conds.union({self.polarity(formula, S2), S if pol == 0 else Not(S)}), S1, pol, assertions)
+        self.local_tseitin(formula.args()[1],conds.union({self.polarity(formula, S1), S if pol == 0 else Not(S)}), S2, pol, assertions)
 
     def convert(self, formula):
         assertions = []
@@ -96,7 +97,6 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
             self.local_tseitin(formula, set(), S, 0, assertions)
             assertions.append(S)
 
-        assertions.append(S)
         #for el in assertions:
         #    print(el)
         return And(assertions)
@@ -141,15 +141,16 @@ if __name__ == "__main__":
     #atoms = {A, B, C, D, E, F, G, H}
     
     #formula = Or(And(A,B), And(C,D))
-    formula = Or(Not(And(A,B)), And(C,D))
-    atoms = {A,B, C, D}
+    #formula = Or(Not(And(A,B)), And(C,D))
+    #atoms = {A,B, C, D}
 
     #formula = Not(Or(A,And(B, C)))
     #formula = And(Not(A), Or(Not(B), Not(C)))
     #atoms = {A, B, C}
 
-    # NOT WORKING FOMRULAE BELOW!
+    # NOT WORKING FOMRULAE BELOW (now working)!
     #formula = Or(A, Not(And(B, Or(C,D))))
+    formula = Not(Or(A, Not(And(B, Not(Or(C,D))))))
     #formula = Or(A, Or(Not(B), And(Not(C),Not(D))))
     atoms = {A,B, C, D}
 
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     print("CNFIZED MODELS:")
     n_models = 0
     for model in wmi._get_allsat(cnf, use_ta=True, atoms=atoms):
-        print(model)
+        #print(model)
         cnf_models.append(model)
         model = {a: Bool(v) for a, v in model.items()}
         assert simplify(substitute(formula, model)).is_true()
