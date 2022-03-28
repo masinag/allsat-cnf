@@ -25,22 +25,38 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
     def _get_key(self, formula, **kwargs):
         return super()._get_key(formula)
 
-    def manage_operator(self, formula, S, S1, S2, bottom_tree):
+    def manage_operator(self, formula, S, S1, S2, is_leaves, pol):
         res = []
-        if formula.is_and():
-            res.append({Not(S), S1})
-            res.append({Not(S), S2})
-            res.append({Not(S1), Not(S2), S})
-            if not bottom_tree:
-                res.append({Not(S1), S2})
-                res.append({Not(S2), S1})
-        elif formula.is_or():
-            res.append({Not(S), S1, S2})
-            res.append({Not(S1), S})
-            res.append({Not(S2), S})
-            if not bottom_tree:
-                res.append({Not(S1), Not(S2)})
-                res.append({S1, S2})
+        if pol == 0:
+            if formula.is_and():
+                res.append({Not(S), S1})
+                res.append({Not(S), S2})
+                res.append({Not(S1), Not(S2), S})
+                if not is_leaves:
+                    res.append({Not(S1), S2})
+                    res.append({Not(S2), S1})
+            elif formula.is_or():
+                res.append({Not(S), S1, S2})
+                res.append({Not(S1), S})
+                res.append({Not(S2), S})
+                if not is_leaves:
+                    res.append({Not(S1), Not(S2)})
+                    res.append({S1, S2})
+        else:
+            if formula.is_and():
+                res.append({Not(S), S1})
+                res.append({Not(S), S2})
+                res.append({Not(S1), Not(S2), S})
+                if not is_leaves:
+                    res.append({Not(S1), Not(S2)})
+                    res.append({S1, S2})
+            elif formula.is_or():
+                res.append({Not(S), S1, S2})
+                res.append({Not(S1), S})
+                res.append({Not(S2), S})
+                if not is_leaves:
+                    res.append({Not(S1), S2})
+                    res.append({Not(S2), S1})
         return res
 
     def polarity(self, formula, S):
@@ -49,28 +65,40 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
         else:
             return Not(S)
 
-    def local_tseitin(self, formula, conds, S, assertions):
-        if formula.is_symbol():
+    def local_tseitin(self, formula, conds, S, pol, assertions):
+        #print("local_tseitin({}, {}, {})".format(formula, conds, S))
+        if formula.is_symbol() or (formula.is_not() and formula.arg(0).is_symbol()):
             return
 
-        is_left_term = formula.args()[0].is_symbol()
-        is_right_term = formula.args()[1].is_symbol()
         if formula.is_not():
-            self.local_tseitin(formula, conds, not(S), assertions)
+            self.local_tseitin(formula.arg(0), conds, Not(S), 1-pol, assertions)
+            return
+
+        is_left_term = formula.args()[0].is_symbol() or (formula.arg(0).is_not() and formula.arg(0).arg(0).is_symbol())
+        is_right_term = formula.args()[1].is_symbol() or (formula.arg(1).is_not() and formula.arg(1).arg(0).is_symbol())
+    
         S1 = self._new_label() if not is_left_term else formula.args()[0] 
         S2 = self._new_label() if not is_right_term else formula.args()[1]
-        for tseit in self.manage_operator(formula, S, S1, S2, is_left_term and is_right_term):
+        for tseit in self.manage_operator(formula, S, S1, S2, is_left_term and is_right_term, pol):
             assertions.append(Or({Not(S_phi) for S_phi in conds}.union(tseit)))
 
-        self.local_tseitin(formula.args()[0],conds.union({self.polarity(formula, S2), S}), S1, assertions)
-        self.local_tseitin(formula.args()[1],conds.union({self.polarity(formula, S1), S}), S2, assertions)
+        self.local_tseitin(formula.args()[0],conds.union({self.polarity(formula, S2), S}), S1, pol, assertions)
+        self.local_tseitin(formula.args()[1],conds.union({self.polarity(formula, S1), S}), S2, pol, assertions)
 
     def convert(self, formula):
         assertions = []
         S = self._new_label()
         self.original_symb = S
-        self.local_tseitin(formula, set(), S, assertions)
+        if formula.is_not():
+            self.local_tseitin(formula.arg(0), set(), S, 1, assertions)
+            assertions.append(Not(S))
+        else:
+            self.local_tseitin(formula, set(), S, 0, assertions)
+            assertions.append(S)
+
         assertions.append(S)
+        #for el in assertions:
+        #    print(el)
         return And(assertions)
 
 
@@ -109,15 +137,25 @@ if __name__ == "__main__":
     H = Symbol("H", BOOL)
 
     #formula = Or(And(A, B), And(C, D), And(E, F), And(G, H))
-    formula = Or(Or(Or(And(A, B), And(C, D)), And(E, F)), And(G, H))
-    atoms = {A, B, C, D, E, F, G, H}
+    #formula = Or(Or(Or(And(A, B), And(C, D)), And(E, F)), And(G, H))
+    #atoms = {A, B, C, D, E, F, G, H}
     
     #formula = Or(And(A,B), And(C,D))
-    #formula = Or(A, And(B, Or(C,D)))
-    #atoms = {A,B, C, D}
+    formula = Or(Not(And(A,B)), And(C,D))
+    atoms = {A,B, C, D}
+
+    #formula = Not(Or(A,And(B, C)))
+    #formula = And(Not(A), Or(Not(B), Not(C)))
+    #atoms = {A, B, C}
+
+    # NOT WORKING FOMRULAE BELOW!
+    #formula = Or(A, Not(And(B, Or(C,D))))
+    #formula = Or(A, Or(Not(B), And(Not(C),Not(D))))
+    atoms = {A,B, C, D}
 
     #formula = And(A,Or(B, C))
-    #formula = Or(A, And(B,C))
+    #formula = And(A,Not(Or(B, C)))
+    #formula = Or(A, Not(And(B,C)))
     #atoms = {A,B,C}
     # total models
     total_models = []
@@ -138,7 +176,7 @@ if __name__ == "__main__":
     print("CNFIZED MODELS:")
     n_models = 0
     for model in wmi._get_allsat(cnf, use_ta=True, atoms=atoms):
-        #print(model)
+        print(model)
         cnf_models.append(model)
         model = {a: Bool(v) for a, v in model.items()}
         assert simplify(substitute(formula, model)).is_true()
