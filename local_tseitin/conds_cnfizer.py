@@ -67,10 +67,8 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
                                1-pol, count, assertions)
             return
 
-        is_left_term = formula.args()[0].is_symbol() or (
-            formula.arg(0).is_not() and formula.arg(0).arg(0).is_symbol())
-        is_right_term = formula.args()[1].is_symbol() or (
-            formula.arg(1).is_not() and formula.arg(1).arg(0).is_symbol())
+        is_left_term = self.is_literal(formula.args()[0])
+        is_right_term = self.is_literal(formula.args()[1])
 
         S1 = self._new_label() if not is_left_term else formula.args()[0]
         S2 = self._new_label() if not is_right_term else formula.args()[1]

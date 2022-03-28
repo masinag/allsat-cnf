@@ -51,14 +51,11 @@ def main(formula):
         pprint(non_cnf_models)
 
     for cname, cnfizer in cnfizers.items():
-        cnf = cnfizer().convert(formula)
+        cnf = cnfizer(verbose=args.v).convert(formula)
         start_time = time.time()
         cnf_models = solver.get_allsat(cnf, use_ta=True, atoms=atoms)
         print("{}: {}/{} ({:.02f}s)".format(cname, len(cnf_models),
               len(total_models), time.time() - start_time))
-
-        if args.v:
-            print("CNF: {}".format(cnf.serialize()))
 
         if args.v:
             pprint(cnf_models)

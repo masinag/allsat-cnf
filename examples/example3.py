@@ -6,11 +6,13 @@ random.seed(42)
 boolean_atoms = list(boolean_atoms)[:5]
 real_variables = list(real_variables)[:5]
 
-def random_coefficient(l = -1, u = 1):
+
+def random_coefficient(l=-1, u=1):
     coeff = 0
     while coeff == 0:
-        coeff = random.uniform(-1, 1)
+        coeff = random.uniform(l, u)
     return Real(coeff)
+
 
 def random_atom():
     if random.random() < 0.5:
@@ -27,6 +29,7 @@ def random_atom():
         bound = random_coefficient(0, len(real_variables))
         return LT(Plus(monomials), bound)
 
+
 def random_formula(depth):
     if depth == 0:
         return random_atom()
@@ -36,6 +39,7 @@ def random_formula(depth):
     left = random_formula(depth - 1)
     right = random_formula(depth - 1)
     return operator(left, right)
+
 
 formula = random_formula(6)
 main(formula)
