@@ -3,11 +3,17 @@ from pysmt.shortcuts import *
 from pysmt.walkers import IdentityDagWalker, handles
 import pysmt.operators as op
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", help="increase output verbosity",
+                    action="store_true")
+
 
 class LocalTseitinCNFizerActivation(IdentityDagWalker):
     VAR_TEMPLATE = "T{:d}"
     ACT_TEMPLATE = "TA{:d}"
     original_symb = None
+    args = parser.parse_args()
 
     def __init__(self, env=None, invalidate_memoization=None):
         super().__init__(env, invalidate_memoization)
@@ -66,13 +72,14 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
             return Not(S)
     
 
-    def local_tseitin(self, formula, conds, S, pol, assertions):
-        #print("local_tseitin({}, {}, {})".format(formula, conds, S))
+    def local_tseitin(self, formula, conds, S, pol, count, assertions):
+        if self.args.v:
+            print("".join(["--" for i in range(count)]) + "local_tseitin({}, {}, {}, {})".format(formula, conds, S, pol))
         if formula.is_symbol() or (formula.is_not() and formula.arg(0).is_symbol()):
             return
 
         if formula.is_not():
-            self.local_tseitin(formula.arg(0), conds, Not(S), 1-pol, assertions)
+            self.local_tseitin(formula.arg(0), conds, Not(S), 1-pol, count, assertions)
             return
 
         is_left_term = formula.args()[0].is_symbol() or (formula.arg(0).is_not() and formula.arg(0).arg(0).is_symbol())
@@ -83,22 +90,28 @@ class LocalTseitinCNFizerActivation(IdentityDagWalker):
         for tseit in self.manage_operator(formula, S, S1, S2, is_left_term and is_right_term, pol):
             assertions.append(Or({Not(S_phi) for S_phi in conds}.union(tseit)))
 
-        self.local_tseitin(formula.args()[0],conds.union({self.polarity(formula, S2), S if pol == 0 else Not(S)}), S1, pol, assertions)
-        self.local_tseitin(formula.args()[1],conds.union({self.polarity(formula, S1), S if pol == 0 else Not(S)}), S2, pol, assertions)
+        self.local_tseitin(formula.args()[0],conds.union({self.polarity(formula, S2), S if pol == 0 else Not(S)}), S1, pol, count + 1, assertions)
+        self.local_tseitin(formula.args()[1],conds.union({self.polarity(formula, S1), S if pol == 0 else Not(S)}), S2, pol, count + 1, assertions)
 
     def convert(self, formula):
         assertions = []
         S = self._new_label()
         self.original_symb = S
+        if self.args.v:
+            print("Recursive calls to local_tseitin(formula, conds, symbol, polarity):")
         if formula.is_not():
-            self.local_tseitin(formula.arg(0), set(), S, 1, assertions)
+            self.local_tseitin(formula.arg(0), set(), S, 1, 0, assertions)
             assertions.append(Not(S))
         else:
-            self.local_tseitin(formula, set(), S, 0, assertions)
+            self.local_tseitin(formula, set(), S, 0, 0, assertions)
             assertions.append(S)
 
-        #for el in assertions:
-        #    print(el)
+        if self.args.v:
+            print()
+            print("Encoded clauses:")
+            for el in assertions:
+                print(el)
+            print()
         return And(assertions)
 
 
@@ -125,6 +138,8 @@ def test_models(cnf_models, total_models):
 
 if __name__ == "__main__":
     from wmipa import WMI
+
+    args = parser.parse_args()
     wmi = WMI(None)
     cnfizer = LocalTseitinCNFizerActivation()
     A = Symbol("A", BOOL)
@@ -150,14 +165,14 @@ if __name__ == "__main__":
 
     # NOT WORKING FOMRULAE BELOW (now working)!
     #formula = Or(A, Not(And(B, Or(C,D))))
-    formula = Not(Or(A, Not(And(B, Not(Or(C,D))))))
+    #formula = Not(Or(A, Not(And(B, Not(Or(C,D))))))
     #formula = Or(A, Or(Not(B), And(Not(C),Not(D))))
-    atoms = {A,B, C, D}
+    #atoms = {A,B, C, D}
 
-    #formula = And(A,Or(B, C))
+    formula = And(A,Or(B, C))
     #formula = And(A,Not(Or(B, C)))
     #formula = Or(A, Not(And(B,C)))
-    #atoms = {A,B,C}
+    atoms = {A,B,C}
     # total models
     total_models = []
     for model in wmi._get_allsat(formula, use_ta=False, atoms=atoms):
@@ -167,17 +182,19 @@ if __name__ == "__main__":
     print("NON-CNFIZED MODELS:")
     n_models = 0
     for model in wmi._get_allsat(formula, use_ta=True, atoms=atoms):
-        #print(model)
+        if args.v:
+            print(model)
         n_models += 1
     print("{}/{}".format(n_models, len(total_models)))
+    print()
 
     cnf = cnfizer.convert(formula)
-    # print("CNFized:", cnf.serialize())
     cnf_models = []
     print("CNFIZED MODELS:")
     n_models = 0
     for model in wmi._get_allsat(cnf, use_ta=True, atoms=atoms):
-        #print(model)
+        if args.v:
+            print(model)
         cnf_models.append(model)
         model = {a: Bool(v) for a, v in model.items()}
         assert simplify(substitute(formula, model)).is_true()
