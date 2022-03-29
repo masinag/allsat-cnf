@@ -11,42 +11,31 @@ parser.add_argument("-v", help="increase output verbosity",
 
 class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.original_symb = None
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+    #     self.original_symb = None
 
     def manage_operator(self, formula, S, S1, S2, is_leaves, pol):
         res = []
-        if pol == 0:
-            if formula.is_and():
-                res.append({Not(S), S1})
-                res.append({Not(S), S2})
-                res.append({Not(S1), Not(S2), S})
-                if not is_leaves:
-                    res.append({Not(S1), S2})
-                    res.append({Not(S2), S1})
-            elif formula.is_or():
-                res.append({Not(S), S1, S2})
-                res.append({Not(S1), S})
-                res.append({Not(S2), S})
-                if not is_leaves:
-                    res.append({Not(S1), Not(S2)})
-                    res.append({S1, S2})
-        else:
-            if formula.is_and():
-                res.append({Not(S), S1})
-                res.append({Not(S), S2})
-                res.append({Not(S1), Not(S2), S})
-                if not is_leaves:
-                    res.append({Not(S1), Not(S2)})
-                    res.append({S1, S2})
-            elif formula.is_or():
-                res.append({Not(S), S1, S2})
-                res.append({Not(S1), S})
-                res.append({Not(S2), S})
-                if not is_leaves:
-                    res.append({Not(S1), S2})
-                    res.append({Not(S2), S1})
+        if formula.is_and():
+            # S <-> (S1 & S2)
+            res.append({Not(S), S1})
+            res.append({Not(S), S2})
+            res.append({Not(S1), Not(S2), S})
+        elif formula.is_or():
+            # S <-> (S1 | S2)
+            res.append({Not(S), S1, S2})
+            res.append({Not(S1), S})
+            res.append({Not(S2), S})
+        if not is_leaves:
+            if (pol == 0 and formula.is_and()) or (pol == 1 and formula.is_or()):
+                # S1 <-> S2
+                res.append({Not(S1), S2})
+                res.append({Not(S2), S1})
+            elif (pol == 0 and formula.is_or()) or (pol == 1 and formula.is_and()):
+                # S1 <-> !S2
+                res.append({Not(S1), Not(S2)})
+                res.append({S1, S2})
         return res
 
     def polarity(self, formula, S):
@@ -57,8 +46,8 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
     def local_tseitin(self, formula, conds, S, pol, count, assertions):
         if self.verbose:
-            print("".join(["--" for i in range(count)]) +
-                  "local_tseitin({}, {}, {}, {})".format(formula, conds, S, pol))
+            print("{}local_tseitin({}, {}, {}, {})".format(
+                "--" * count, formula, conds, S, pol))
         if self.is_literal(formula):
             return
 
@@ -67,23 +56,25 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
                                1-pol, count, assertions)
             return
 
-        is_left_term = self.is_literal(formula.args()[0])
-        is_right_term = self.is_literal(formula.args()[1])
+        left, right = formula.args()
 
-        S1 = self._new_label() if not is_left_term else formula.args()[0]
-        S2 = self._new_label() if not is_right_term else formula.args()[1]
+        is_left_term = self.is_literal(left)
+        is_right_term = self.is_literal(right)
+
+        S1 = self._new_label() if not is_left_term else left
+        S2 = self._new_label() if not is_right_term else right
         for tseit in self.manage_operator(formula, S, S1, S2, is_left_term and is_right_term, pol):
             assertions.append(Or({Not(S_phi) for S_phi in conds}.union(tseit)))
 
-        self.local_tseitin(formula.args()[0], conds.union({self.polarity(
+        self.local_tseitin(left, conds.union({self.polarity(
             formula, S2), S if pol == 0 else Not(S)}), S1, pol, count + 1, assertions)
-        self.local_tseitin(formula.args()[1], conds.union({self.polarity(
+        self.local_tseitin(right, conds.union({self.polarity(
             formula, S1), S if pol == 0 else Not(S)}), S2, pol, count + 1, assertions)
 
     def convert(self, formula):
         assertions = []
         S = self._new_label()
-        self.original_symb = S
+        # self.original_symb = S
         if self.verbose:
             print("Recursive calls to local_tseitin(formula, conds, symbol, polarity):")
         if formula.is_not():
