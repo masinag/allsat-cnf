@@ -125,7 +125,9 @@ class AllSATSolver:
             [converter.convert(v) for v in atoms],
             lambda model: _allsat_callback(model, converter, models))
         
+        total_models_count = 0
         for i, model in enumerate(models):
+            total_models_count += 2**(len(atoms) - len(model))
             assignments = {}
             for atom in model:
                 if atom.is_not():
@@ -146,7 +148,7 @@ class AllSATSolver:
                         assignments[element_of_normalization] = not value if element_of_normalization.is_lt(
                         ) else value
             models[i] = {a if v else Not(a) for a, v in assignments.items()}
-        return models
+        return models, total_models_count
 
 def get_boolean_variables(formula: FNode):
     return _get_variables(formula, BOOL)

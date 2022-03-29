@@ -31,10 +31,12 @@ cnfizers = [
 def test_correctness(CNFizer, phi):
     atoms = get_boolean_variables(phi) | get_lra_atoms(phi)
 
-    total_models = solver.get_allsat(phi, use_ta=False, atoms=atoms)
+    total_models, count_tot = solver.get_allsat(phi, use_ta=False, atoms=atoms)
+    assert count_tot == len(total_models)
     cnf = CNFizer.convert(phi)
     print(CNFizer, phi.serialize(), atoms, cnf.serialize(), file=sys.stderr)
-    partial_models = solver.get_allsat(cnf, use_ta=True, atoms=atoms)
+    partial_models, count_part = solver.get_allsat(cnf, use_ta=True, atoms=atoms)
+    assert count_part == count_tot
 
     check_eval_true(phi, partial_models)
 

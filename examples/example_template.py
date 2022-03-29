@@ -39,12 +39,15 @@ def main(formula):
     atoms = get_boolean_variables(formula) | get_lra_atoms(formula)
     # total models
     start_time = time.time()
-    total_models = solver.get_allsat(formula, use_ta=False, atoms=atoms)
+    total_models, count_tot = solver.get_allsat(formula, use_ta=False, atoms=atoms)
+    assert count_tot == len(total_models)
     print("{} total models ({:.02f}s)".format(
         len(total_models), time.time() - start_time))
 
     start_time = time.time()
-    non_cnf_models = solver.get_allsat(formula, use_ta=True, atoms=atoms)
+    non_cnf_models, count_part = solver.get_allsat(formula, use_ta=True, atoms=atoms)
+    if not count_part == count_tot:
+        print("Warning: model counting not correct ({} vs {})".format(count_part, count_tot))
     print("NON-CNFIZED MODELS: {}/{} ({:.02f}s)".format(len(non_cnf_models),
           len(total_models), time.time() - start_time))
     if args.v:
@@ -53,7 +56,9 @@ def main(formula):
     for cname, cnfizer in cnfizers.items():
         cnf = cnfizer(verbose=args.v).convert(formula)
         start_time = time.time()
-        cnf_models = solver.get_allsat(cnf, use_ta=True, atoms=atoms)
+        cnf_models, count_part = solver.get_allsat(cnf, use_ta=True, atoms=atoms)
+        if not count_part == count_tot:
+            print("Warning: model counting not correct ({} vs {})".format(count_part, count_tot))
         print("{}: {}/{} ({:.02f}s)".format(cname, len(cnf_models),
               len(total_models), time.time() - start_time))
 
