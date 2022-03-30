@@ -1,7 +1,7 @@
 import argparse
+from pprint import pformat
 
 from pysmt.shortcuts import *
-
 from local_tseitin.cnfizer import LocalTseitinCNFizer
 
 parser = argparse.ArgumentParser()
@@ -48,6 +48,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         if self.verbose:
             print("{}local_tseitin({}, {}, {}, {})".format(
                 "--" * count, formula, conds, S, pol))
+    
         if self.is_literal(formula):
             return
 
@@ -55,7 +56,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             self.local_tseitin(formula.arg(0), conds, Not(S),
                                1-pol, count, assertions)
             return
-
+ 
         left, right = formula.args()
 
         is_left_term = self.is_literal(left)
@@ -72,6 +73,11 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             formula, S1), S if pol == 0 else Not(S)}), S2, pol, count + 1, assertions)
 
     def convert(self, formula):
+        if self.verbose:
+            print("Input formula:", formula.serialize())
+        formula = self.preprocessor.convert(formula)
+        if self.verbose:
+            print("Preprocessed formula:", formula.serialize())
         assertions = []
         S = self._new_label()
         # self.original_symb = S
@@ -90,4 +96,5 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             for el in assertions:
                 print(el)
             print()
+        print("Clauses:\n", pformat(assertions))
         return And(assertions)
