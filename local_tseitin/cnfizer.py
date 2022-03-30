@@ -10,13 +10,16 @@ class LocalTseitinCNFizer():
         self.verbose = verbose
         self.vars = 0
         self.preprocessor = Preprocessor()
+        self.labels = set()
 
     def _new_label(self):
         self.vars += 1
-        return Symbol(LocalTseitinCNFizer.VAR_TEMPLATE.format(self.vars))
+        S = Symbol(LocalTseitinCNFizer.VAR_TEMPLATE.format(self.vars))
+        self.labels.add(S)
+        return S
 
     def convert(self, phi):
-        raise NotImplemented
+        return NotImplementedError
 
     def is_atom(self, atom):
         return atom.is_symbol(BOOL) or atom.is_theory_relation()
@@ -24,15 +27,18 @@ class LocalTseitinCNFizer():
     def is_literal(self, literal):
         return self.is_atom(literal) or (literal.is_not() and self.is_atom(literal.arg(0)))
 
+    def is_clause(self, phi):
+        return self.is_literal(phi) or (phi.is_or() and all(self.is_literal(a) for a in phi.args()))
+
     def is_cnf(self, phi):
-        if self.is_literal(phi):
-            return True
+        return self.is_clause(phi) or (phi.is_and() and all(self.is_clause(a) for a in phi.args()))
 
 
 class Preprocessor(IdentityDagWalker):
     """
     Simplify boolean constants and make operators binary
     """
+
     def convert(self, formula):
         return self.walk(formula)
 
@@ -44,7 +50,7 @@ class Preprocessor(IdentityDagWalker):
             elif not arg.is_true():
                 res.append(arg)
         return reduce(And, res)
-    
+
     def walk_or(self, formula, args, **kwargs):
         res = []
         for arg in args:
@@ -65,7 +71,7 @@ class Preprocessor(IdentityDagWalker):
 
     def walk_implies(self, formula, args, **kwargs):
         left, right = args
-        left = self.walk_not(Not(left), left, **kwargs)
+        left = self.walk_not(Not(left), (left,), **kwargs)
         return self.walk_or(formula, (left, right), **kwargs)
 
     def walk_iff(self, formula, args, **kwargs):
@@ -75,8 +81,8 @@ class Preprocessor(IdentityDagWalker):
         elif right.is_true():
             return left
         elif left.is_false():
-            return self.walk_not(formula.arg(1), right, **kwargs)
+            return self.walk_not(formula.arg(1), (right,), **kwargs)
         elif right.is_false():
-            return self.walk_not(formula.arg(0), left, **kwargs)
+            return self.walk_not(formula.arg(0), (left,), **kwargs)
         else:
             return Iff(left, right)

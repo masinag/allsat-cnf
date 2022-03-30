@@ -56,7 +56,8 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             self.local_tseitin(formula.arg(0), conds, Not(S),
                                1-pol, count, assertions)
             return
- 
+
+        assert len(formula.args()) ==2, "{}".format(formula.serialize())
         left, right = formula.args()
 
         is_left_term = self.is_literal(left)
@@ -96,5 +97,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             for el in assertions:
                 print(el)
             print()
-        print("Clauses:\n", pformat(assertions))
-        return And(assertions)
+        # print("Clauses:\n", pformat(assertions))
+        cnf = And(assertions)
+        assert self.is_cnf(cnf)
+        return cnf
