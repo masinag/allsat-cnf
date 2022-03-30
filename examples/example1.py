@@ -15,7 +15,8 @@ formulas = [
     Or(A, Or(Not(B), And(Not(C), Not(D)))),
     And(A, Not(Or(B, C))),
     Or(A, Not(And(B, C))),
-    And(A, Or(B, C))
+    And(A, Or(B, C)),
+    Iff(Iff(A,B), Iff(C,D))
 ]
 
 for formula in formulas:
