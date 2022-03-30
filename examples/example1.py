@@ -1,7 +1,7 @@
 from pysmt.shortcuts import *
 
 from example_template import (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P,
-                              Q, R, S, T, U, V, W, X, Y, Z, main)
+                              Q, R, S, T, U, V, W, X, Y, Z, make_example)
 
 formulas = [
     Or(Or(Or(And(A, B), And(C, D)), And(E, F)), And(G, H)),
@@ -20,4 +20,4 @@ formulas = [
 ]
 
 for formula in formulas:
-    main(formula)
+    make_example(formula)

@@ -42,4 +42,4 @@ def random_formula(depth):
 
 
 formula = random_formula(6)
-main(formula)
+make_example(formula)

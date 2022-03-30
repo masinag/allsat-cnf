@@ -16,4 +16,4 @@ def random_formula(depth):
     return operator(left, right)
 
 formula = random_formula(10)
-main(formula)
+make_example(formula)

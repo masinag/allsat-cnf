@@ -29,14 +29,14 @@ cnfizers = {
 }
 
 
-def main(formula):
+def make_example(formula, atoms = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", help="increase output verbosity",
                         action="store_true")
     args = parser.parse_args()
 
     print("Formula: {}".format(formula.serialize()))
-    atoms = get_boolean_variables(formula) | get_lra_atoms(formula)
+    atoms = atoms or (get_boolean_variables(formula) | get_lra_atoms(formula))
     # total models
     start_time = time.time()
     total_models, count_tot = solver.get_allsat(formula, use_ta=False, atoms=atoms)
