@@ -12,6 +12,9 @@ class LocalTseitinCNFizer():
         self.preprocessor = Preprocessor()
         self.labels = set()
 
+    def is_label(self, atom):
+        return atom in self.labels
+
     def _new_label(self):
         self.vars += 1
         S = Symbol(LocalTseitinCNFizer.VAR_TEMPLATE.format(self.vars))
@@ -84,5 +87,12 @@ class Preprocessor(IdentityDagWalker):
             return self.walk_not(formula.arg(1), (right,), **kwargs)
         elif right.is_false():
             return self.walk_not(formula.arg(0), (left,), **kwargs)
+        # else:
+        #     l, r = formula.args()
+        #     imp1 = Implies(l, r)
+        #     imp2 = Implies(r, l)
+        #     res1 = self.walk_implies(imp1, (left, right), **kwargs)
+        #     res2 = self.walk_implies(imp2, (right, left), **kwargs)
+        #     return self.walk_and(And(imp1, imp2), (res1, res2), **kwargs)
         else:
             return Iff(left, right)

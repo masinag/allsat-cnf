@@ -110,8 +110,10 @@ class LocalTseitinCNFizerActivation(LocalTseitinCNFizer, IdentityDagWalker):
 
         (S_phi1, A_phi1), (S_phi2, A_phi2) = args
         # A -> (A_phi1 & A_phi2)
-        assertions.append(Or(Not(A), A_phi1))
-        assertions.append(Or(Not(A), A_phi2))
+        if A_phi1 is not None:
+            assertions.append(Or(Not(A), A_phi1))
+        if A_phi2 is not None:
+            assertions.append(Or(Not(A), A_phi2))
 
         # (A & S) -> S_phi1 -> S_phi2
         assertions.append(Or(Not(A), Not(S), Not(S_phi1), S_phi2))
