@@ -7,7 +7,6 @@ from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.utils import *
 from pysmt.shortcuts import *
 
-solver = AllSATSolver()
 
 boolean_atoms = []
 for i in range(ord("A"), ord("Z") + 1):
@@ -24,7 +23,6 @@ for i in range(20):
     real_variables.append(x)
 
 cnfizers = {
-    #"ACT-CNF": LocalTseitinCNFizerActivation,
     "CND-CNF": LocalTseitinCNFizerConds,
 }
 
@@ -39,13 +37,13 @@ def make_example(formula, atoms = None):
     atoms = atoms or (get_boolean_variables(formula) | get_lra_atoms(formula))
     # total models
     start_time = time.time()
-    total_models, count_tot = solver.get_allsat(formula, use_ta=False, atoms=atoms)
+    total_models, count_tot = get_allsat(formula, use_ta=False, atoms=atoms)
     assert count_tot == len(total_models)
     print("{} total models ({:.02f}s)".format(
         len(total_models), time.time() - start_time))
 
     start_time = time.time()
-    non_cnf_models, count_part = solver.get_allsat(formula, use_ta=True, atoms=atoms)
+    non_cnf_models, count_part = get_allsat(formula, use_ta=True, atoms=atoms)
     if not count_part == count_tot:
         print("Warning: model counting not correct ({} vs {})".format(count_part, count_tot))
     print("NON-CNFIZED MODELS: {}/{} ({:.02f}s)".format(len(non_cnf_models),
@@ -56,7 +54,7 @@ def make_example(formula, atoms = None):
     for cname, cnfizer in cnfizers.items():
         cnf = cnfizer(verbose=args.v).convert(formula)
         start_time = time.time()
-        cnf_models, count_part = solver.get_allsat(cnf, use_ta=True, atoms=atoms)
+        cnf_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
         if not count_part == count_tot:
             print("Warning: model counting not correct ({} vs {})".format(count_part, count_tot))
         print("{}: {}/{} ({:.02f}s)".format(cname, len(cnf_models),
@@ -64,6 +62,5 @@ def make_example(formula, atoms = None):
 
         if args.v:
             pprint(cnf_models)
-        check_eval_true(formula, cnf_models)
-        check_models(cnf_models, total_models)
+        check_models(cnf_models, formula)
     print()
