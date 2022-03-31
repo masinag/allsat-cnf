@@ -19,32 +19,33 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         res = []
         if formula.is_and():
             # S <-> (S1 & S2)
-            if pol == 0:
-                res.append({Not(S), S1})
-                res.append({Not(S), S2})
-            else:
-                res.append({Not(S1), Not(S2), S})
+            res.append({Not(S), S1})
+            res.append({Not(S), S2})
+            res.append({Not(S1), Not(S2), S})
         elif formula.is_or():
             # S <-> (S1 | S2)
-            if pol == 0:
-                res.append({Not(S), S1, S2})
-            else:
-                res.append({Not(S1), S})
-                res.append({Not(S2), S})
+            res.append({Not(S), S1, S2})
+            res.append({Not(S1), S})
+            res.append({Not(S2), S})
         elif formula.is_iff():
             res.append({Not(S), S1, Not(S2)})
             res.append({Not(S), S2, Not(S1)})
             res.append({S, S1, S2})
             res.append({S, Not(S2), Not(S1)})
         if not is_leaves:
-            if (pol == 0 and formula.is_and()) or (pol == 1 and formula.is_or()):
+            #if (pol == 0 and formula.is_and()) or (pol == 1 and formula.is_or()):
                 # S1 <-> S2
-                res.append({Not(S1), S2})
-                res.append({Not(S2), S1})
-            elif (pol == 0 and formula.is_or()) or (pol == 1 and formula.is_and()):
+            #    res.append({Not(S1), S2})
+            #    res.append({Not(S2), S1})
+            if (pol == 0 and formula.is_or()) or (pol == 1 and formula.is_and()):
                 # S1 <-> !S2
-                res.append({Not(S1), Not(S2)})
-                res.append({S1, S2})
+                res.append({Not(S), Not(S1), Not(S2)})
+                res.append({Not(S), S1, S2})
+                #res.append({S, Not(S1), S2})
+                #res.append({S, S1, Not(S2)})
+                #res.append({Not(S1), Not(S2)})
+                #res.append({S1, S2})
+                
         return res
 
     def polarity(self, formula, S):
@@ -81,10 +82,10 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             self.local_tseitin(left, conds.union({S if pol == 0 else Not(S)}), S1, pol, count + 1, assertions)
             self.local_tseitin(right, conds.union({S if pol == 0 else Not(S)}), S2, pol, count + 1, assertions)
         else:
-            self.local_tseitin(left, conds.union({self.polarity(
-                formula, S2), S if pol == 0 else Not(S)}), S1, pol, count + 1, assertions)
-            self.local_tseitin(right, conds.union({self.polarity(
-                formula, S1), S if pol == 0 else Not(S)}), S2, pol, count + 1, assertions)
+            self.local_tseitin(left, {self.polarity(
+                formula, S2), S if pol == 0 else Not(S)}, S1, pol, count + 1, assertions)
+            self.local_tseitin(right, {self.polarity(
+                formula, S1), S if pol == 0 else Not(S)}, S2, pol, count + 1, assertions)
 
     def convert(self, formula):
         if self.verbose:
