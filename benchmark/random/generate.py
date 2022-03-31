@@ -161,9 +161,9 @@ def main():
     time_start = time.time()
     digits = int(log10(args.models)) + 1
     template = "r{r}_b{b}_d{d}_s{s}_{templ}.json".format(
-        r=args.reals, b=args.booleans, d=args.depth, s=args.seedn, templ="{n:0{d}}")
+        r=args.reals, b=args.booleans, d=args.depth, s=args.seed, templ="{n:0{d}}")
     for i in range(args.models):
-        problem = gen.random_problem(args.depth)
+        problem = gen.generate_problem(args.depth)
         file_name = path.join(output_dir, template.format(n=i+1, d=digits))
         write_smtlib(problem, file_name)
         print("\r"*100, end='')
