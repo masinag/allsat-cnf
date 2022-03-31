@@ -19,14 +19,18 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         res = []
         if formula.is_and():
             # S <-> (S1 & S2)
-            res.append({Not(S), S1})
-            res.append({Not(S), S2})
-            res.append({Not(S1), Not(S2), S})
+            if pol == 0:
+                res.append({Not(S), S1})
+                res.append({Not(S), S2})
+            else:
+                res.append({Not(S1), Not(S2), S})
         elif formula.is_or():
             # S <-> (S1 | S2)
-            res.append({Not(S), S1, S2})
-            res.append({Not(S1), S})
-            res.append({Not(S2), S})
+            if pol == 0:
+                res.append({Not(S), S1, S2})
+            else:
+                res.append({Not(S1), S})
+                res.append({Not(S2), S})
         elif formula.is_iff():
             res.append({Not(S), S1, Not(S2)})
             res.append({Not(S), S2, Not(S1)})
