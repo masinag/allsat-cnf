@@ -24,7 +24,7 @@ for i in range(20):
     real_variables.append(x)
 
 cnfizers = {
-    "ACT-CNF": LocalTseitinCNFizerActivation,
+    #"ACT-CNF": LocalTseitinCNFizerActivation,
     "CND-CNF": LocalTseitinCNFizerConds,
 }
 
