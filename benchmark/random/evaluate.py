@@ -89,7 +89,7 @@ def main():
     time_start = time.time()
 
     for i, filename in enumerate(files):
-        print("{}Problem {:3d}/{:3d}".format("\r"* 300, i + 1, len(files)))
+        print("{}Problem {:3d}/{:3d}".format("\r"* 300, i + 1, len(files)), end="")
         time_init = time.time()
         phi = read_smtlib(filename)
         models, _ = get_allsat(phi, mode)
