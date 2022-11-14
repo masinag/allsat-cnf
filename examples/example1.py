@@ -16,7 +16,11 @@ formulas = [
     And(A, Not(Or(B, C))),
     Or(A, Not(And(B, C))),
     And(A, Or(B, C)),
-    Iff(Iff(A,B), Iff(C,D))
+    Iff(Iff(A,B), Iff(C,D)),
+    Iff(Iff(Or(A,B), E), Or(C,D)),
+    Iff(Or(And(Or(A, B), C), D), E), # TO PROVE, BUT SOLVED
+    Iff(A, Or(B, Iff(C, Or(D, E)))), # TO PROVE, BUT SOLVED 
+    Iff(Not(Or(And(A, B), And(C,D))), E),
 ]
 
 for formula in formulas:
