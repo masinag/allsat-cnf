@@ -141,35 +141,141 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             self.local_tseitin(right, conds.union({Not(S1)}), S2, pol, count + 1, assertions, polarizer)
 
 
+    def local_tseitin_rec(self, formula, conds, S, count, polarizer):
+        if self.verbose:
+            print("{}local_tseitin_rec({}, {}, {}, {})".format(
+                "--" * count, formula, conds, S, polarizer))
+    
+        # CASO BASE 1: formula monovariabile
+        if self.is_literal(formula):
+            return formula
+        
+        left, right = formula.args()
+
+        #CASO BASE 2: leaf operator
+        if self.is_literal(left) and self.is_literal(right):
+            S1 = left; S2 = right;
+            clauses = []
+            if formula.is_or():
+                # And(conds) -> (S <-> S1 v S2)
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S1, S2})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S1)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S2)})))
+            if formula.is_and():
+                # And(conds) -> (S <-> S1 ^ S2)
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S1), Not(S2)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S1})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S2})))
+            if formula.is_iff():
+                # And(conds) -> (S <-> S1 <-> S2)
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S1, Not(S2)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S2, Not(S1)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, S1, S2})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S2), Not(S1)})))
+            return And(clauses) 
+
+        assert len(formula.args()) ==2, "{}".format(formula.serialize())
+
+        S1 = self._new_label() if not self.is_literal(left)  else left
+        S2 = self._new_label() if not self.is_literal(right)  else right
+
+        clauses = []
+        if formula.is_or():
+            # And(conds) -> (S <-> S1 v S2)
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S1, S2})))
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S1)})))
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S2)})))
+            
+            # NEW: not both true if it is actually a OR, using polarizer
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(polarizer), Not(S1), Not(S2)})))
+
+            return And([c for c in clauses] + 
+                ([c for c in self.local_tseitin_rec(left, conds.union({Not(S2)}), S1, count + 1, polarizer).args()] if not self.is_literal(left) else []) + 
+                ([c for c in self.local_tseitin_rec(right, conds.union({Not(S1)}), S2, count + 1, polarizer).args()] if not self.is_literal(right) else [])
+            )
+
+        if formula.is_and():
+            # And(conds) -> (S <-> S1 ^ S2)
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S1), Not(S2)})))
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S1})))
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S2})))
+
+            # NEW: not both false it is a AND negated, thus a OR, using polarizer
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({polarizer, S1, S2})))
+
+            return And(
+                [c for c in clauses] + 
+                ([c for c in self.local_tseitin_rec(left, conds.union({S2}), S1, count + 1, polarizer).args()] if not self.is_literal(left) else []) + 
+                ([c for c in self.local_tseitin_rec(right, conds.union({S1}), S2, count + 1, polarizer).args()] if not self.is_literal(right) else [])
+            )
+
+        if formula.is_iff():
+            # And(conds) -> (S <-> S1 <-> S2)
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S1, Not(S2)})))
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S2, Not(S1)})))
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, S1, S2})))
+            clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S2), Not(S1)})))
+
+            
+
+            if not self.is_literal(left):
+                new_Pl = self._new_polarizer()
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(new_Pl), Not(polarizer), S2})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(new_Pl), polarizer, Not(S2)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({new_Pl, Not(polarizer), Not(S2)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({new_Pl, polarizer, S2})))
+            else:
+                new_Pl = polarizer
+
+            if not self.is_literal(right):
+                new_Pr = self._new_polarizer()
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(new_Pr), Not(polarizer), S1})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(new_Pr), polarizer, Not(S1)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({new_Pr, Not(polarizer), Not(S1)})))
+                clauses.append(Or({Not(S_phi) for S_phi in conds}.union({new_Pr, polarizer, S1})))
+            else:
+                new_Pr = polarizer
+
+            return And(
+                [c for c in clauses] +  
+                ([c for c in self.local_tseitin_rec(left, conds, S1, count + 1, new_Pl).args()] if not self.is_literal(left) else []) +
+                ([c for c in self.local_tseitin_rec(right, conds, S2, count + 1, new_Pr).args()] if not self.is_literal(right) else [])
+            )  
+
+
     def convert(self, formula):
         if self.verbose:
             print("Input formula:", formula.serialize())
-        if self.is_cnf(formula):
-            print("FORMULA ALREADY IN CNF!")
-            return formula
         formula = self.preprocessor.convert(formula)
         if self.verbose:
             print("Preprocessed formula:", formula.serialize())
         assertions = []
         S = self._new_label()
-        P = self._new_label()
+        P = self._new_polarizer()
         # self.original_symb = S
         if self.verbose:
             print("Recursive calls to local_tseitin(formula, conds, symbol, polarity):")
+        """
         if formula.is_not():
             self.local_tseitin(formula.arg(0), set(), S, 1, 0, assertions, None)
             assertions.append(Not(S))
         else:
             self.local_tseitin(formula, set(), S, 0, 0, assertions, None)
             assertions.append(S)
+        """
 
+        cnf = self.local_tseitin_rec(formula, set(), S, 0, P)
+        cnf = And([c for c in cnf.args()] + [S, P])
+
+        
         if self.verbose:
             print()
             print("Encoded clauses:")
-            for el in assertions:
+            for el in cnf.args():
                 print(el)
             print()
+        
         # print("Clauses:\n", pformat(assertions))
-        cnf = And(assertions)
+        # cnf = And(assertions)
         assert self.is_cnf(cnf)
         return cnf

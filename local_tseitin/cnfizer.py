@@ -5,10 +5,12 @@ from pysmt.walkers import IdentityDagWalker
 
 class LocalTseitinCNFizer():
     VAR_TEMPLATE = "T{:d}"
+    POL_TEMPLATE = "P{:d}"
 
     def __init__(self, verbose=False):
         self.verbose = verbose
         self.vars = 0
+        self.polvars = 0
         self.preprocessor = Preprocessor()
         self.labels = set()
 
@@ -18,6 +20,12 @@ class LocalTseitinCNFizer():
     def _new_label(self):
         self.vars += 1
         S = Symbol(LocalTseitinCNFizer.VAR_TEMPLATE.format(self.vars))
+        self.labels.add(S)
+        return S
+
+    def _new_polarizer(self):
+        self.polvars += 1
+        S = Symbol(LocalTseitinCNFizer.POL_TEMPLATE.format(self.polvars))
         self.labels.add(S)
         return S
 
