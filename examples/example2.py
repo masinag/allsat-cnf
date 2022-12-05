@@ -12,7 +12,8 @@ def random_formula(depth):
             return random.choice(boolean_atoms)
         else:
             return Not(random.choice(boolean_atoms)) 
-    operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
+    # operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
+    operator = random.choices([Or, And, Iff], weights=[8/17, 8/17, 1/17], k=1)[0]
     if operator is Not:
         return Not(random_formula(depth - 1))
     left = random_formula(depth - 1)
