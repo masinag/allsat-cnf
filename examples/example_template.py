@@ -34,13 +34,15 @@ def make_example(formula, atoms = None):
     args = parser.parse_args()
 
     print("Formula: {}".format(formula.serialize()))
+    output = []
     atoms = atoms or (get_boolean_variables(formula) | get_lra_atoms(formula))
     # total models
     start_time = time.time()
     total_models, count_tot = get_allsat(formula, use_ta=False, atoms=atoms)
     assert count_tot == len(total_models)
+    final_time = time.time() - start_time
     print("{} total models ({:.02f}s)".format(
-        len(total_models), time.time() - start_time))
+        len(total_models), final_time))
 
     start_time = time.time()
     non_cnf_models, count_part = get_allsat(formula, use_ta=True, atoms=atoms)
@@ -51,10 +53,12 @@ def make_example(formula, atoms = None):
     if args.v:
         pprint(non_cnf_models)
 
+
     for cname, cnfizer in cnfizers.items():
         cnf = cnfizer(verbose=args.v).convert(formula)
         start_time = time.time()
         cnf_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
+        final_time_cnf = time.time() - start_time
         if not count_part == count_tot:
             print("Warning: model counting not correct ({} vs {})".format(count_part, count_tot))
         print("{}: {}/{} ({:.02f}s)".format(cname, len(cnf_models),
@@ -64,3 +68,5 @@ def make_example(formula, atoms = None):
             pprint(cnf_models)
         check_models(cnf_models, formula)
     print()
+
+    return [len(non_cnf_models), final_time, len(cnf_models), final_time_cnf] 
