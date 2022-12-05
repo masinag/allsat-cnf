@@ -1,15 +1,16 @@
 
 import argparse
-import sys
-import os
-import time
 import json
+import os
+import sys
+import time
 from os import path
-from pysmt.shortcuts import read_smtlib
-from local_tseitin.utils import AllSATSolver
+
 from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.utils import *
+from local_tseitin.utils import get_allsat as allsat
+
 
 def get_allsat(phi, mode):
     atoms = get_lra_atoms(phi).union(get_boolean_variables(phi))
@@ -20,7 +21,7 @@ def get_allsat(phi, mode):
         phi = LocalTseitinCNFizerActivation().convert(phi)
     elif mode == "TTA":
         use_ta = False
-    return AllSATSolver().get_allsat(phi, use_ta=use_ta, atoms=atoms)
+    return allsat(phi, use_ta=use_ta, atoms=atoms)
 
 def check_input_output(input_dir, output_dir, output_file):
     # check if input dir exists
