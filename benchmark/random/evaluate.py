@@ -95,6 +95,7 @@ def main():
         phi = read_smtlib(filename)
         models, _ = get_allsat(phi, mode)
         time_total = time.time() - time_init
+        check_models(models, phi)
         res = {
             "filename": filename,
             "models": len(models),
