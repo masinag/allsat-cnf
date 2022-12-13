@@ -1,6 +1,6 @@
 DIR=bool_bench
 mkdir -p $DIR/data $DIR/results $DIR/plots
-python3 generate.py -b 10 -r 0 -d 10 -o $DIR/data -m 100
+python3 generate_bool.py -b 20 -d 15 -o $DIR/data -m 100
 
 for dir in $(ls $DIR/data)
 do
