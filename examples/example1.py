@@ -4,24 +4,26 @@ from example_template import (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P,
                               Q, R, S, T, U, V, W, X, Y, Z, make_example)
 
 formulas = [
-    Or(Or(Or(And(A, B), And(C, D)), And(E, F)), And(G, H)),
-    Or(Or(Or(And(A, B), And(C, D)), And(E, F)), And(G, H)),
-    Or(And(A, B), And(C, D)),
-    Or(Not(And(A, B)), And(C, D)),
-    Not(Or(A, And(B, C))),
-    And(Not(A), Or(Not(B), Not(C))),
-    Or(A, Not(And(B, Or(C, D)))),
-    Not(Or(A, Not(And(B, Not(Or(C, D)))))),
-    Or(A, Or(Not(B), And(Not(C), Not(D)))),
-    And(A, Not(Or(B, C))),
-    Or(A, Not(And(B, C))),
     And(A, Or(B, C)),
+    And(Not(A), Or(Not(B), Not(C))),
+    Or(And(A, B), And(C, D)),
+    Or(Or(Or(And(A, B), And(C, D)), And(E, F)), And(G, H)),
+    
+    Or(A, Or(Not(B), And(Not(C), Not(D)))),
     Iff(Iff(A,B), Iff(C,D)),
-    Iff(Iff(Or(A,B), E), Or(C,D)),
+    Iff(Iff(Or(A,B), C), D),
     Iff(Or(And(Or(A, B), C), D), E), # TO PROVE, BUT SOLVED
     Iff(A, Or(B, Iff(C, Or(D, E)))), # TO PROVE, BUT SOLVED 
-    Iff(Not(Or(And(A, B), And(C,D))), E),
+    Iff(A, Or(B, Iff(C, Or(D, And(E, Or(F, G)))))),
+    Or(And(Or(A,C), B), And(Or(A,C),B)),
+    Iff(Iff(Iff(A,B), Iff(C,D)), Iff(Iff(E,F), Or(G,H))),
+    Not(And(Not(And(A, B)), Not(And(B, C)))),
+    And(B, Not(And(Not(A), Not(C)))),
+    And(Not(And(Not(A), Not(B))), Not(And(A, B)))
 ]
 
 for formula in formulas:
     make_example(formula)
+
+
+# 

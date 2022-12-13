@@ -251,6 +251,35 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         # CASO BASE 1: formula monovariabile
         if self.is_literal(formula):
             return [[Bool(True)]], formula
+
+        # CASO NOT(AND) PER AIG
+        if formula.is_not():
+            formula_neg = formula.arg(0)
+            print(formula_neg)
+            left, right = formula_neg.args()
+            S = self._new_label()
+            clauses = []
+
+            cnf1, S1 = self.lt_pol(left, count + 1)
+            cnf2, S2 = self.lt_pol(right, count + 1)
+
+            if formula_neg.is_and():
+                # S <-> -S1 v -S2
+                if self.verbose:
+                    print("NOT(AND)", formula)
+                clauses.append([Not(S), Not(S1), Not(S2)])
+                clauses.append([S, S1])
+                clauses.append([S, S2])
+                # S2 -> CNF1
+                for f in cnf1:
+                    clauses.append([Not(S2)] + f)
+                # S1 -> CNF2
+                for f in cnf2:
+                    clauses.append([Not(S1)] + f)
+                # S -> -S1 v -S2
+                if not self.is_literal(left) or not self.is_literal(right):
+                    clauses.append([Not(S), S1, S2])
+                return clauses, S
         
         left, right = formula.args()
         S = self._new_label()
@@ -342,9 +371,11 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             self.local_tseitin(formula, set(), S, 0, 0, assertions, None)
             assertions.append(S)
         """
+        
 
         #cnf = self.local_tseitin_rec(formula, set(), S, 0, P)
         cnf, S = self.lt_pol(formula, 0)
+        #print("SIZE NEW FORMULA:", len(cnf))
         cnf = And([Or(c) for c in cnf])
         
         if self.verbose:
@@ -357,6 +388,6 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         cnf = simplify(cnf)
         
         # print("Clauses:\n", pformat(assertions))
-        # cnf = And(assertions)
+        #cnf = And(assertions)
         assert self.is_cnf(cnf)
         return cnf
