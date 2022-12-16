@@ -255,7 +255,6 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         # CASO NOT(AND) PER AIG
         if formula.is_not():
             formula_neg = formula.arg(0)
-            print(formula_neg)
             left, right = formula_neg.args()
             S = self._new_label()
             clauses = []
@@ -265,8 +264,6 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
             if formula_neg.is_and():
                 # S <-> -S1 v -S2
-                if self.verbose:
-                    print("NOT(AND)", formula)
                 clauses.append([Not(S), Not(S1), Not(S2)])
                 clauses.append([S, S1])
                 clauses.append([S, S2])
@@ -318,10 +315,10 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append([S, Not(S2)])
             # -S2 -> CNF1
             for f in cnf1:
-                clauses.append([S2] + f)
+                clauses.append(f + [S2])
             # -S1 -> CNF2
             for f in cnf2:
-                clauses.append([S1] + f)
+                clauses.append(f + [S1])
             # S -> -S1 v -S2
             clauses.append([Not(S), Not(S1), Not(S2)])
         if formula.is_and():
@@ -331,10 +328,10 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append([Not(S), S2])
             # S2 -> CNF1
             for f in cnf1:
-                clauses.append([Not(S2)] + f)
+                clauses.append(f + [Not(S2)])
             # S1 -> CNF2
             for f in cnf2:
-                clauses.append([Not(S1)] + f)
+                clauses.append(f + [Not(S1)])
             # -S -> S1 v S2
             clauses.append([S, S1, S2])
         if formula.is_iff():
