@@ -252,9 +252,10 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
     
         # CASO BASE 1: formula monovariabile
         if self.is_literal(formula):
-            return [[Bool(True)]], formula
+            return [([Bool(True)], 0)], formula
 
         # CASO NOT(AND) PER AIG
+        
         if formula.is_not():
             formula_neg = formula.arg(0)
             left, right = formula_neg.args()
@@ -266,19 +267,24 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
             if formula_neg.is_and():
                 # S <-> -S1 v -S2
-                clauses.append([Not(S), Not(S1), Not(S2)])
-                clauses.append([S, S1])
-                clauses.append([S, S2])
+                clauses.append(([Not(S), Not(S1), Not(S2)], self.guards))
+                clauses.append(([S, S1], self.guards))
+                clauses.append(([S, S2], self.guards))
                 # S2 -> CNF1
                 for f in cnf1:
-                    clauses.append([Not(S2)] + f)
+                    if f[1] is None or f[1] > 0:
+                        f = ([Not(S2)] + f[0], f[1] - 1) if f[1] is not None else ([Not(S2)] + f[0], f[1])
+                    clauses.append(f)
                 # S1 -> CNF2
                 for f in cnf2:
-                    clauses.append([Not(S1)] + f)
+                    if f[1] is None or f[1] > 0:
+                        f = ([Not(S1)] + f[0], f[1] - 1) if f[1] is not None else ([Not(S1)] + f[0], f[1])
+                    clauses.append(f)
                 # S -> -S1 v -S2
                 if not self.is_literal(left) or not self.is_literal(right):
-                    clauses.append([Not(S), S1, S2])
+                    clauses.append(([Not(S), S1, S2], self.guards))
                 return clauses, S
+        
         
         left, right = formula.args()
         S = self._new_label()
@@ -289,20 +295,20 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             S1 = left; S2 = right;
             if formula.is_or():
                 # (S <-> S1 v S2)
-                clauses.append([Not(S), S1, S2])
-                clauses.append([S, Not(S1)])
-                clauses.append([S, Not(S2)])
+                clauses.append(([Not(S), S1, S2], self.guards))
+                clauses.append(([S, Not(S1)], self.guards))
+                clauses.append(([S, Not(S2)], self.guards))
             if formula.is_and():
                 # (S <-> S1 ^ S2)
-                clauses.append([S, Not(S1), Not(S2)])
-                clauses.append([Not(S), S1])
-                clauses.append([Not(S), S2])
+                clauses.append(([S, Not(S1), Not(S2)], self.guards))
+                clauses.append(([Not(S), S1], self.guards))
+                clauses.append(([Not(S), S2], self.guards))
             if formula.is_iff():
                 # (S <-> S1 <-> S2)
-                clauses.append([Not(S), S1, Not(S2)])
-                clauses.append([Not(S), S2, Not(S1)])
-                clauses.append([S, S1, S2])
-                clauses.append([S, Not(S2), Not(S1)])
+                clauses.append(([Not(S), S1, Not(S2)], self.guards))
+                clauses.append(([Not(S), S2, Not(S1)], self.guards))
+                clauses.append(([S, S1, S2], self.guards))
+                clauses.append(([S, Not(S2), Not(S1)], self.guards))
             return clauses, S
 
         assert len(formula.args()) == 2, "{}".format(formula.serialize())
@@ -312,49 +318,48 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
         if formula.is_or():
             # S <-> S1 v S2
-            clauses.append([Not(S), S1, S2])
-            clauses.append([S, Not(S1)])
-            clauses.append([S, Not(S2)])
+            clauses.append(([Not(S), S1, S2], self.guards))
+            clauses.append(([S, Not(S1)], self.guards))
+            clauses.append(([S, Not(S2)], self.guards))
             # -S2 -> CNF1
             for f in cnf1:
-                if self.guards is None or len(f) < 3 + self.guards:
-                    f = [S2] + f
+                if f[1] is None or f[1] > 0:
+                    f = ([S2] + f[0], f[1] - 1) if f[1] is not None else ([S2] + f[0], f[1])
                 clauses.append(f)
             # -S1 -> CNF2
             for f in cnf2:
-                if self.guards is None or len(f) < 3 + self.guards:
-                    f = [S1] + f
+                if f[1] is None or f[1] > 0:
+                    f = ([S1] + f[0], f[1] - 1) if f[1] is not None else ([S1] + f[0], f[1])
                 clauses.append(f)
             # S -> -S1 v -S2
-            clauses.append([Not(S), Not(S1), Not(S2)])
+            clauses.append(([Not(S), Not(S1), Not(S2)], self.guards))
         if formula.is_and():
             # S <-> S1 v S2
-            clauses.append([S, Not(S1), Not(S2)])
-            clauses.append([Not(S), S1])
-            clauses.append([Not(S), S2])
+            clauses.append( ([S, Not(S1), Not(S2)], self.guards) )
+            clauses.append( ([Not(S), S1], self.guards) )
+            clauses.append( ([Not(S), S2], self.guards) )
             # S2 -> CNF1
             for f in cnf1:
-                if self.guards is None or len(f) < 3 + self.guards:
-                    f = [Not(S2)] + f
+                if f[1] is None or f[1] > 0:
+                    f = ([Not(S2)] + f[0], f[1] - 1) if f[1] is not None else ([Not(S2)] + f[0], f[1])
                 clauses.append(f)
             # S1 -> CNF2
             for f in cnf2:
-                if self.guards is None or len(f) < 3 + self.guards:
-                    f = [Not(S1)] + f
-                clauses.append(f + [Not(S1)])
+                if f[1] is None or f[1] > 0:
+                    f = ([Not(S1)] + f[0], f[1] - 1) if f[1] is not None else ([Not(S1)] + f[0], f[1])
+                clauses.append(f)
             # -S -> S1 v S2
-            clauses.append([S, S1, S2])
+            clauses.append(([S, S1, S2], self.guards))
         if formula.is_iff():
             # S <-> S1 <-> S2
-            clauses.append([Not(S), S1, Not(S2)])
-            clauses.append([Not(S), S2, Not(S1)])
-            clauses.append([S, S1, S2])
-            clauses.append([S, Not(S2), Not(S1)])
+            clauses.append(([Not(S), S1, Not(S2)], self.guards))
+            clauses.append(([Not(S), S2, Not(S1)], self.guards))
+            clauses.append(([S, S1, S2], self.guards))
+            clauses.append(([S, Not(S2), Not(S1)], self.guards))
             for f in cnf1:
                 clauses.append(f)
             for f in cnf2:
                 clauses.append(f)
-            
         return clauses, S 
 
 
@@ -383,6 +388,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         #cnf = self.local_tseitin_rec(formula, set(), S, 0, P)
         cnf, S = self.lt_pol(formula, 0)
         #print("SIZE NEW FORMULA:", len(cnf))
+        cnf = [f[0] for f in cnf]
         cnf = And([Or(c) for c in cnf])
         
         if self.verbose:
