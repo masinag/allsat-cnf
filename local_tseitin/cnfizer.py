@@ -7,12 +7,13 @@ class LocalTseitinCNFizer():
     VAR_TEMPLATE = "T{:d}"
     POL_TEMPLATE = "P{:d}"
 
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, guards=None):
         self.verbose = verbose
         self.vars = 0
         self.polvars = 0
         self.preprocessor = Preprocessor()
         self.labels = set()
+        self.guards = guards
 
     def is_label(self, atom):
         return atom in self.labels

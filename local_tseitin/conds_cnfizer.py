@@ -7,6 +7,8 @@ from local_tseitin.cnfizer import LocalTseitinCNFizer
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", help="increase output verbosity",
                     action="store_true")
+parser.add_argument("-g", help="set how many guards to add", type=int,
+                    action="store")
 
 
 class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
@@ -315,10 +317,14 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append([S, Not(S2)])
             # -S2 -> CNF1
             for f in cnf1:
-                clauses.append(f + [S2])
+                if self.guards is None or len(f) < 3 + self.guards:
+                    f = [S2] + f
+                clauses.append(f)
             # -S1 -> CNF2
             for f in cnf2:
-                clauses.append(f + [S1])
+                if self.guards is None or len(f) < 3 + self.guards:
+                    f = [S1] + f
+                clauses.append(f)
             # S -> -S1 v -S2
             clauses.append([Not(S), Not(S1), Not(S2)])
         if formula.is_and():
@@ -328,9 +334,13 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append([Not(S), S2])
             # S2 -> CNF1
             for f in cnf1:
-                clauses.append(f + [Not(S2)])
+                if self.guards is None or len(f) < 3 + self.guards:
+                    f = [Not(S2)] + f
+                clauses.append(f)
             # S1 -> CNF2
             for f in cnf2:
+                if self.guards is None or len(f) < 3 + self.guards:
+                    f = [Not(S1)] + f
                 clauses.append(f + [Not(S1)])
             # -S -> S1 v S2
             clauses.append([S, S1, S2])

@@ -31,6 +31,7 @@ def make_example(formula, atoms = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", help="increase output verbosity",
                         action="store_true")
+    parser.add_argument("-g", help="set how many guards to add", type=int, action="store")
     args = parser.parse_args()
 
     print("Formula: {}".format(formula.serialize()))
@@ -55,7 +56,7 @@ def make_example(formula, atoms = None):
 
 
     for cname, cnfizer in cnfizers.items():
-        cnf = cnfizer(verbose=args.v).convert(formula)
+        cnf = cnfizer(verbose=args.v, guards=args.g).convert(formula)
         start_time = time.time()
         cnf_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
         final_time_cnf = time.time() - start_time
