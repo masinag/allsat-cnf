@@ -4,6 +4,7 @@ from pprint import pprint
 
 from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
+from local_tseitin.conds_cnfizer_aig import LocalTseitinCNFizerCondsAIG
 from local_tseitin.utils import *
 from pysmt.shortcuts import *
 
@@ -24,17 +25,21 @@ for i in range(20):
 
 cnfizers = {
     "CND-CNF": LocalTseitinCNFizerConds,
+    "CND-CNF-AIG" : LocalTseitinCNFizerCondsAIG,
 }
-
+i = 1
 
 def make_example(formula, atoms = None):
+    global i
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", help="increase output verbosity",
                         action="store_true")
     parser.add_argument("-g", help="set how many guards to add", type=int, action="store")
     args = parser.parse_args()
 
-    print("Formula: {}".format(formula.serialize()))
+    #print("Formula: {}".format(formula.serialize()))
+    print("FORMULA {}".format(i))
+    i += 1
     output = []
     atoms = atoms or (get_boolean_variables(formula) | get_lra_atoms(formula))
     # total models
