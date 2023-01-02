@@ -24,7 +24,7 @@ def error(msg=""):
     sys.exit(1)
 
 
-def get_input_files(input_dirs: list[str]) -> list[str]:
+def get_input_files(input_dirs: List[str]) -> List[str]:
     input_files = []
     for input_dir in input_dirs:
         if not os.path.exists(input_dir):
@@ -42,7 +42,7 @@ def get_input_files(input_dirs: list[str]) -> list[str]:
     return input_files
 
 
-def parse_inputs(input_files: list[str]) -> pd.DataFrame:
+def parse_inputs(input_files: List[str]) -> pd.DataFrame:
     data = []
     for filename in input_files:
         with open(filename) as f:
@@ -143,7 +143,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    inputs: list[str] = args.input
+    inputs: List[str] = args.input
     output_dir: str = args.output
     filename: str = args.filename
 
