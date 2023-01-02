@@ -9,7 +9,7 @@ for dir in $(ls -d $DIR/data/*b${BOOL}_d${DEPTH}*)
 do
     res_dir=$(sed "s+data+results+g" <<< $dir)
     mkdir -p $res_dir
-    for mode in AUTO CND
+    for mode in AUTO CND POL
     do
         python3 evaluate.py $dir -m $mode -o $res_dir
     done
