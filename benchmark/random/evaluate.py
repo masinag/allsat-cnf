@@ -23,7 +23,8 @@ def get_allsat(phi, mode, with_repetitions):
         phi = LocalTseitinCNFizerActivation().convert_as_formula(phi)
     elif mode == "TTA":
         use_ta = False
-    return allsat(phi, use_ta=use_ta, atoms=atoms, options={"dpll.allsat_allow_duplicates": "true" if with_repetitions else "false"})
+    return allsat(phi, use_ta=use_ta, atoms=atoms,
+                  options={"dpll.allsat_allow_duplicates": "true" if with_repetitions else "false"})
 
 
 def check_input_output(input_dir, output_dir, output_file):
