@@ -12,7 +12,7 @@ from local_tseitin.utils import *
 from local_tseitin.utils import get_allsat as allsat
 
 
-def get_allsat(phi, mode):
+def get_allsat(phi, mode, with_repetitions):
     atoms = get_lra_atoms(phi).union(get_boolean_variables(phi))
     use_ta = True
     if mode == "POL":
@@ -23,7 +23,7 @@ def get_allsat(phi, mode):
         phi = LocalTseitinCNFizerActivation().convert_as_formula(phi)
     elif mode == "TTA":
         use_ta = False
-    return allsat(phi, use_ta=use_ta, atoms=atoms)
+    return allsat(phi, use_ta=use_ta, atoms=atoms, options={"dpll.allsat_allow_duplicates": "true" if with_repetitions else "false"})
 
 
 def check_input_output(input_dir, output_dir, output_file):
@@ -69,6 +69,8 @@ def parse_args():
                         help='Output folder where to save the result (default: cwd)')
     parser.add_argument('-m', '--mode', choices=modes,
                         required=True, help='Mode to use')
+    parser.add_argument('-r', '--with-repetitions', action='store_true',
+                        help='Allow generating models with repetitions')
     return parser.parse_args()
 
 
@@ -78,9 +80,11 @@ def main():
     # input_type = args.input_type
     output_dir = args.output
     mode = args.mode
+    with_repetitions = args.with_repetitions
 
+    smode = f"{mode}{'_REP' if with_repetitions else ''}"
     output_file = "{}_{}_{}.json".format(
-        os.path.split(input_dir.rstrip('/'))[1], mode, int(time.time()))
+        os.path.split(input_dir.rstrip('/'))[1], smode, int(time.time()))
     output_file = path.join(output_dir, output_file)
     print("Creating... {}".format(output_file))
     check_input_output(input_dir, output_dir, output_file)
@@ -95,7 +99,7 @@ def main():
         print("{}Problem {:3d}/{:3d}".format("\r" * 300, i + 1, len(files)), end="")
         time_init = time.time()
         phi = read_smtlib(filename)
-        models, _ = get_allsat(phi, mode)
+        models, _ = get_allsat(phi, mode, with_repetitions)
         time_total = time.time() - time_init
         if mode not in ["TTA", "AUTO"]:
             check_models(models, phi)
@@ -103,8 +107,9 @@ def main():
             "filename": filename,
             "models": len(models),
             "time": time_total,
+            "repetitions": with_repetitions,
         }
-        write_result(mode, res, output_file)
+        write_result(smode, res, output_file)
 
     seconds = time.time() - time_start
     print("Done! {:.3f}s".format(seconds))
