@@ -211,12 +211,12 @@ class LocalTseitinCNFizerCondsAIG(LocalTseitinCNFizer):
         return clauses, S, P, False
 
 
-    def convert(self, formula):
+    def convert_as_formula(self, formula):
         if self.verbose:
             print("Input formula:", formula.serialize())
             print(self.all_clauses)
             print(self.hash_set)
-        formula = self.preprocessor.convert(formula)
+        formula = self.preprocessor.convert_as_formula(formula)
         if self.verbose:
             print("Preprocessed formula:", formula.serialize())
         assertions = []

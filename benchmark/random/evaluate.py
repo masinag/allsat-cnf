@@ -1,10 +1,10 @@
-
 import argparse
 import json
 import os
 import sys
 import time
 from os import path
+from pysmt.rewritings import PolarityCNFizer
 
 from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
@@ -15,13 +15,16 @@ from local_tseitin.utils import get_allsat as allsat
 def get_allsat(phi, mode):
     atoms = get_lra_atoms(phi).union(get_boolean_variables(phi))
     use_ta = True
+    if mode == "POL":
+        phi = PolarityCNFizer().convert_as_formula(phi)
     if mode == "CND":
-        phi = LocalTseitinCNFizerConds().convert(phi)
+        phi = LocalTseitinCNFizerConds().convert_as_formula(phi)
     elif mode == "ACT":
-        phi = LocalTseitinCNFizerActivation().convert(phi)
+        phi = LocalTseitinCNFizerActivation().convert_as_formula(phi)
     elif mode == "TTA":
         use_ta = False
     return allsat(phi, use_ta=use_ta, atoms=atoms)
+
 
 def check_input_output(input_dir, output_dir, output_file):
     # check if input dir exists
@@ -56,7 +59,7 @@ def write_result(mode, res, output_file):
 
 
 def parse_args():
-    modes = ["TTA", "AUTO", "ACT", "CND"]
+    modes = ["TTA", "AUTO", "POL", "ACT", "CND"]
 
     parser = argparse.ArgumentParser(description='Compute WMI on models')
     parser.add_argument('input', help='Folder with .json files')
@@ -82,7 +85,6 @@ def main():
     print("Creating... {}".format(output_file))
     check_input_output(input_dir, output_dir, output_file)
 
-
     elements = [path.join(input_dir, f) for f in os.listdir(input_dir)]
     files = [e for e in elements if path.isfile(e)]
 
@@ -90,7 +92,7 @@ def main():
     time_start = time.time()
 
     for i, filename in enumerate(files):
-        print("{}Problem {:3d}/{:3d}".format("\r"* 300, i + 1, len(files)), end="")
+        print("{}Problem {:3d}/{:3d}".format("\r" * 300, i + 1, len(files)), end="")
         time_init = time.time()
         phi = read_smtlib(filename)
         models, _ = get_allsat(phi, mode)
@@ -103,8 +105,6 @@ def main():
             "time": time_total,
         }
         write_result(mode, res, output_file)
-
-    
 
     seconds = time.time() - time_start
     print("Done! {:.3f}s".format(seconds))

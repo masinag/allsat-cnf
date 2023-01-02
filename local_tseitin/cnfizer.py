@@ -30,7 +30,7 @@ class LocalTseitinCNFizer():
         self.labels.add(S)
         return S
 
-    def convert(self, phi):
+    def convert_as_formula(self, phi):
         return NotImplementedError
 
     def is_atom(self, atom):
@@ -51,7 +51,7 @@ class Preprocessor(IdentityDagWalker):
     Simplify boolean constants and make operators binary
     """
 
-    def convert(self, formula):
+    def convert_as_formula(self, formula):
         return self.walk(formula)
 
     def walk_and(self, formula, args, **kwargs):

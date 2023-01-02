@@ -13,7 +13,7 @@ VERSION = "0.1"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'pysmt',
+    'pysmt @ git+ssh://git@github.com/masinag/pysmt@cnf-improve#egg=pysmt',
 ]
 
 # What packages are optional?

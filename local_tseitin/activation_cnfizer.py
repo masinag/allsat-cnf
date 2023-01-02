@@ -22,7 +22,7 @@ class LocalTseitinCNFizerActivation(LocalTseitinCNFizer, IdentityDagWalker):
     def _get_key(self, formula, **kwargs):
         return super()._get_key(formula)
 
-    def convert(self, formula):
+    def convert_as_formula(self, formula):
         assertions = []
         S, A = self.walk(formula, assertions=assertions)
         assertions.append(S)
