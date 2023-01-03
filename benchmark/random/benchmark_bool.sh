@@ -1,3 +1,5 @@
+#!/bin/bash
+
 DIR=bool_bench
 mkdir -p $DIR/data $DIR/results $DIR/plots
 BOOL=$1

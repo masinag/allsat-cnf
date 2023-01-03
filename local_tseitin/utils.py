@@ -1,3 +1,4 @@
+import itertools
 from pprint import pformat
 from typing import *
 from collections import defaultdict
@@ -14,7 +15,7 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
             "dpll.allsat_minimize_model": "true",
             "dpll.allsat_allow_duplicates": "false",
             "preprocessor.toplevel_propagation": "false",
-            "preprocessor.simplification": "0"
+            # "preprocessor.simplification": "0"
         }
     else:
         solver_options = {}
@@ -22,6 +23,8 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
     solver_options.update(options)
     if atoms is None:
         atoms = get_boolean_variables(formula)
+
+    # print(solver_options, atoms)
 
     solver = Solver(name="msat", solver_options=solver_options)
     converter = solver.converter
@@ -34,7 +37,7 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
         lambda model: _allsat_callback(model, converter, models))
 
     total_models_count = sum(
-        map(lambda model: 2**(len(atoms) - len(model)), models))
+        map(lambda model: 2 ** (len(atoms) - len(model)), models))
     return models, total_models_count
 
 
@@ -60,5 +63,13 @@ def _allsat_callback(model, converter, models):
     return 1
 
 
-def check_models(models, phi):
-    assert is_unsat(Not(Iff(Or(map(And, models)), phi)))
+def check_models(tta, ta):
+    # check:
+    # (i) every total truth assignment in tta is a super-assignment of one in ta
+    for mu in tta:
+        assert any(mu.issuperset(nu) for nu in ta), "Error: mu={} is not a super-assignment of any nu in ta".format(mu)
+
+    # (ii) every pair of models in ta assigns opposite truth values to at least one element
+    for mu, nu in itertools.combinations(ta, 2):
+        assert not mu.isdisjoint(map(lambda x: Not(x).simplify(),
+                                     nu)), "Error: mu={} and nu={} are overlapping".format(mu, nu)

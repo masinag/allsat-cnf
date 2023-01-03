@@ -9,8 +9,6 @@ import sys
 import os
 
 
-
-
 def random_formula(depth, atoms):
     if depth == 0:
         operator = random.choice([Or, Not])
