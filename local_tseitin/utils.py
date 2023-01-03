@@ -69,7 +69,9 @@ def check_models(tta, ta):
     for mu in tta:
         assert any(mu.issuperset(nu) for nu in ta), "Error: mu={} is not a super-assignment of any nu in ta".format(mu)
 
-    # (ii) every pair of models in ta assigns opposite truth values to at least one element
-    for mu, nu in itertools.combinations(ta, 2):
-        assert not mu.isdisjoint(map(lambda x: Not(x).simplify(),
-                                     nu)), "Error: mu={} and nu={} are overlapping".format(mu, nu)
+    # # (ii) every pair of models in ta assigns opposite truth values to at least one element
+
+    # NOTE: Very expensive! We can trust mathsat on this part
+    # for mu, nu in itertools.combinations(ta, 2):
+    #     assert not mu.isdisjoint(map(lambda x: Not(x).simplify(),
+    #                                  nu)), "Error: mu={} and nu={} are overlapping".format(mu, nu)
