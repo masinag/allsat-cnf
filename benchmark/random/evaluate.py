@@ -105,7 +105,9 @@ def main():
         models, n_models = get_allsat(phi, mode, with_repetitions)
         time_total = time.time() - time_init
         if mode not in ["TTA", "AUTO"]:
-            print("{}Problem {:3d}/{:3d} checking models...".format("\r" * 600, i + 1, len(files)), end="")
+            print(
+                "{}Problem {:3d}/{:3d} checking models ({} vs {})...".format("\r" * 600, i + 1, len(files), len(models),
+                                                                             len(tta)), end="")
             assert len(tta) == n_models
             check_models(tta, models)
         res = {
