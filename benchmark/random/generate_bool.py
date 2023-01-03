@@ -76,6 +76,8 @@ def main():
     if args.seed is None:
         args.seed = int(time.time())
 
+    random.seed(args.seed)
+
     output_dir = 'models_b{}_d{}_m{}_s{}'.format(
         args.booleans, args.depth, args.models, args.seed)
     output_dir = path.join(args.output, output_dir)
