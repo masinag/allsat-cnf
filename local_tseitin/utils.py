@@ -74,11 +74,13 @@ def get_dict_model(mu):
 
 
 def check_models(tta, ta, phi):
+    # assert is_valid(Iff(phi, Or(map(And), ta)))
     # check:
     # 0. every mu in ta evaluates phi to true:
     for mu in ta:
         mu_dict = get_dict_model(mu)
-        assert phi.substitute(mu_dict).simplify().is_true()
+        assert phi.substitute(mu_dict).simplify().is_true(), \
+            "Error: model {} does not evaluate {} to true".format(mu, phi.serialize())
     # 1. every total truth assignment in tta is a super-assignment of one in ta
     for mu in tta:
         assert any(mu.issuperset(nu) for nu in ta), "Error: mu={} is not a super-assignment of any nu in ta".format(mu)

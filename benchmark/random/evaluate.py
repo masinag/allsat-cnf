@@ -97,14 +97,14 @@ def main():
     time_start = time.time()
 
     for i, filename in enumerate(files):
-        print("{}Problem {:3d}/{:3d} generating total models...".format("\r" * 600, i + 1, len(files)), end="")
         phi = read_smtlib(filename)
-        tta, _ = get_allsat(phi, "TTA", False)
         print("{}Problem {:3d}/{:3d} generating partial models...".format("\r" * 600, i + 1, len(files)), end="")
         time_init = time.time()
         models, n_models = get_allsat(phi, mode, with_repetitions)
         time_total = time.time() - time_init
         if mode not in ["TTA", "AUTO"]:
+            print("{}Problem {:3d}/{:3d} generating total models...".format("\r" * 600, i + 1, len(files)), end="")
+            tta, _ = get_allsat(phi, "TTA", False)
             print(
                 "{}Problem {:3d}/{:3d} checking models ({} vs {})...".format("\r" * 600, i + 1, len(files), len(models),
                                                                              len(tta)), end="")
