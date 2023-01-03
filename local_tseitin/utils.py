@@ -63,13 +63,27 @@ def _allsat_callback(model, converter, models):
     return 1
 
 
-def check_models(tta, ta):
+def get_dict_model(mu):
+    mu_dict = {}
+    for a in mu:
+        if a.is_not():
+            mu[a.arg(0)] = FALSE()
+        else:
+            mu[a] = TRUE()
+    return mu_dict
+
+
+def check_models(tta, ta, phi):
     # check:
-    # (i) every total truth assignment in tta is a super-assignment of one in ta
+    # 0. every mu in ta evaluates phi to true:
+    for mu in ta:
+        mu_dict = get_dict_model(mu)
+        assert phi.substitute(mu_dict).simplify().is_true()
+    # 1. every total truth assignment in tta is a super-assignment of one in ta
     for mu in tta:
         assert any(mu.issuperset(nu) for nu in ta), "Error: mu={} is not a super-assignment of any nu in ta".format(mu)
 
-    # # (ii) every pair of models in ta assigns opposite truth values to at least one element
+    # 2. every pair of models in ta assigns opposite truth values to at least one element
 
     # NOTE: Very expensive! We can trust mathsat on this part
     # for mu, nu in itertools.combinations(ta, 2):
