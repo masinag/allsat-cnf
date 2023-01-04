@@ -61,7 +61,7 @@ def make_example(formula, atoms = None):
 
 
     for cname, cnfizer in cnfizers.items():
-        cnf = cnfizer(verbose=args.v, guards=args.g).convert(formula)
+        cnf = cnfizer(verbose=args.v, guards=args.g).convert_as_formula(formula)
         start_time = time.time()
         cnf_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
         final_time_cnf = time.time() - start_time

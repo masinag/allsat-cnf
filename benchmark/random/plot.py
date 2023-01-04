@@ -2,10 +2,13 @@ import argparse
 import json
 import os
 import sys
+from typing import List, Literal
 
 import matplotlib.pyplot as plt
-import numpy as np
+# import numpy as np
 import pandas as pd
+
+Param = Literal["time", "models"]
 
 plt.style.use("ggplot")
 fs = 10  # font size
@@ -13,7 +16,7 @@ ticks_fs = 15
 lw = 2.5  # line width
 figsize = (10, 8)
 label_step = 5
-ORDER = ["TTA", "AUTO", "ACT", "CND"]
+ORDER = ["TTA", "AUTO", "ACT", "POL", "CND"]
 
 
 def error(msg=""):
@@ -21,7 +24,7 @@ def error(msg=""):
     sys.exit(1)
 
 
-def get_input_files(input_dirs):
+def get_input_files(input_dirs: List[str]) -> List[str]:
     input_files = []
     for input_dir in input_dirs:
         if not os.path.exists(input_dir):
@@ -39,7 +42,7 @@ def get_input_files(input_dirs):
     return input_files
 
 
-def parse_inputs(input_files):
+def parse_inputs(input_files: List[str]) -> pd.DataFrame:
     data = []
     for filename in input_files:
         with open(filename) as f:
@@ -53,15 +56,35 @@ def parse_inputs(input_files):
     return pd.DataFrame(data)
 
 
-def plot_data(outdir, data: pd.DataFrame, param, xlabel):
-    
+def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str):
+    data = data[param]
+    ax = plt.gca()
+    for mode in data.columns.get_level_values(0).unique():
+        if mode not in ["AUTO", "TTA"]:
+            ax = data.plot(kind="scatter", x="AUTO", y=mode, label=mode, marker="x")
+    ax.set_aspect("equal")
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    ax.set_xlim(min(x0, y0), max(x1, y1))
+    ax.set_ylim(min(x0, y0), max(x1, y1))
+    plt.legend(loc=6, fontsize=fs)
+    # axes labels
+    plt.xlabel(f"Mathsat CNF ({param})", fontsize=fs)
+    plt.ylabel(f"Custom CNF ({param})", fontsize=fs)
+    # save figure
+    outfile = os.path.join(outdir, "{}_scatter{}.png".format(param, filename))
+    plt.savefig(outfile, bbox_inches='tight')
+    print("created {}".format(outfile))
+    plt.clf()
+
+
+def plot_data(outdir: str, data: pd.DataFrame, param: Param, xlabel: str, filename: str):
     n_problems = max(data.index) + 1
 
     plt.figure(figsize=figsize)
-    
-    # plot time for all modes, n_integrations only for *PA*
-    modes = data.columns.get_level_values(0).unique()
-    modes = [mode for mode in ORDER if mode in modes]
+
+    # modes = data.columns.get_level_values(0).unique()
+    # modes = [mode for mode in ORDER if mode in modes]
     data[param].plot(linewidth=lw, marker="x")
 
     ylabel = param
@@ -81,18 +104,10 @@ def plot_data(outdir, data: pd.DataFrame, param, xlabel):
     # if title:
     #     plt.title(title, fontsize=fs)
 
-    outfile = os.path.join(
-        outdir, "{}.png".format(param))
+    outfile = os.path.join(outdir, "{}{}.png".format(param, filename))
     plt.savefig(outfile, bbox_inches='tight')
     print("created {}".format(outfile))
     plt.clf()
-
-
-def parse_interval(interval):
-    frm, to = interval.split("-")
-    frm = int(frm) if frm != "" else None
-    to = int(to) if to != "" else None
-    return frm, to
 
 
 def group_data(data):
@@ -100,8 +115,8 @@ def group_data(data):
     data = data \
         .groupby(["filename", "mode"]) \
         .aggregate(
-            time=("time", "min"),
-            models=("models", "min")) \
+        time=("time", "min"),
+        models=("models", "min")) \
         .unstack() \
         .reset_index(drop=True)
 
@@ -119,6 +134,8 @@ def parse_args():
         "input", nargs="+", help="Folder and/or files containing result files as .json")
     parser.add_argument("-o", "--output", default=os.getcwd(),
                         help="Output folder where to put the plots (default: cwd)")
+    parser.add_argument("-f", "--filename", default="",
+                        help="Filename suffix (default: '')")
     # parser.add_argument("--cactus", action="store_true",
     #                     help="If true use cactus plot")
     return parser.parse_args()
@@ -126,22 +143,21 @@ def parse_args():
 
 def main():
     args = parse_args()
-    inputs = args.input
-    output_dir = args.output
-    # if args.cactus:
-    #     xlabel = "Number of problems solved"
-    # else:
-    #     xlabel = "Problem instances"
+    inputs: List[str] = args.input
+    output_dir: str = args.output
+    filename: str = args.filename
 
     if not os.path.exists(output_dir):
         error("Output folder '{}' does not exists".format(output_dir))
 
     input_files = get_input_files(inputs)
-    data = parse_inputs(input_files)
-    data = group_data(data)
+    data: pd.DataFrame = parse_inputs(input_files)
+    data: pd.DataFrame = group_data(data)
     xlabel = "Problem instances"
-    plot_data(output_dir, data, "time", xlabel)
-    plot_data(output_dir, data, "models", xlabel)
+    plot_data(output_dir, data, "time", xlabel, filename)
+    plot_data(output_dir, data, "models", xlabel, filename)
+    scatter(output_dir, data, "time", filename)
+    scatter(output_dir, data, "models", filename)
 
 
 if __name__ == "__main__":

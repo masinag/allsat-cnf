@@ -9,8 +9,6 @@ import sys
 import os
 
 
-
-
 def random_formula(depth, atoms):
     if depth == 0:
         operator = random.choice([Or, Not])
@@ -77,6 +75,8 @@ def main():
 
     if args.seed is None:
         args.seed = int(time.time())
+
+    random.seed(args.seed)
 
     output_dir = 'models_b{}_d{}_m{}_s{}'.format(
         args.booleans, args.depth, args.models, args.seed)
