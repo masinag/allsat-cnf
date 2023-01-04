@@ -67,14 +67,14 @@ def get_dict_model(mu):
     mu_dict = {}
     for a in mu:
         if a.is_not():
-            mu[a.arg(0)] = FALSE()
+            mu_dict[a.arg(0)] = FALSE()
         else:
-            mu[a] = TRUE()
+            mu_dict[a] = TRUE()
     return mu_dict
 
 
 def check_models(tta, ta, phi):
-    # assert is_valid(Iff(phi, Or(map(And), ta)))
+    # assert is_valid(Iff(phi, Or(map(And, ta))))
     # check:
     # 0. every mu in ta evaluates phi to true:
     for mu in ta:
