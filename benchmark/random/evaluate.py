@@ -109,7 +109,7 @@ def main():
                 "{}Problem {:3d}/{:3d} checking models ({} vs {})...".format("\r" * 600, i + 1, len(files), len(models),
                                                                              len(tta)), end="")
             assert len(tta) == n_models
-            check_models(tta, models)
+            check_models(tta, models, phi)
         res = {
             "filename": filename,
             "models": len(models),
