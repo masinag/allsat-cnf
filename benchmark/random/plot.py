@@ -16,7 +16,17 @@ ticks_fs = 15
 lw = 2.5  # line width
 figsize = (10, 8)
 label_step = 5
-ORDER = ["TTA", "AUTO", "ACT", "POL", "CND"]
+ORDER = ["TTA", "AUTO", "ACT", "POL", "NNF_POL", "CND"]
+COLOR = {
+    "AUTO": "red",
+    "TTA": "blue",
+    "ACT": "green",
+    "POL": "orange",
+    "NNF_POL": "purple",
+    "CND": "brown",
+}
+ORDER += [f"{mode}_REP" for mode in ORDER]
+COLOR.update({f"{mode}_REP": COLOR[mode] for mode in COLOR})
 
 
 def error(msg=""):
@@ -42,26 +52,31 @@ def get_input_files(input_dirs: List[str]) -> List[str]:
     return input_files
 
 
-def parse_inputs(input_files: List[str]) -> pd.DataFrame:
+def parse_inputs(input_files: List[str], with_repetitions: bool) -> pd.DataFrame:
     data = []
     for filename in input_files:
         with open(filename) as f:
             result_out = json.load(f)
         mode = result_out["mode"]
+        if with_repetitions != ("REP" in mode):
+            continue
         for result in result_out["results"]:
             result["mode"] = mode
         data.extend(result_out["results"])
 
-    # groupby to easily generate MulitIndex
     return pd.DataFrame(data)
 
 
-def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str):
+def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_repetitions: bool, logscale=False):
     data = data[param]
     ax = plt.gca()
-    for mode in data.columns.get_level_values(0).unique():
-        if mode not in ["AUTO", "TTA"]:
-            ax = data.plot(kind="scatter", x="AUTO", y=mode, label=mode, marker="x")
+    modes = data.columns.get_level_values(0).unique()
+    auto_mode = f"AUTO{'_REP' if with_repetitions else ''}"
+    tta_mode = f"TTA{'_REP' if with_repetitions else ''}"
+    for mode in filter(lambda x: x in modes, ORDER):
+        if mode not in [auto_mode, tta_mode]:
+            ax = data.plot(kind="scatter", x=auto_mode, y=mode, logx=logscale, label=mode, color=COLOR[mode],
+                           marker="x", ax=ax)
     ax.set_aspect("equal")
     x0, x1 = ax.get_xlim()
     y0, y1 = ax.get_ylim()
@@ -69,7 +84,7 @@ def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str):
     ax.set_ylim(min(x0, y0), max(x1, y1))
     plt.legend(loc=6, fontsize=fs)
     # axes labels
-    plt.xlabel(f"Mathsat CNF ({param})", fontsize=fs)
+    plt.xlabel(f"MathSAT CNF ({param})", fontsize=fs)
     plt.ylabel(f"Custom CNF ({param})", fontsize=fs)
     # save figure
     outfile = os.path.join(outdir, "{}_scatter{}.png".format(param, filename))
@@ -110,15 +125,13 @@ def plot_data(outdir: str, data: pd.DataFrame, param: Param, xlabel: str, filena
     plt.clf()
 
 
-def group_data(data):
+def group_data(data: pd.DataFrame):
     # aggregate and compute the mean for each query
     data = data \
         .groupby(["filename", "mode"]) \
-        .aggregate(
-        time=("time", "min"),
-        models=("models", "min")) \
-        .unstack() \
-        .reset_index(drop=True)
+        .aggregate(time=("time", "min"),
+                   models=("models", "min")) \
+        .unstack().reset_index(drop=True)
 
     # sort by increasing number of models
     modes = data.columns.get_level_values(0).unique()
@@ -136,6 +149,8 @@ def parse_args():
                         help="Output folder where to put the plots (default: cwd)")
     parser.add_argument("-f", "--filename", default="",
                         help="Filename suffix (default: '')")
+    parser.add_argument("-r", "--with-repetitions", action="store_true", default=False,
+                        help="Plot results for TA with repetitions")
     # parser.add_argument("--cactus", action="store_true",
     #                     help="If true use cactus plot")
     return parser.parse_args()
@@ -146,18 +161,19 @@ def main():
     inputs: List[str] = args.input
     output_dir: str = args.output
     filename: str = args.filename
+    with_repetitions: bool = args.with_repetitions
 
     if not os.path.exists(output_dir):
         error("Output folder '{}' does not exists".format(output_dir))
 
     input_files = get_input_files(inputs)
-    data: pd.DataFrame = parse_inputs(input_files)
+    data: pd.DataFrame = parse_inputs(input_files, with_repetitions)
     data: pd.DataFrame = group_data(data)
     xlabel = "Problem instances"
     plot_data(output_dir, data, "time", xlabel, filename)
     plot_data(output_dir, data, "models", xlabel, filename)
-    scatter(output_dir, data, "time", filename)
-    scatter(output_dir, data, "models", filename)
+    scatter(output_dir, data, "time", filename, with_repetitions)
+    scatter(output_dir, data, "models", filename, with_repetitions)
 
 
 if __name__ == "__main__":

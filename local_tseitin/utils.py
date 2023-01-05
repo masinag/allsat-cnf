@@ -73,19 +73,22 @@ def get_dict_model(mu):
     return mu_dict
 
 
-def check_models(tta, ta, phi):
-    # assert is_valid(Iff(phi, Or(map(And, ta))))
-    # check:
-    # 0. every mu in ta evaluates phi to true:
+def check_models(ta, phi):
+    # check every model in ta satisfies phi
     for mu in ta:
-        mu_dict = get_dict_model(mu)
-        assert phi.substitute(mu_dict).simplify().is_true(), \
-            "Error: model {} does not evaluate {} to true".format(mu, phi.serialize())
-    # 1. every total truth assignment in tta is a super-assignment of one in ta
-    for mu in tta:
-        assert any(mu.issuperset(nu) for nu in ta), "Error: mu={} is not a super-assignment of any nu in ta".format(mu)
-
-    # 2. every pair of models in ta assigns opposite truth values to at least one element
+        assert is_sat(And(mu) & phi)
+    assert is_valid(Iff(phi, Or(map(And, ta))))
+    # # check:
+    # # 0. every mu in ta evaluates phi to true:
+    # for mu in ta:
+    #     mu_dict = get_dict_model(mu)
+    #     assert phi.substitute(mu_dict).simplify().is_true(), \
+    #         "Error: model {} does not evaluate {} to true".format(mu, phi.serialize())
+    # # 1. every total truth assignment in tta is a super-assignment of one in ta
+    # for mu in tta:
+    #     assert any(mu.issuperset(nu) for nu in ta), "Error: mu={} is not a super-assignment of any nu in ta".format(mu)
+    #
+    # # 2. every pair of models in ta assigns opposite truth values to at least one element
 
     # NOTE: Very expensive! We can trust mathsat on this part
     # for mu, nu in itertools.combinations(ta, 2):
