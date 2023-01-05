@@ -4,7 +4,7 @@ import os
 import sys
 import time
 from os import path
-from pysmt.rewritings import PolarityCNFizer
+from pysmt.rewritings import PolarityCNFizer, nnf
 
 from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
@@ -15,9 +15,13 @@ from local_tseitin.utils import get_allsat as allsat
 def get_allsat(phi, mode, with_repetitions):
     atoms = get_lra_atoms(phi).union(get_boolean_variables(phi))
     use_ta = True
+    if mode == "NNF_POL":
+        phi = nnf(phi)
+        mode = "POL"
+
     if mode == "POL":
         phi = PolarityCNFizer().convert_as_formula(phi)
-    if mode == "CND":
+    elif mode == "CND":
         phi = LocalTseitinCNFizerConds().convert_as_formula(phi)
     elif mode == "ACT":
         phi = LocalTseitinCNFizerActivation().convert_as_formula(phi)
@@ -60,7 +64,7 @@ def write_result(mode, res, output_file):
 
 
 def parse_args():
-    modes = ["TTA", "AUTO", "POL", "ACT", "CND"]
+    modes = ["TTA", "AUTO", "POL", "NNF_POL", "ACT", "CND"]
 
     parser = argparse.ArgumentParser(description='Compute WMI on models')
     parser.add_argument('input', help='Folder with .json files')

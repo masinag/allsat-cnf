@@ -16,7 +16,7 @@ ticks_fs = 15
 lw = 2.5  # line width
 figsize = (10, 8)
 label_step = 5
-ORDER = ["TTA", "AUTO", "ACT", "POL", "CND"]
+ORDER = ["TTA", "AUTO", "ACT", "POL", "NNF_POL", "CND"]
 
 
 def error(msg=""):
