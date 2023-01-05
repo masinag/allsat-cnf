@@ -122,37 +122,37 @@ class GuardedAIG(LocalTseitinCNFizer):
         # P -> (S <-> S1 and S2)
         if self.verbose:
             print("{} -> ({} <-> {} and {})".format(P, S, S1, S2))
-        self.all_clauses.append( ([Not(P), S, Not(S1), Not(S2)], self.guards) )
-        self.all_clauses.append( ([Not(P), Not(S), S1], self.guards) )
-        self.all_clauses.append( ([Not(P), Not(S), S2], self.guards) )
+        self.all_clauses.append( [Not(P), S, Not(S1), Not(S2)] )
+        self.all_clauses.append( [Not(P), Not(S), S1] )
+        self.all_clauses.append( [Not(P), Not(S), S2] )
 
         # P -> (Not(S) -> S1 or S2) 
         if self.verbose:
             print("{} -> ({} -> {} and {})".format(P, Not(S), S1, S2))
-        self.all_clauses.append(([Not(P), S, S1, S2], self.guards))
+        self.all_clauses.append([Not(P), S, S1, S2])
 
 
         if not left_leaf:
             if self.verbose:
                 print("{} and {} -> {}".format(P, S, P1))
-            self.all_clauses.append(((Not(P), P1, Not(S)), self.guards))
+            self.all_clauses.append((Not(P), P1, Not(S)))
             if self.verbose:
                 print("{} and Not({}) and {} -> {}".format(P, S, S2, P1))
-            self.all_clauses.append(((Not(P), S, Not(S2), P1), self.guards))
+            self.all_clauses.append((Not(P), S, Not(S2), P1))
             if self.verbose:
                 print("{} and Not({}) and Not({}) -> Not({})".format(P, S, S2, P1))
-            self.all_clauses.append(((Not(P), S, S2, Not(P1)), self.guards))
+            self.all_clauses.append((Not(P), S, S2, Not(P1)))
 
         if not right_leaf:
             if self.verbose:
                 print("{} and {} -> {}".format(P, S, P2))
-            self.all_clauses.append(((Not(P), P2, Not(S)), self.guards))
+            self.all_clauses.append((Not(P), P2, Not(S)))
             if self.verbose:
                 print("{} and Not({}) and {} -> {}".format(P, S, S1, P2))
-            self.all_clauses.append(((Not(P), S, Not(S1), P2), self.guards))
+            self.all_clauses.append((Not(P), S, Not(S1), P2))
             if self.verbose:
                 print("{} and Not({}) and Not({}) -> Not({})".format(P, S, S1, P2))
-            self.all_clauses.append(((Not(P), S, S1, Not(P2)), self.guards))
+            self.all_clauses.append((Not(P), S, S1, Not(P2)))
 
 
     def convert(self, aig_file):
@@ -169,7 +169,7 @@ class GuardedAIG(LocalTseitinCNFizer):
 
         #self.all_clauses.reverse()
 
-        cnf = [f[0] for f in self.all_clauses]
+        cnf = [f for f in self.all_clauses]
         cnf = And([Or(c) for c in cnf])
 
         if self.verbose:
