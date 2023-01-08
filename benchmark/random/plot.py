@@ -67,7 +67,7 @@ def parse_inputs(input_files: List[str], with_repetitions: bool) -> pd.DataFrame
     return pd.DataFrame(data)
 
 
-def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_repetitions: bool, logscale=False):
+def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_repetitions: bool, logscale=True):
     data = data[param]
     ax = plt.gca()
     modes = data.columns.get_level_values(0).unique()
@@ -75,13 +75,14 @@ def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_r
     tta_mode = f"TTA{'_REP' if with_repetitions else ''}"
     for mode in filter(lambda x: x in modes, ORDER):
         if mode not in [auto_mode, tta_mode]:
-            ax = data.plot(kind="scatter", x=auto_mode, y=mode, logx=logscale, label=mode, color=COLOR[mode],
+            ax = data.plot(kind="scatter", x=auto_mode, y=mode, logy=logscale, label=mode, color=COLOR[mode],
                            marker="x", ax=ax)
-    ax.set_aspect("equal")
-    x0, x1 = ax.get_xlim()
-    y0, y1 = ax.get_ylim()
-    ax.set_xlim(min(x0, y0), max(x1, y1))
-    ax.set_ylim(min(x0, y0), max(x1, y1))
+    if not logscale:
+        ax.set_aspect("equal")
+        x0, x1 = ax.get_xlim()
+        y0, y1 = ax.get_ylim()
+        ax.set_xlim(min(x0, y0), max(x1, y1))
+        ax.set_ylim(min(x0, y0), max(x1, y1))
     plt.legend(loc=6, fontsize=fs)
     # axes labels
     plt.xlabel(f"MathSAT CNF ({param})", fontsize=fs)
