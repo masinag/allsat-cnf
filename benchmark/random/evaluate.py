@@ -76,6 +76,8 @@ def parse_args():
                         required=True, help='Mode to use')
     parser.add_argument('-r', '--with-repetitions', action='store_true',
                         help='Allow generating models with repetitions')
+    parser.add_argument('--no-check', action='store_true',
+                        help='Do not check the models')
     return parser.parse_args()
 
 
@@ -86,6 +88,7 @@ def main():
     output_dir = args.output
     mode = args.mode
     with_repetitions = args.with_repetitions
+    do_check_models = not args.no_check
 
     smode = f"{mode}{'_REP' if with_repetitions else ''}"
     output_file = "{}_{}_{}.json".format(
@@ -106,11 +109,12 @@ def main():
         time_init = time.time()
         models, n_models = get_allsat(phi, mode, with_repetitions)
         time_total = time.time() - time_init
-        if mode not in ["TTA", "AUTO"]:
+        if do_check_models and mode not in ["TTA", "AUTO"]:
             # print("{}Problem {:3d}/{:3d} generating total models...".format("\r" * 600, i + 1, len(files)), end="")
             # tta, _ = get_allsat(phi, "TTA", False)
             print(
-                "{}Problem {:3d}/{:3d} checking models ({}/{})...".format("\r" * 600, i + 1, len(files), len(models), n_models),
+                "{}Problem {:3d}/{:3d} checking models ({}/{})...".format("\r" * 600, i + 1, len(files), len(models),
+                                                                          n_models),
                 end="")
             check_models(models, phi)
         res = {
