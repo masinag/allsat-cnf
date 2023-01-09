@@ -59,6 +59,7 @@ class GuardedAIG(LocalTseitinCNFizer):
         self.symbols = dict()
         self.important_symbols = set()
         self.input_vars = 0
+        self.basic_tseitin = False
 
     def get_type(self, formula):
         if formula.is_not():
@@ -103,6 +104,29 @@ class GuardedAIG(LocalTseitinCNFizer):
                 aig.gates.append([int(x) for x in line.split()])
         return aig
 
+    def basicTseitin(self, gate, left, right):
+        # CLASSIC AND
+        # CREATE VARIABLES FOR THIS GATE
+        S = self._new_label()
+        P = self._new_polarizer()
+        self.symbols[self.get_index(gate)] = (S,P)
+        S1, P1, S2, P2 = None, None, None, None
+        S1, P1 = self.symbols[self.get_index(left)]
+        S2, P2 = self.symbols[self.get_index(right)]
+        left_leaf = S1 == P1
+        right_leaf = S2 == P2
+        if left % 2 == 1:
+            S1 = Not(S1)
+        if right % 2 == 1:
+            S2 = Not(S2)
+
+        # P -> (S <-> S1 and S2)
+        if self.verbose:
+            print("({} <-> {} and {})".format(S, S1, S2))
+        self.all_clauses.append( [S, Not(S1), Not(S2)] )
+        self.all_clauses.append( [Not(S), S1] )
+        self.all_clauses.append( [Not(S), S2] )
+
     def guardedTseitin(self, gate, left, right):
         # CLASSIC AND
         # CREATE VARIABLES FOR THIS GATE
@@ -126,10 +150,19 @@ class GuardedAIG(LocalTseitinCNFizer):
         self.all_clauses.append( [Not(P), Not(S), S1] )
         self.all_clauses.append( [Not(P), Not(S), S2] )
 
-        # P -> (Not(S) -> S1 or S2) 
-        if self.verbose:
-            print("{} -> ({} -> {} and {})".format(P, Not(S), S1, S2))
-        self.all_clauses.append([Not(P), S, S1, S2])
+        if(True):
+            # P -> (Not(S) and Not(P1) and Not(P2) -> S1 or S2)
+            if not left_leaf or not right_leaf:
+                if self.verbose:
+                    print("{} -> (({} and {} and {})-> {} or {})".format(P, Not(S), Not(P1), Not(P2), S1, S2))
+                self.all_clauses.append([Not(P), S, P1, P2, S1, S2])
+                #self.all_clauses.append([Not(P), S, S1, S2])
+        else:
+         # P -> (Not(S) and Not(P1) -> S1 or S2)
+            if not left_leaf or not right_leaf:
+                if self.verbose:
+                    print("{} -> (({} and {})-> {} or {})".format(P, Not(S), Not(P1), S1, S2))
+                self.all_clauses.append([Not(P), S, P1, S1, S2])
 
 
         if not left_leaf:
@@ -139,9 +172,9 @@ class GuardedAIG(LocalTseitinCNFizer):
             if self.verbose:
                 print("{} and Not({}) and {} -> {}".format(P, S, S2, P1))
             self.all_clauses.append((Not(P), S, Not(S2), P1))
-            if self.verbose:
-                print("{} and Not({}) and Not({}) -> Not({})".format(P, S, S2, P1))
-            self.all_clauses.append((Not(P), S, S2, Not(P1)))
+            #if self.verbose:
+            #    print("{} and Not({}) and Not({}) -> Not({})".format(P, S, S2, P1))
+            #self.all_clauses.append((Not(P), S, S2, Not(P1)))
 
         if not right_leaf:
             if self.verbose:
@@ -150,22 +183,24 @@ class GuardedAIG(LocalTseitinCNFizer):
             if self.verbose:
                 print("{} and Not({}) and {} -> {}".format(P, S, S1, P2))
             self.all_clauses.append((Not(P), S, Not(S1), P2))
-            if self.verbose:
-                print("{} and Not({}) and Not({}) -> Not({})".format(P, S, S1, P2))
-            self.all_clauses.append((Not(P), S, S1, Not(P2)))
+            #if self.verbose:
+            #    print("{} and Not({}) and Not({}) -> Not({})".format(P, S, S1, P2))
+            #self.all_clauses.append((Not(P), S, S1, Not(P2)))
 
 
     def convert(self, aig_file):
-        self.verbose = True
-
         aig = self.preprocess(aig_file)
         print(aig)
         print(self.symbols)
         print(self.important_symbols)
         
         cnf = []
-        for gate in aig.gates:
-            self.guardedTseitin(gate[0], gate[1], gate[2])
+        if not self.basic_tseitin:
+            for gate in aig.gates:
+                self.guardedTseitin(gate[0], gate[1], gate[2])
+        else:
+            for gate in aig.gates:
+                self.basicTseitin(gate[0], gate[1], gate[2])
 
         #self.all_clauses.reverse()
 
