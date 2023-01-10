@@ -154,7 +154,7 @@ class GuardedAIG(LocalTseitinCNFizer):
             # P -> (Not(S) and Not(P1) and Not(P2) -> S1 or S2)
             if not left_leaf or not right_leaf:
                 if self.verbose:
-                    print("{} and {} -> {} or {})".format(P, Not(S), Not(P1), Not(P2)))
+                    print("{} and {} -> {} or {})".format(P, Not(S), P1, P2))
                 self.all_clauses.append([Not(P), S, P1, P2])
                 #self.all_clauses.append([Not(P), S, S1, S2])
         else:
