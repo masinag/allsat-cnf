@@ -15,6 +15,7 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
             "dpll.allsat_minimize_model": "true",
             "dpll.allsat_allow_duplicates": "false",
             "preprocessor.toplevel_propagation": "false",
+            "dpll.branching_initial_phase": "0"
             # "preprocessor.simplification": "0"
         }
     else:
