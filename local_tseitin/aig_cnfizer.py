@@ -100,7 +100,7 @@ class GuardedAIG(LocalTseitinCNFizer):
             assert(aig.L == 0)
             for line in lines[aig.I+1:aig.I+aig.O+1]:
                 aig.outputs.append(int(line))
-            for line in lines[aig.I+aig.O+1:]:
+            for line in lines[aig.I+aig.O+1:aig.I+aig.O+aig.A+1]:
                 aig.gates.append([int(x) for x in line.split()])
         return aig
 
