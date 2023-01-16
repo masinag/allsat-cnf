@@ -16,7 +16,7 @@ ticks_fs = 15
 lw = 2.5  # line width
 figsize = (10, 8)
 label_step = 5
-ORDER = ["TTA", "AUTO", "ACT", "POL", "NNF_POL", "CND"]
+ORDER = ["TTA", "AUTO", "ACT", "POL", "NNF_POL", "CND", "NNF_CND"]
 COLOR = {
     "AUTO": "red",
     "TTA": "blue",
@@ -24,6 +24,7 @@ COLOR = {
     "POL": "orange",
     "NNF_POL": "purple",
     "CND": "brown",
+    "NNF_CND": "pink",
 }
 ORDER += [f"{mode}_REP" for mode in ORDER]
 COLOR.update({f"{mode}_REP": COLOR[mode] for mode in COLOR})
