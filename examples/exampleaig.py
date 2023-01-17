@@ -15,8 +15,8 @@ encoder_basic = GuardedAIG()
 encoder_basic.basic_tseitin = True
 if args.v:
     encoder.verbose = True
-cnf, important_symbols = encoder.convert(aig_file)
-cnf_basic, important_symbols_basic = encoder_basic.convert(aig_file)
+cnf, important_symbols = encoder.convert_as_formula(aig_file)
+cnf_basic, important_symbols_basic = encoder_basic.convert_as_formula(aig_file)
 
 cnf_models, count_part = get_allsat(cnf, use_ta=True, atoms=important_symbols)
 cnf_models_basic, count_part_basic = get_allsat(cnf_basic, use_ta=True, atoms=important_symbols_basic)

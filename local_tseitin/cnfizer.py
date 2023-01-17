@@ -1,9 +1,10 @@
+from abc import ABC, abstractmethod
 from functools import reduce
 from pysmt.shortcuts import *
 from pysmt.walkers import IdentityDagWalker
 
 
-class LocalTseitinCNFizer():
+class LocalTseitinCNFizer(ABC):
     VAR_TEMPLATE = "T{:d}"
     POL_TEMPLATE = "P{:d}"
 
@@ -30,8 +31,9 @@ class LocalTseitinCNFizer():
         self.labels.add(S)
         return S
 
+    @abstractmethod
     def convert_as_formula(self, phi):
-        return NotImplementedError
+        raise NotImplementedError()
 
     def is_atom(self, atom):
         return atom.is_symbol(BOOL) or atom.is_theory_relation()

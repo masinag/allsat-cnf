@@ -14,6 +14,7 @@ VERSION = "0.1"
 # What packages are required for this module to be executed?
 REQUIRED = [
     'pysmt @ git+ssh://git@github.com/masinag/pysmt@cnf-improve#egg=pysmt',
+    'py-aiger >= 6.2.0',
 ]
 
 # What packages are optional?
