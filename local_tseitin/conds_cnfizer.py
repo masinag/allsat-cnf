@@ -369,9 +369,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         formula = self.preprocessor.convert_as_formula(formula)
         if self.verbose:
             print("Preprocessed formula:", formula.serialize())
-        assertions = []
-        S = self._new_label()
-        P = self._new_polarizer()
+
         # self.original_symb = S
         if self.verbose:
             print("Recursive calls to local_tseitin(formula, conds, symbol, polarity):")

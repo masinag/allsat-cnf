@@ -160,7 +160,7 @@ def main():
     print("Starting creating models")
     time_start = time.time()
     digits = int(log10(args.models)) + 1
-    template = "r{r}_b{b}_d{d}_s{s}_{templ}.json".format(
+    template = "r{r}_b{b}_d{d}_s{s}_{templ}.smt2".format(
         r=args.reals, b=args.booleans, d=args.depth, s=args.seed, templ="{n:0{d}}")
     for i in range(args.models):
         problem = gen.generate_problem(args.depth)
