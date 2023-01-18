@@ -52,7 +52,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             elif formula.is_and() and polarizer is None and pol == 1:
                 res.append({S1, S2})
                 res.append({Not(S1), Not(S2)})
-                
+
         return res
 
     def polarity(self, formula, S):
@@ -65,7 +65,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         if self.verbose:
             print("{}local_tseitin({}, {}, {}, {}, {})".format(
                 "--" * count, formula, conds, S, pol, polarizer))
-    
+
         if self.is_literal(formula):
             return
 
@@ -147,11 +147,11 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         if self.verbose:
             print("{}local_tseitin_rec({}, {}, {}, {})".format(
                 "--" * count, formula, conds, S, polarizer))
-    
+
         # CASO BASE 1: formula monovariabile
         if self.is_literal(formula):
             return formula
-        
+
         left, right = formula.args()
 
         #CASO BASE 2: leaf operator
@@ -174,7 +174,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
                 clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(S), S2, Not(S1)})))
                 clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, S1, S2})))
                 clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S2), Not(S1)})))
-            return And(clauses) 
+            return And(clauses)
 
         assert len(formula.args()) ==2, "{}".format(formula.serialize())
 
@@ -187,12 +187,12 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(polarizer), Not(S), S1, S2})))
             clauses.append(Or({Not(S_phi) for S_phi in conds}.union({polarizer, S, Not(S1)})))
             clauses.append(Or({Not(S_phi) for S_phi in conds}.union({polarizer, S, Not(S2)})))
-            
+
             # NEW: not both true if it is actually a OR, using polarizer
             clauses.append(Or({Not(S_phi) for S_phi in conds}.union({Not(polarizer), Not(S1), Not(S2)})))
 
-            return And([c for c in clauses] + 
-                ([c for c in self.local_tseitin_rec(left, conds.union({Not(S2)}), S1, count + 1, polarizer).args()] if not self.is_literal(left) else []) + 
+            return And([c for c in clauses] +
+                ([c for c in self.local_tseitin_rec(left, conds.union({Not(S2)}), S1, count + 1, polarizer).args()] if not self.is_literal(left) else []) +
                 ([c for c in self.local_tseitin_rec(right, conds.union({Not(S1)}), S2, count + 1, polarizer).args()] if not self.is_literal(right) else [])
             )
 
@@ -206,8 +206,8 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append(Or({Not(S_phi) for S_phi in conds}.union({polarizer, S1, S2})))
 
             return And(
-                [c for c in clauses] + 
-                ([c for c in self.local_tseitin_rec(left, conds.union({S2}), S1, count + 1, polarizer).args()] if not self.is_literal(left) else []) + 
+                [c for c in clauses] +
+                ([c for c in self.local_tseitin_rec(left, conds.union({S2}), S1, count + 1, polarizer).args()] if not self.is_literal(left) else []) +
                 ([c for c in self.local_tseitin_rec(right, conds.union({S1}), S2, count + 1, polarizer).args()] if not self.is_literal(right) else [])
             )
 
@@ -218,7 +218,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, S1, S2})))
             clauses.append(Or({Not(S_phi) for S_phi in conds}.union({S, Not(S2), Not(S1)})))
 
-            
+
 
             if not self.is_literal(left):
                 new_Pl = self._new_polarizer()
@@ -239,23 +239,23 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
                 new_Pr = polarizer
 
             return And(
-                [c for c in clauses] +  
+                [c for c in clauses] +
                 ([c for c in self.local_tseitin_rec(left, conds, S1, count + 1, new_Pl).args()] if not self.is_literal(left) else []) +
                 ([c for c in self.local_tseitin_rec(right, conds, S2, count + 1, new_Pr).args()] if not self.is_literal(right) else [])
-            )  
+            )
 
 
     def lt_pol(self, formula, count):
         if self.verbose:
             print("{}local_tseitin_rec({})".format(
                 "--" * count, formula))
-    
+
         # CASO BASE 1: formula monovariabile
         if self.is_literal(formula):
             return [([Bool(True)], 0)], formula
 
         # CASO NOT(AND) PER AIG
-        
+
         if formula.is_not():
             formula_neg = formula.arg(0)
             left, right = formula_neg.args()
@@ -267,9 +267,9 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
             if formula_neg.is_and():
                 # S <-> -S1 v -S2
-                clauses.append(([Not(S), Not(S1), Not(S2)], self.guards))
-                clauses.append(([S, S1], self.guards))
-                clauses.append(([S, S2], self.guards))
+                clauses.append([Not(S), Not(S1), Not(S2)])
+                clauses.append([S, S1])
+                clauses.append([S, S2])
                 # S2 -> CNF1
                 for f in cnf1:
                     if f[1] is None or f[1] > 0:
@@ -284,15 +284,15 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
                 if not self.is_literal(left) or not self.is_literal(right):
                     clauses.append(([Not(S), S1, S2], self.guards))
                 return clauses, S
-        
-        
+
         left, right = formula.args()
         S = self._new_label()
         clauses = []
 
-        #CASO BASE 2: leaf operator
+        # CASO BASE 2: leaf operator
         if self.is_literal(left) and self.is_literal(right):
-            S1 = left; S2 = right;
+            S1 = left
+            S2 = right
             if formula.is_or():
                 # (S <-> S1 v S2)
                 clauses.append(([Not(S), S1, S2], self.guards))
@@ -335,9 +335,9 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clauses.append(([Not(S), Not(S1), Not(S2)], self.guards))
         if formula.is_and():
             # S <-> S1 v S2
-            clauses.append( ([S, Not(S1), Not(S2)], self.guards) )
-            clauses.append( ([Not(S), S1], self.guards) )
-            clauses.append( ([Not(S), S2], self.guards) )
+            clauses.append(([S, Not(S1), Not(S2)], self.guards))
+            clauses.append(([Not(S), S1], self.guards))
+            clauses.append(([Not(S), S2], self.guards))
             # S2 -> CNF1
             for f in cnf1:
                 if f[1] is None or f[1] > 0:
@@ -360,8 +360,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
                 clauses.append(f)
             for f in cnf2:
                 clauses.append(f)
-        return clauses, S 
-
+        return clauses, S
 
     def convert_as_formula(self, formula):
         if self.verbose:
@@ -381,24 +380,40 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             self.local_tseitin(formula, set(), S, 0, 0, assertions, None)
             assertions.append(S)
         """
-        
 
-        #cnf = self.local_tseitin_rec(formula, set(), S, 0, P)
-        cnf, S = self.lt_pol(formula, 0)
-        #print("SIZE NEW FORMULA:", len(cnf))
-        cnf = [f[0] for f in cnf]
+        # cnf = self.local_tseitin_rec(formula, set(), S, 0, P)
+        clauses, S = self.lt_pol(formula, 0)
+        # print("SIZE NEW FORMULA:", len(cnf))
+        cnf = []
+
+        for clause in clauses:
+            clause = clause[0]
+            _clause = []
+            for lit in clause:
+                if lit == S:
+                    # ignore clauses as !S -> ...
+                    _clause.clear()
+                    break
+                elif lit.is_not() and lit.arg(0) == S:
+                    # convert S -> l1 v ... lk into l1 v ... lk
+                    continue
+                else:
+                    _clause.append(lit)
+            if _clause:
+                cnf.append(_clause)
         cnf = And([Or(c) for c in cnf])
-        
+
         if self.verbose:
             print()
             print("Encoded clauses:")
             for el in cnf.args():
                 print(el)
             print()
-        cnf = substitute(cnf, {S:Bool(True)})
-        cnf = simplify(cnf)
-        
+
+        # cnf = substitute(cnf, {S: Bool(True)})
+        # cnf = simplify(cnf)
+
         # print("Clauses:\n", pformat(assertions))
-        #cnf = And(assertions)
+        # cnf = And(assertions)
         assert self.is_cnf(cnf)
         return cnf

@@ -15,7 +15,8 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
             "dpll.allsat_minimize_model": "true",
             "dpll.allsat_allow_duplicates": "false",
             "preprocessor.toplevel_propagation": "false",
-            "dpll.branching_initial_phase": "0"
+            "dpll.branching_initial_phase": "0",
+            # "debug.api_call_trace": "2",
             # "preprocessor.simplification": "0"
         }
     else:
@@ -25,17 +26,19 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
     if atoms is None:
         atoms = get_boolean_variables(formula)
 
+    atoms = sorted(atoms, key=lambda x: x.symbol_name())
+
     # print(solver_options, atoms)
 
-    solver = Solver(name="msat", solver_options=solver_options)
-    converter = solver.converter
+    with Solver(name="msat", solver_options=solver_options) as solver:
+        converter = solver.converter
 
-    solver.add_assertion(formula)
-    models = []
-    mathsat.msat_all_sat(
-        solver.msat_env(),
-        [converter.convert(v) for v in atoms],
-        lambda model: _allsat_callback(model, converter, models))
+        solver.add_assertion(formula)
+        models = []
+        solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, converter, models))
+        # mathsat.msat_all_sat(solver.msat_env(),
+        #                      [converter.convert(a) for a in atoms],
+        #                      lambda model: _allsat_callback(model, converter, models))
 
     total_models_count = sum(
         map(lambda model: 2 ** (len(atoms) - len(model)), models))
