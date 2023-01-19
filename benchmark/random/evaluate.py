@@ -97,7 +97,7 @@ def main():
     print("Creating... {}".format(output_file))
     check_input_output(input_dir, output_dir, output_file)
 
-    elements = [path.join(input_dir, f) for f in os.listdir(input_dir)]
+    elements = [path.join(input_dir, f) for f in sorted(os.listdir(input_dir))]
     files = [e for e in elements if path.isfile(e)]
 
     print("Started computing")

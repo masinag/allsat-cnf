@@ -36,7 +36,7 @@ class LocalTseitinCNFizer(ABC):
         raise NotImplementedError()
 
     def is_atom(self, atom):
-        return atom.is_symbol(BOOL) or atom.is_theory_relation()
+        return atom.is_symbol(BOOL) or atom.is_theory_relation() or atom.is_bool_constant()
 
     def is_literal(self, literal):
         return self.is_atom(literal) or (literal.is_not() and self.is_atom(literal.arg(0)))

@@ -415,5 +415,5 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
         # print("Clauses:\n", pformat(assertions))
         # cnf = And(assertions)
-        assert self.is_cnf(cnf)
+        assert self.is_cnf(cnf), cnf.serialize()
         return cnf
