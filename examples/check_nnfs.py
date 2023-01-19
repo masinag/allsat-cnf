@@ -19,15 +19,19 @@ def count_models(phis):
         atoms = get_atoms(phi)
 
         # print("Pleisted CNF")
+        
         psi = PolarityCNFizer().convert_as_formula(phi)
         models, count = get_allsat(psi, atoms=atoms, use_ta=True, options=options)
         data.append({"phi": phi, "phi_id": phi.node_id(), "count": count, "n_models": len(models), "type": "POL"})
+        
         # print(f"\t{len(models)}/{count} models")
 
         # print("NNF + Pleisted CNF")
+        
         psi = PolarityCNFizer().convert_as_formula(nnf(phi))
         models, count = get_allsat(psi, atoms=atoms, use_ta=True, options=options)
         data.append({"phi": phi, "phi_id": phi.node_id(), "count": count, "n_models": len(models), "type": "NNF_POL"})
+        
         # print(f"\t{len(models)}/{count} models")
 
         # print("Guarded CNF")
@@ -62,8 +66,8 @@ def main():
         # (A & B) | (C & D) | (E & F) | (G & H),
         # (A & B) | (C & D) | (E & F) | (G & H) | (I & J),
         # (A & B) | (C & D) | (E & F) | (G & H) | (I & J) | (K & L),
-        random_formula(5, atoms) for _ in range(50)
-    ]
+        # random_formula(5, atoms) for _ in range(50)
+        (((A & B) | C) & Iff((A & B ), D))    ]
     data = count_models(phis)
     # create a dataframe with formulas on the rows and the columns are the different types
     df = pd.DataFrame(data)
