@@ -2,7 +2,6 @@ import argparse
 import time
 from pprint import pprint
 
-from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.conds_cnfizer_aig import LocalTseitinCNFizerCondsAIG
 from local_tseitin.utils import *
