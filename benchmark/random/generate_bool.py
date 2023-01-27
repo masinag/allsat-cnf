@@ -9,7 +9,7 @@ import sys
 import os
 
 
-def random_formula(depth, atoms):
+def random_formula(depth, atoms, operators, weights):
     if depth == 0:
         operator = random.choice([Or, Not])
         if operator is Or:
@@ -17,11 +17,11 @@ def random_formula(depth, atoms):
         else:
             return Not(random.choice(atoms))
     # operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
-    operator = random.choices([Or, And, Iff], weights=[8 / 17, 8 / 17, 1 / 17], k=1)[0]
+    operator = random.choices(operators, weights=weights, k=1)[0]
     if operator is Not:
-        return Not(random_formula(depth - 1, atoms))
-    left = random_formula(depth - 1, atoms)
-    right = random_formula(depth - 1, atoms)
+        return Not(random_formula(depth - 1, atoms, operators, weights))
+    left = random_formula(depth - 1, atoms, operators, weights)
+    right = random_formula(depth - 1, atoms, operators, weights)
     return operator(left, right)
 
 
@@ -48,6 +48,9 @@ def parse_args():
                         help='Maximum number of bool variables (default: 3)')
     parser.add_argument('-d', '--depth', default=3, type=positive,
                         help='Depth of the formula tree (default: 3)')
+    parser.add_argument('--no-xnnf', action='store_true', default=False,
+                        help='Set this flag to generate formulas with negations also not '
+                             'at literal level (default: False)')
     parser.add_argument('-m', '--models', default=20, type=positive,
                         help='Number of model files (default: 20)')
     parser.add_argument('-s', '--seed', type=positive_0,
@@ -93,8 +96,17 @@ def main():
     digits = int(log10(args.models)) + 1
     template = "b{b}_d{d}_s{s}_{templ}.smt2".format(
         b=args.booleans, d=args.depth, s=args.seed, templ="{n:0{d}}")
+
+    operators = [Or, And, Iff]
+    weights = [10, 10, 2]
+    if not args.no_xnnf:
+        operators += [Not]
+        weights += [4]
+    weights_sum = sum(weights)
+    normalized_weights = [w / weights_sum for w in weights]
+
     for i in range(args.models):
-        problem = random_formula(args.depth, boolean_atoms)
+        problem = random_formula(args.depth, boolean_atoms, operators, normalized_weights)
         file_name = path.join(output_dir, template.format(n=i + 1, d=digits))
         write_smtlib(problem, file_name)
         print("\r" * 100, end='')
