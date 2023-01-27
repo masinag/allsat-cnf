@@ -258,32 +258,8 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
         if formula.is_not():
             formula_neg = formula.arg(0)
-            left, right = formula_neg.args()
-            S = self._new_label()
-            clauses = []
-
-            cnf1, S1 = self.lt_pol(left, count + 1)
-            cnf2, S2 = self.lt_pol(right, count + 1)
-
-            if formula_neg.is_and():
-                # S <-> -S1 v -S2
-                clauses.append([Not(S), Not(S1), Not(S2)])
-                clauses.append([S, S1])
-                clauses.append([S, S2])
-                # S2 -> CNF1
-                for f in cnf1:
-                    if f[1] is None or f[1] > 0:
-                        f = ([Not(S2)] + f[0], f[1] - 1) if f[1] is not None else ([Not(S2)] + f[0], f[1])
-                    clauses.append(f)
-                # S1 -> CNF2
-                for f in cnf2:
-                    if f[1] is None or f[1] > 0:
-                        f = ([Not(S1)] + f[0], f[1] - 1) if f[1] is not None else ([Not(S1)] + f[0], f[1])
-                    clauses.append(f)
-                # S -> -S1 v -S2
-                if not self.is_literal(left) or not self.is_literal(right):
-                    clauses.append(([Not(S), S1, S2], self.guards))
-                return clauses, S
+            cnf, S = self.lt_pol(formula_neg, count + 1)
+            return cnf, ~S
 
         left, right = formula.args()
         S = self._new_label()
