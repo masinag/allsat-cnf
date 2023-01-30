@@ -32,7 +32,7 @@ class LocalTseitinCNFizer(ABC):
         return S
 
     @abstractmethod
-    def convert_as_formula(self, phi):
+    def convert_as_formula(self, phi, **kwargs):
         raise NotImplementedError()
 
 
@@ -41,8 +41,8 @@ class Preprocessor(IdentityDagWalker):
     Simplify boolean constants and make operators binary
     """
 
-    def convert_as_formula(self, formula):
-        return self.walk(formula)
+    def convert_as_formula(self, formula, expand_iff=False):
+        return self.walk(formula, expand_iff=expand_iff)
 
     def walk_and(self, formula, args, **kwargs):
         res = []
@@ -76,7 +76,7 @@ class Preprocessor(IdentityDagWalker):
         left = self.walk_not(Not(left), (left,), **kwargs)
         return self.walk_or(formula, (left, right), **kwargs)
 
-    def walk_iff(self, formula, args, **kwargs):
+    def walk_iff(self, formula, args, expand_iff=False, **kwargs):
         left, right = args
         if left.is_true():
             return right
@@ -86,12 +86,12 @@ class Preprocessor(IdentityDagWalker):
             return self.walk_not(formula.arg(1), (right,), **kwargs)
         elif right.is_false():
             return self.walk_not(formula.arg(0), (left,), **kwargs)
-        # else:
-        #     l, r = formula.args()
-        #     imp1 = Implies(l, r)
-        #     imp2 = Implies(r, l)
-        #     res1 = self.walk_implies(imp1, (left, right), **kwargs)
-        #     res2 = self.walk_implies(imp2, (right, left), **kwargs)
-        #     return self.walk_and(And(imp1, imp2), (res1, res2), **kwargs)
+        elif expand_iff:
+            l, r = formula.args()
+            imp1 = Implies(l, r)
+            imp2 = Implies(r, l)
+            res1 = self.walk_implies(imp1, (left, right), **kwargs)
+            res2 = self.walk_implies(imp2, (right, left), **kwargs)
+            return self.walk_and(And(imp1, imp2), (res1, res2), **kwargs)
         else:
             return Iff(left, right)

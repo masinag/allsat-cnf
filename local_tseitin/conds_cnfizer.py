@@ -117,7 +117,7 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
     def convert_as_formula(self, formula, expand_iff=False, **kwargs):
         if self.verbose:
             print("Input formula:", formula.serialize())
-        formula = self.preprocessor.convert_as_formula(formula)
+        formula = self.preprocessor.convert_as_formula(formula, expand_iff=expand_iff)
         if self.verbose:
             print("Preprocessed formula:", formula.serialize())
 
@@ -306,7 +306,7 @@ class LocalTseitinCNFizerShared(LocalTseitinCNFizer):
             if not is_literal(right):
                 if self.verbose:
                     print("{} -> {}".format(P, P2))
-                conditions.append(([Not(P), P2], self.guards))
+                conditions.append(([Not(P), P2], self.max_guards))
                 if self.verbose:
                     print("{} -> {}".format(Not(P), Not(P2)))
                 conditions.append([[P, Not(P2)], self.max_guards])
@@ -330,7 +330,7 @@ class LocalTseitinCNFizerShared(LocalTseitinCNFizer):
         self.activators[(S1, S2, formula.node_type())] = [P]
         return clauses, S, P, conditions
 
-    def convert_as_formula(self, formula):
+    def convert_as_formula(self, formula, **kwargs):
         if self.verbose:
             print("Input formula:", formula.serialize())
         formula = self.preprocessor.convert_as_formula(formula)

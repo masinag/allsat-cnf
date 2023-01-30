@@ -15,6 +15,12 @@ from local_tseitin.utils import get_allsat as allsat
 def get_allsat(phi, mode, with_repetitions):
     atoms = get_lra_atoms(phi).union(get_boolean_variables(phi))
     use_ta = True
+    expand_iff = False
+
+    if mode.startswith("EXPAND_"):
+        expand_iff = True
+        mode = mode.lstrip("EXPAND_")
+
     if mode.startswith("NNF_"):
         phi = nnf(phi)
         mode = mode.lstrip("NNF_")
@@ -22,7 +28,7 @@ def get_allsat(phi, mode, with_repetitions):
     if mode == "POL":
         phi = PolarityCNFizer().convert_as_formula(phi)
     elif mode == "CND":
-        phi = LocalTseitinCNFizerConds().convert_as_formula(phi)
+        phi = LocalTseitinCNFizerConds().convert_as_formula(phi, expand_iff=expand_iff)
     # elif mode == "ACT":
     #     phi = LocalTseitinCNFizerActivation().convert_as_formula(phi)
     elif mode == "TTA":
@@ -64,7 +70,7 @@ def write_result(mode, res, output_file):
 
 
 def parse_args():
-    modes = ["TTA", "AUTO", "POL", "NNF_POL", "CND", "NNF_CND"]
+    modes = ["TTA", "AUTO", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
 
     parser = argparse.ArgumentParser(description='Compute WMI on models')
     parser.add_argument('input', help='Folder with .json files')
