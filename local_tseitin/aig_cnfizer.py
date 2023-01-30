@@ -8,6 +8,7 @@ from pysmt.fnode import FNode
 from pysmt.shortcuts import *
 
 from local_tseitin.cnfizer import LocalTseitinCNFizer
+from local_tseitin.utils import is_cnf
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", help="increase output verbosity",
@@ -251,7 +252,7 @@ class GuardedAIG(LocalTseitinCNFizer):
 
         cnf = simplify(cnf)
 
-        assert self.is_cnf(cnf)
+        assert is_cnf(cnf)
         self.hash_set.clear()
         self.all_clauses.clear()
         print(aig.to_pysmt().serialize())

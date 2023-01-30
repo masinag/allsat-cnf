@@ -6,7 +6,8 @@ from collections import defaultdict
 import mathsat
 from pysmt.fnode import FNode
 from pysmt.shortcuts import *
-from pysmt.typing import PySMTType
+from pysmt.shortcuts import Not
+from pysmt.typing import PySMTType, BOOL
 
 
 def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
@@ -98,3 +99,42 @@ def check_models(ta, phi):
     # for mu, nu in itertools.combinations(ta, 2):
     #     assert not mu.isdisjoint(map(lambda x: Not(x).simplify(),
     #                                  nu)), "Error: mu={} and nu={} are overlapping".format(mu, nu)
+
+
+# def pysmt_to_aag(phi: FNode) -> str:
+#     """Convert a PySMT formula to an AIGER circuit in AAG format.
+#
+#     :param phi: PySMT formula
+#     :return: string representing an AIGER circuit in AAG format
+#     """
+#     # convert to py-aiger format
+#     pass
+#
+#
+# def aig_to_pysmt(aig: AIGER, symbols: Dict[int, FNode]) -> FNode:
+#     """
+#
+#     """
+#
+#
+# def pysmt_cnf_to_aig(phi: FNode) -> AIGER:
+#     pass
+
+def is_atom(atom):
+    return atom.is_symbol(BOOL) or atom.is_theory_relation() or atom.is_bool_constant()
+
+
+def is_literal(literal):
+    return is_atom(literal) or (literal.is_not() and is_atom(literal.arg(0)))
+
+
+def is_clause(phi):
+    return is_literal(phi) or (phi.is_or() and all(is_literal(a) for a in phi.args()))
+
+
+def is_cnf(phi):
+    return is_clause(phi) or (phi.is_and() and all(is_clause(a) for a in phi.args()))
+
+
+def negate_literal(literal):
+    return Not(literal).simplify()

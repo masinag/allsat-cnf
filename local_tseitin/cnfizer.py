@@ -8,13 +8,13 @@ class LocalTseitinCNFizer(ABC):
     VAR_TEMPLATE = "T{:d}"
     POL_TEMPLATE = "P{:d}"
 
-    def __init__(self, verbose=False, guards=None):
+    def __init__(self, verbose=False, max_guards=None):
         self.verbose = verbose
         self.vars = 0
         self.polvars = 0
         self.preprocessor = Preprocessor()
         self.labels = set()
-        self.guards = guards
+        self.max_guards = max_guards
 
     def is_label(self, atom):
         return atom in self.labels
@@ -34,18 +34,6 @@ class LocalTseitinCNFizer(ABC):
     @abstractmethod
     def convert_as_formula(self, phi):
         raise NotImplementedError()
-
-    def is_atom(self, atom):
-        return atom.is_symbol(BOOL) or atom.is_theory_relation() or atom.is_bool_constant()
-
-    def is_literal(self, literal):
-        return self.is_atom(literal) or (literal.is_not() and self.is_atom(literal.arg(0)))
-
-    def is_clause(self, phi):
-        return self.is_literal(phi) or (phi.is_or() and all(self.is_literal(a) for a in phi.args()))
-
-    def is_cnf(self, phi):
-        return self.is_clause(phi) or (phi.is_and() and all(self.is_clause(a) for a in phi.args()))
 
 
 class Preprocessor(IdentityDagWalker):

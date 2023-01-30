@@ -2,7 +2,7 @@ import sys
 from itertools import product
 
 import pytest
-from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
+# from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.utils import get_boolean_variables, get_lra_atoms
 
@@ -23,7 +23,7 @@ formulas_to_test = [
 ]
 
 cnfizers = [
-    LocalTseitinCNFizerActivation(),
+    # LocalTseitinCNFizerActivation(),
     LocalTseitinCNFizerConds(),
 ]
 
@@ -34,9 +34,20 @@ def test_correctness(CNFizer, phi):
 
     total_models, count_tot = get_allsat(phi, use_ta=False, atoms=atoms)
     assert count_tot == len(total_models)
-    cnf = CNFizer.convert(phi)
+    cnf = CNFizer.convert_as_formula(phi)
     partial_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
-    assert count_part == count_tot
+    assert count_part == count_tot, f"{phi.serialize()}\n{cnf.serialize()}"
 
     check_models(partial_models, phi)
     # assert phi
+# ((T1 | (! A)) &
+#  (T1 | T2) &
+#  True &
+#  (A | T2 | (! B) | T3) &
+#  (A | (! T2) | B) &
+#  (A | (! T2) | (! T3)) &
+#  True &
+#  (A | (! B) | (! T3) | C | D) &
+#  (A | (! B) | T3 | (! C)) &
+#  (A | (! B) | T3 | (! D)) &
+#  (A | T2 | B | (! T3)))

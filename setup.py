@@ -15,6 +15,7 @@ VERSION = "0.1"
 REQUIRED = [
     'pysmt @ git+ssh://git@github.com/masinag/pysmt@cnf-improve#egg=pysmt',
     'py-aiger >= 6.2.0',
+    'funcy >= 1.17',
 ]
 
 # What packages are optional?
