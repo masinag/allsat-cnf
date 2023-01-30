@@ -1,7 +1,11 @@
 import sys
 from itertools import product
+from typing import List
 
 import pytest
+from pysmt.fnode import FNode
+
+from local_tseitin.cnfizer import LocalTseitinCNFizer
 # from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.utils import get_boolean_variables, get_lra_atoms
@@ -11,7 +15,7 @@ from pysmt.shortcuts import *
 from utils import (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T,
                    U, V, W, X, Y, Z, check_models, get_allsat)
 
-formulas_to_test = [
+formulas_to_test: List[FNode] = [
     And(A, B),
     Or(A, B),
     And(Or(A, B), Or(C, D)),
@@ -25,16 +29,17 @@ formulas_to_test = [
 cnfizers = [
     # LocalTseitinCNFizerActivation(),
     LocalTseitinCNFizerConds(),
+    LocalTseitinCNFizerConds(expand_iff=True),
 ]
 
 
-@pytest.mark.parametrize("CNFizer, phi", product(cnfizers, formulas_to_test))
-def test_correctness(CNFizer, phi):
+@pytest.mark.parametrize("cnfizer, phi", product(cnfizers, formulas_to_test))
+def test_correctness(cnfizer: LocalTseitinCNFizer, phi: FNode):
     atoms = get_boolean_variables(phi) | get_lra_atoms(phi)
 
     total_models, count_tot = get_allsat(phi, use_ta=False, atoms=atoms)
     assert count_tot == len(total_models)
-    cnf = CNFizer.convert_as_formula(phi)
+    cnf = cnfizer.convert_as_formula(phi)
     partial_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
     assert count_part == count_tot, f"{phi.serialize()}\n{cnf.serialize()}"
 

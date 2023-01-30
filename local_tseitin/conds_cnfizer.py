@@ -114,10 +114,10 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             clause, guards_left = self.get_clause_with_guard(clause, guard, guards_left)
             guarded_clauses.append((clause, guards_left))
 
-    def convert_as_formula(self, formula, expand_iff=False, **kwargs):
+    def convert_as_formula(self, formula):
         if self.verbose:
             print("Input formula:", formula.serialize())
-        formula = self.preprocessor.convert_as_formula(formula, expand_iff=expand_iff)
+        formula = self.preprocessor.convert_as_formula(formula)
         if self.verbose:
             print("Preprocessed formula:", formula.serialize())
 
@@ -330,7 +330,7 @@ class LocalTseitinCNFizerShared(LocalTseitinCNFizer):
         self.activators[(S1, S2, formula.node_type())] = [P]
         return clauses, S, P, conditions
 
-    def convert_as_formula(self, formula, **kwargs):
+    def convert_as_formula(self, formula):
         if self.verbose:
             print("Input formula:", formula.serialize())
         formula = self.preprocessor.convert_as_formula(formula)

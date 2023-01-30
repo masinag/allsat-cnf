@@ -28,7 +28,7 @@ def get_allsat(phi, mode, with_repetitions):
     if mode == "POL":
         phi = PolarityCNFizer().convert_as_formula(phi)
     elif mode == "CND":
-        phi = LocalTseitinCNFizerConds().convert_as_formula(phi, expand_iff=expand_iff)
+        phi = LocalTseitinCNFizerConds(expand_iff=expand_iff).convert_as_formula(phi)
     # elif mode == "ACT":
     #     phi = LocalTseitinCNFizerActivation().convert_as_formula(phi)
     elif mode == "TTA":

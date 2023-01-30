@@ -8,11 +8,11 @@ class LocalTseitinCNFizer(ABC):
     VAR_TEMPLATE = "T{:d}"
     POL_TEMPLATE = "P{:d}"
 
-    def __init__(self, verbose=False, max_guards=None):
+    def __init__(self, verbose=False, max_guards=None, expand_iff=False):
         self.verbose = verbose
         self.vars = 0
         self.polvars = 0
-        self.preprocessor = Preprocessor()
+        self.preprocessor = Preprocessor(expand_iff=expand_iff)
         self.labels = set()
         self.max_guards = max_guards
 
@@ -32,7 +32,7 @@ class LocalTseitinCNFizer(ABC):
         return S
 
     @abstractmethod
-    def convert_as_formula(self, phi, **kwargs):
+    def convert_as_formula(self, phi):
         raise NotImplementedError()
 
 
@@ -40,9 +40,15 @@ class Preprocessor(IdentityDagWalker):
     """
     Simplify boolean constants and make operators binary
     """
+    def __init__(self, expand_iff=False):
+        IdentityDagWalker.__init__(self, invalidate_memoization=True)
+        self.expand_iff = expand_iff
 
-    def convert_as_formula(self, formula, expand_iff=False):
-        return self.walk(formula, expand_iff=expand_iff)
+    def _get_key(self, formula, **kwargs):
+        return formula
+
+    def convert_as_formula(self, formula):
+        return self.walk(formula)
 
     def walk_and(self, formula, args, **kwargs):
         res = []
@@ -76,7 +82,7 @@ class Preprocessor(IdentityDagWalker):
         left = self.walk_not(Not(left), (left,), **kwargs)
         return self.walk_or(formula, (left, right), **kwargs)
 
-    def walk_iff(self, formula, args, expand_iff=False, **kwargs):
+    def walk_iff(self, formula, args, **kwargs):
         left, right = args
         if left.is_true():
             return right
@@ -86,7 +92,7 @@ class Preprocessor(IdentityDagWalker):
             return self.walk_not(formula.arg(1), (right,), **kwargs)
         elif right.is_false():
             return self.walk_not(formula.arg(0), (left,), **kwargs)
-        elif expand_iff:
+        elif self.expand_iff:
             l, r = formula.args()
             imp1 = Implies(l, r)
             imp2 = Implies(r, l)
