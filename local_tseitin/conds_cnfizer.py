@@ -15,9 +15,7 @@ parser.add_argument("-g", help="set how many guards to add", type=int,
 class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
     def lt_pol(self, formula, count):
-        if self.verbose:
-            print("{}local_tseitin_rec({})".format(
-                "--" * count, formula))
+        self.log("{}local_tseitin_rec({})".format("--" * count, formula))
 
         # BASE CASE 1: literal-formula
         if is_literal(formula):
@@ -41,16 +39,19 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             not_S2 = negate_literal(S2)
             if formula.is_or():
                 # (S <-> S1 v S2)
+                self.log("{} <-> {} v {}".format(S, S1, S2))
                 clauses.append(self.new_clause([not_S, S1, S2]))
                 clauses.append(self.new_clause([S, not_S1]))
                 clauses.append(self.new_clause([S, not_S2]))
             if formula.is_and():
-                # (S <-> S1 ^ S2)
+                # (S <-> S1 & S2)
+                self.log("{} <-> {} & {}".format(S, S1, S2))
                 clauses.append(self.new_clause([S, not_S1, not_S2]))
                 clauses.append(self.new_clause([not_S, S1]))
                 clauses.append(self.new_clause([not_S, S2]))
             if formula.is_iff():
                 # (S <-> S1 <-> S2)
+                self.log("{} <-> ({} <-> {})".format(S, S1, S2))
                 clauses.append(self.new_clause([not_S, S1, not_S2]))
                 clauses.append(self.new_clause([not_S, S2, not_S1]))
                 clauses.append(self.new_clause([S, S1, S2]))
@@ -66,28 +67,37 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
         if formula.is_or():
             # S <-> S1 v S2
+            self.log("{} <-> {} v {}".format(S, S1, S2))
             clauses.append(self.new_clause([not_S, S1, S2]))
             clauses.append(self.new_clause([S, not_S1]))
             clauses.append(self.new_clause([S, not_S2]))
             # -S2 -> CNF1
+            self.log("{} -> CNF1".format(not_S2))
             self.add_guard_to_clauses(cnf1, clauses, S2)
             # -S1 -> CNF2
+            self.log("{} -> CNF2".format(not_S1))
             self.add_guard_to_clauses(cnf2, clauses, S1)
             # S -> -S1 v -S2
+            self.log("{} -> {} v {}".format(S, not_S1, not_S2))
             clauses.append(self.new_clause([not_S, not_S1, not_S2]))
         if formula.is_and():
-            # S <-> S1 v S2
+            # S <-> S1 & S2
+            self.log("{} <-> {} & {}".format(S, S1, S2))
             clauses.append(self.new_clause([S, not_S1, not_S2]))
             clauses.append(self.new_clause([not_S, S1]))
             clauses.append(self.new_clause([not_S, S2]))
             # S2 -> CNF1
+            self.log("{} -> CNF1".format(S2))
             self.add_guard_to_clauses(cnf1, clauses, not_S2)
             # S1 -> CNF2
+            self.log("{} -> CNF2".format(S1))
             self.add_guard_to_clauses(cnf2, clauses, not_S1)
             # -S -> S1 v S2
+            self.log("{} -> {} v {}".format(not_S, S1, S2))
             clauses.append(self.new_clause([S, S1, S2]))
         if formula.is_iff():
             # S <-> S1 <-> S2
+            self.log("{} <-> ({} <-> {})".format(S, S1, S2))
             clauses.append(self.new_clause([not_S, S1, not_S2]))
             clauses.append(self.new_clause([not_S, S2, not_S1]))
             clauses.append(self.new_clause([S, S1, S2]))
@@ -97,6 +107,10 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             for f in cnf2:
                 clauses.append(f)
         return clauses, S
+
+    def log(self, msg):
+        if self.verbose:
+            print(msg)
 
     def new_clause(self, literals):
         return literals, self.max_guards
@@ -115,11 +129,9 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
             guarded_clauses.append((clause, guards_left))
 
     def convert_as_formula(self, formula):
-        if self.verbose:
-            print("Input formula:", formula.serialize())
+        self.log("Input formula: {}".format(formula.serialize()))
         formula = self.preprocessor.convert_as_formula(formula)
-        if self.verbose:
-            print("Preprocessed formula:", formula.serialize())
+        self.log("Preprocessed formula: {}".format(formula.serialize()))
 
         clauses, S = self.lt_pol(formula, 0)
         not_S = negate_literal(S)
@@ -128,11 +140,11 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         for clause, _ in clauses:
             clean_clause = []
             for lit in clause:
-                if lit == S:
+                if lit.is_bool_constant(True) or lit == S:
                     # ignore clauses as !S -> ...
                     clean_clause.clear()
                     break
-                elif lit == not_S:
+                elif lit.is_bool_constant(False) or lit == not_S:
                     # convert S -> l1 v ... lk into l1 v ... lk
                     continue
                 else:
@@ -142,12 +154,8 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
         cnf = And([Or(c) for c in cnf])
 
-        if self.verbose:
-            print()
-            print(f"{len(cnf.args())} encoded clauses:")
-            for el in cnf.args():
-                print(el)
-            print()
+        self.log("\n{} encoded clauses:\n{}\n".format(
+            len(cnf.args()), "\n".join(map(str, cnf.args()))))
 
         assert is_cnf(cnf), cnf.serialize()
         return cnf
