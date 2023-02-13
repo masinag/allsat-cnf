@@ -123,7 +123,7 @@ def negate_literal(literal):
 class AIG:
     def __init__(self, aig: _AIG):
         assert len(aig.outputs) == 1
-        assert len(aig.latches) == 0
+        # assert len(aig.latches) == 0
         self.aig = aig
         self.inputs: Dict[_Input, Symbol] = {}
 

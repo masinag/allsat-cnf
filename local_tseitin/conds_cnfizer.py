@@ -130,8 +130,6 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
 
     def convert_as_formula(self, formula):
         self.log("Input formula: {}".format(formula.serialize()))
-        formula = self.preprocessor.convert_as_formula(formula)
-        self.log("Preprocessed formula: {}".format(formula.serialize()))
 
         clauses, S = self.lt_pol(formula, 0)
         if len(clauses) == 1:
@@ -344,9 +342,6 @@ class LocalTseitinCNFizerShared(LocalTseitinCNFizer):
     def convert_as_formula(self, formula):
         if self.verbose:
             print("Input formula:", formula.serialize())
-        formula = self.preprocessor.convert_as_formula(formula)
-        if self.verbose:
-            print("Preprocessed formula:", formula.serialize())
 
         # self.original_symb = S
         if self.verbose:

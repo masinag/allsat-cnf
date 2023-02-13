@@ -216,9 +216,7 @@ class LocalTseitinCNFizerCondsAIG(LocalTseitinCNFizer):
             print("Input formula:", formula.serialize())
             print(self.all_clauses)
             print(self.hash_set)
-        formula = self.preprocessor.convert_as_formula(formula)
-        if self.verbose:
-            print("Preprocessed formula:", formula.serialize())
+
         assertions = []
         S = self._new_label()
         P = self._new_polarizer()

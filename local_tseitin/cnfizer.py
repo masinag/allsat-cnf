@@ -8,11 +8,10 @@ class LocalTseitinCNFizer(ABC):
     VAR_TEMPLATE = "T{:d}"
     POL_TEMPLATE = "P{:d}"
 
-    def __init__(self, verbose=False, max_guards=None, expand_iff=False):
+    def __init__(self, verbose=False, max_guards=None):
         self.verbose = verbose
         self.vars = 0
         self.polvars = 0
-        self.preprocessor = Preprocessor(expand_iff=expand_iff)
         self.labels = set()
         self.max_guards = max_guards
 
@@ -40,9 +39,10 @@ class Preprocessor(IdentityDagWalker):
     """
     Simplify boolean constants and make operators binary
     """
-    def __init__(self, expand_iff=False):
+    def __init__(self, expand_iff=False, binary_operators=False):
         IdentityDagWalker.__init__(self, invalidate_memoization=True)
         self.expand_iff = expand_iff
+        self.binary_operators = binary_operators
 
     def _get_key(self, formula, **kwargs):
         return formula
@@ -59,7 +59,10 @@ class Preprocessor(IdentityDagWalker):
                 res.append(arg)
         if len(res) == 0:
             return TRUE()
-        return reduce(And, res)
+        if self.binary_operators:
+            return reduce(And, res)
+        else:
+            return And(res)
 
     def walk_or(self, formula, args, **kwargs):
         res = []
@@ -70,7 +73,10 @@ class Preprocessor(IdentityDagWalker):
                 res.append(arg)
         if len(res) == 0:
             return FALSE()
-        return reduce(Or, res)
+        if self.binary_operators:
+            return reduce(Or, res)
+        else:
+            return Or(res)
 
     def walk_not(self, formula, args, **kwargs):
         arg = args[0]
