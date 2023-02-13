@@ -108,7 +108,7 @@ def main():
     check_input_output(input_dir, output_dir, output_file)
 
     elements = [path.join(input_dir, f) for f in sorted(os.listdir(input_dir))]
-    files = [e for e in elements if path.isfile(e)]
+    files = [e for e in elements if not path.isdir(e)]
 
     print("Started computing")
     time_start = time.time()

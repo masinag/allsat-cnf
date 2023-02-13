@@ -6,8 +6,8 @@ DIR=aig-bench
 DATA_URL=http://fmv.jku.at/aiger/smtqfbv-aigs.7z
 
 # check if p7zip is installed
-if ! which 7zr > /dev/null; then
-    echo "p7zip not found: please install it by running 'sudo apt-get install p7zip'"
+if ! which py7zr > /dev/null; then
+    echo "py7zr not found: please install it by running 'pip install py7zr'"
     exit 1
 fi
 
@@ -16,7 +16,8 @@ DEPTH=$2
 
 REPETITIONS=""
 archname=$(basename $DATA_URL)
-dirname=$DIR/data/${dirname%.*}
+dirname=$DIR/data/${archname%.*}
+
 
 # check if data DIR/data exists
 if [ ! -d $dirname ]; then
@@ -28,13 +29,23 @@ if [ ! -d $dirname ]; then
   wget -O $tmpdata $DATA_URL
   echo "Extracting data to $dirname..."
 #  tar xzf $tmpdata -C $dirname
-  7zr x $tmpdata -o$dirname
+  py7zr x $tmpdata $dirname
   rm $tmpdata
+
+
+fi
+
+
+testdirname="$dirname-test"
+if [ ! -d $testdirname ]; then
+	mkdir $testdirname
+	for f in $(ls $dirname | grep test); do
+		ln -s $(realpath $dirname/$f) $testdirname/$f
+	done
 fi
 
 mkdir -p $DIR/results $DIR/plots
-echo $DIR/data
-echo $(ls -d $DIR/data/* | grep test)
+
 for dir in $(ls -d $DIR/data/* | grep test); do
   res_dir=$(sed "s+data+results+g" <<<$dir)
   mkdir -p "$res_dir"
