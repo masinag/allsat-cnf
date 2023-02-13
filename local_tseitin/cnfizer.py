@@ -57,6 +57,8 @@ class Preprocessor(IdentityDagWalker):
                 return arg
             elif not arg.is_true():
                 res.append(arg)
+        if len(res) == 0:
+            return TRUE()
         return reduce(And, res)
 
     def walk_or(self, formula, args, **kwargs):
@@ -66,6 +68,8 @@ class Preprocessor(IdentityDagWalker):
                 return arg
             elif not arg.is_false():
                 res.append(arg)
+        if len(res) == 0:
+            return FALSE()
         return reduce(Or, res)
 
     def walk_not(self, formula, args, **kwargs):

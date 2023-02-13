@@ -134,6 +134,9 @@ class LocalTseitinCNFizerConds(LocalTseitinCNFizer):
         self.log("Preprocessed formula: {}".format(formula.serialize()))
 
         clauses, S = self.lt_pol(formula, 0)
+        if len(clauses) == 1:
+            return S
+
         not_S = negate_literal(S)
         cnf = []
 
