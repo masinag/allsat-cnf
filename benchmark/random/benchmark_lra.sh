@@ -4,10 +4,10 @@ python3 generate.py -b 5 -r 5 -d 6 -o $DIR/data -m 20
 
 for dir in $(ls $DIR/data)
 do
-    for mode in TTA AUTO ACT CND
+    for mode in AUTO NNF_AUTO CND NNF_CND POL NNF_POL
     do
-        python3 evaluate.py $DIR/data/$dir -m $mode -o $DIR/results
+        python3 ../evaluate.py $DIR/data/$dir -m $mode -o $DIR/results
     done
 done
 
-python3 plot.py $DIR/results -o $DIR/plots
+python3 ../plot.py $DIR/results -o $DIR/plots

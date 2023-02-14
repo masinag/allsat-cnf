@@ -20,13 +20,13 @@ class LocalTseitinCNFizer(ABC):
 
     def _new_label(self):
         self.vars += 1
-        S = Symbol(LocalTseitinCNFizer.VAR_TEMPLATE.format(self.vars))
+        S = Symbol(LocalTseitinCNFizer.VAR_TEMPLATE.format(self.vars), BOOL)
         self.labels.add(S)
         return S
 
     def _new_polarizer(self):
         self.polvars += 1
-        S = Symbol(LocalTseitinCNFizer.POL_TEMPLATE.format(self.polvars))
+        S = Symbol(LocalTseitinCNFizer.POL_TEMPLATE.format(self.polvars), BOOL)
         self.labels.add(S)
         return S
 

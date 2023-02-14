@@ -16,7 +16,7 @@ ticks_fs = 15
 lw = 2.5  # line width
 figsize = (10, 8)
 label_step = 5
-ORDER = ["TTA", "AUTO", "ACT", "POL", "NNF_POL", "CND", "NNF_CND"]
+ORDER = ["TTA", "AUTO", "NNF_AUTO", "ACT", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
 COLOR = {
     "AUTO": "red",
     "TTA": "blue",
@@ -24,7 +24,8 @@ COLOR = {
     "POL": "orange",
     "NNF_POL": "purple",
     "CND": "brown",
-    "NNF_CND": "pink",
+    "NNF_CND": "teal",
+    "EXPAND_CND": "gray",
 }
 ORDER += [f"{mode}_REP" for mode in ORDER]
 COLOR.update({f"{mode}_REP": COLOR[mode] for mode in COLOR})
@@ -95,16 +96,43 @@ def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_r
     plt.clf()
 
 
-def plot_data(outdir: str, data: pd.DataFrame, param: Param, xlabel: str, filename: str):
+def compare(outdir: str, data: pd.DataFrame, param: Param, modex: str, modey: str, filename: str, logscale=True):
+    data = data[param]
+    ax = data.plot(kind="scatter", x=modex, y=modey, logy=logscale, color=COLOR[modex],
+                   marker="x")
+    # plot bisector
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    ax.plot([min(x0, y0), max(x1, y1)], [min(x0, y0), max(x1, y1)], color="black", linestyle="--")
+    if not logscale:
+        ax.set_aspect("equal")
+        x0, x1 = ax.get_xlim()
+        y0, y1 = ax.get_ylim()
+        ax.set_xlim(min(x0, y0), max(x1, y1))
+        ax.set_ylim(min(x0, y0), max(x1, y1))
+    plt.legend(loc=6, fontsize=fs)
+    # axes labels
+    plt.xlabel(f"{modex} ({param})", fontsize=fs)
+    plt.ylabel(f"{modey} ({param})", fontsize=fs)
+    # save figure
+    outfile = os.path.join(outdir, "{}_compare_{}_vs_{}{}.png".format(param, modex, modey, filename))
+    plt.savefig(outfile, bbox_inches='tight')
+    print("created {}".format(outfile))
+    plt.clf()
+
+
+def plot_data(outdir: str, data: pd.DataFrame, param: Param, xlabel: str, ylabel: str, filename: str):
     n_problems = max(data.index) + 1
 
     plt.figure(figsize=figsize)
 
-    # modes = data.columns.get_level_values(0).unique()
-    # modes = [mode for mode in ORDER if mode in modes]
-    data[param].plot(linewidth=lw, marker="x")
-
-    ylabel = param
+    modes = data.columns.get_level_values(1).unique()
+    print(modes)
+    modes = [mode for mode in ORDER if mode in modes]
+    print(modes)
+    for mode in modes:
+        data[param][mode].sort_values(ignore_index=True).plot(linewidth=lw, color=COLOR[mode],
+                                                              label=mode)
 
     # legend
     plt.legend(loc=6, fontsize=fs)
@@ -138,7 +166,8 @@ def group_data(data: pd.DataFrame):
     # sort by increasing number of models
     modes = data.columns.get_level_values(0).unique()
     modes = [mode for mode in ORDER if mode in modes]
-    sort_by = [(mode, "models") for mode in modes]
+
+    sort_by = [("models", mode) for mode in modes]
     data.sort_values(by=sort_by, inplace=True, ignore_index=True)
     return data
 
@@ -171,11 +200,24 @@ def main():
     input_files = get_input_files(inputs)
     data: pd.DataFrame = parse_inputs(input_files, with_repetitions)
     data: pd.DataFrame = group_data(data)
-    xlabel = "Problem instances"
-    plot_data(output_dir, data, "time", xlabel, filename)
-    plot_data(output_dir, data, "models", xlabel, filename)
+    xlabel = "Number of problems solved"
+
+    plot_data(output_dir, data, "time", xlabel, "Time (s)", filename)
+    plot_data(output_dir, data, "models", xlabel, "Number of models", filename)
     scatter(output_dir, data, "time", filename, with_repetitions)
     scatter(output_dir, data, "models", filename, with_repetitions)
+
+    compare(output_dir, data, "time", "CND", "NNF_CND", filename, logscale=False)
+    compare(output_dir, data, "models", "CND", "NNF_CND", filename, logscale=False)
+
+    compare(output_dir, data, "time", "NNF_POL", "NNF_CND", filename, logscale=False)
+    compare(output_dir, data, "models", "NNF_POL", "NNF_CND", filename, logscale=False)
+
+    compare(output_dir, data, "time", "NNF_POL", "CND", filename, logscale=False)
+    compare(output_dir, data, "models", "NNF_POL", "CND", filename, logscale=False)
+
+    compare(output_dir, data, "time", "NNF_CND", "EXPAND_CND", filename, logscale=False)
+    compare(output_dir, data, "models", "NNF_CND", "EXPAND_CND", filename, logscale=False)
 
 
 if __name__ == "__main__":

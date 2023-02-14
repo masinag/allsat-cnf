@@ -1,19 +1,17 @@
-import sys
 from itertools import product
-from typing import List
+from typing import List, Callable
 
 import pytest
 from pysmt.fnode import FNode
-
-from local_tseitin.cnfizer import LocalTseitinCNFizer
-# from local_tseitin.activation_cnfizer import LocalTseitinCNFizerActivation
-from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
-from local_tseitin.utils import get_boolean_variables, get_lra_atoms
-
 from pysmt.shortcuts import *
 
-from utils import (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T,
-                   U, V, W, X, Y, Z, check_models, get_allsat)
+from local_tseitin.cnfizer import LocalTseitinCNFizer, Preprocessor
+from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
+from local_tseitin.utils import check_models, get_allsat
+from local_tseitin.utils import get_boolean_variables, get_lra_atoms
+from utils import boolean_variables
+
+A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z = boolean_variables
 
 formulas_to_test: List[FNode] = [
     And(A, B),
@@ -29,13 +27,19 @@ formulas_to_test: List[FNode] = [
 cnfizers = [
     # LocalTseitinCNFizerActivation(),
     LocalTseitinCNFizerConds(),
-    LocalTseitinCNFizerConds(expand_iff=True),
+]
+
+preprocessings = [
+    lambda f: f,
+    lambda f: Preprocessor(expand_iff=True).walk(f),
+    lambda f: Preprocessor(binary_operators=True).walk(f),
 ]
 
 
-@pytest.mark.parametrize("cnfizer, phi", product(cnfizers, formulas_to_test))
-def test_correctness(cnfizer: LocalTseitinCNFizer, phi: FNode):
+@pytest.mark.parametrize("preprocess, cnfizer, phi", product(preprocessings, cnfizers, formulas_to_test))
+def test_correctness(preprocess: Callable[[FNode], FNode], cnfizer: LocalTseitinCNFizer, phi: FNode):
     atoms = get_boolean_variables(phi) | get_lra_atoms(phi)
+    phi = preprocess(phi)
 
     total_models, count_tot = get_allsat(phi, use_ta=False, atoms=atoms)
     assert count_tot == len(total_models)

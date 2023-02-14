@@ -9,13 +9,14 @@ URL = 'http://gitlab.com/giuspek/local-tseitin'
 EMAIL = ''
 AUTHOR = ''
 REQUIRES_PYTHON = '>=3.5.0'
-VERSION = "0.1"
+VERSION = '0.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
     'pysmt @ git+ssh://git@github.com/masinag/pysmt@cnf-improve#egg=pysmt',
     'py-aiger >= 6.2.0',
     'funcy >= 1.17',
+    'psutil>=5.9.4',
 ]
 
 # What packages are optional?
@@ -24,7 +25,7 @@ EXTRAS = {
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-with open(path.join(here, "README.md")) as ref:
+with open(path.join(here, 'README.md')) as ref:
     long_description = ref.read()
 
 setup(
@@ -32,7 +33,7 @@ setup(
     version=VERSION,
     description=DESCRIPTION,
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type='text/markdown',
     url=URL,
     author=AUTHOR,
     author_email=EMAIL,
@@ -48,7 +49,7 @@ setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     setup_requires=['pytest-runner'],
-    tests_require=["pytest"],
+    tests_require=['pytest'],
     cmdclass={
         #        'upload': UploadCommand,
         #        'install': PostInstallCommand,

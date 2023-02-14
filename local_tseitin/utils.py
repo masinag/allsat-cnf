@@ -7,17 +7,19 @@ from pysmt.fnode import FNode
 from pysmt.shortcuts import *
 from pysmt.shortcuts import Not, Symbol, And, Bool
 from pysmt.typing import PySMTType, BOOL
+from pysmt.walkers import IdentityDagWalker
 
 
-def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
+def get_allsat(formula: FNode, use_ta=False, atoms=None, options=None):
+    if options is None:
+        options = {}
+
     if use_ta:
         solver_options = {
             "dpll.allsat_minimize_model": "true",
             "dpll.allsat_allow_duplicates": "false",
             "preprocessor.toplevel_propagation": "false",
             "dpll.branching_initial_phase": "0",
-            # "debug.api_call_trace": "2",
-            # "preprocessor.simplification": "0"
         }
     else:
         solver_options = {}
@@ -28,17 +30,12 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options={}):
 
     atoms = sorted(atoms, key=lambda x: x.symbol_name())
 
-    # print(solver_options, atoms)
-
     with Solver(name="msat", solver_options=solver_options) as solver:
         converter = solver.converter
-
+        assert formula == IdentityDagWalker().walk(formula)
         solver.add_assertion(formula)
         models = []
         solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, converter, models))
-        # mathsat.msat_all_sat(solver.msat_env(),
-        #                      [converter.convert(a) for a in atoms],
-        #                      lambda model: _allsat_callback(model, converter, models))
 
     total_models_count = sum(
         map(lambda model: 2 ** (len(atoms) - len(model)), models))
@@ -61,8 +58,13 @@ def get_lra_atoms(formula: FNode):
     return {a for a in formula.get_atoms() if a.is_theory_relation()}
 
 
+def get_functions(formula: FNode):
+    return {a for a in formula.get_atoms() if a.is_function_application()}
+
+
 def _allsat_callback(model, converter, models):
     py_model = {converter.back(v) for v in model}
+    assert IdentityDagWalker().walk(And(py_model)) == And(py_model)
     models.append(py_model)
     return 1
 
@@ -79,25 +81,30 @@ def get_dict_model(mu):
 
 def check_models(ta, phi):
     # check every model in ta satisfies phi
-    for mu in ta:
-        assert is_sat(And(mu) & phi)
-    assert is_valid(Iff(phi, Or(map(And, ta))))
-    # # check:
-    # # 0. every mu in ta evaluates phi to true:
-    # for mu in ta:
-    #     mu_dict = get_dict_model(mu)
-    #     assert phi.substitute(mu_dict).simplify().is_true(), \
-    #         "Error: model {} does not evaluate {} to true".format(mu, phi.serialize())
-    # # 1. every total truth assignment in tta is a super-assignment of one in ta
-    # for mu in tta:
-    #     assert any(mu.issuperset(nu) for nu in ta), "Error: mu={} is not a super-assignment of any nu in ta".format(mu)
-    #
-    # # 2. every pair of models in ta assigns opposite truth values to at least one element
+    ta_is_correct(phi, ta)
+    ta_is_complete(phi, ta)
 
-    # NOTE: Very expensive! We can trust mathsat on this part
-    # for mu, nu in itertools.combinations(ta, 2):
-    #     assert not mu.isdisjoint(map(lambda x: Not(x).simplify(),
-    #                                  nu)), "Error: mu={} and nu={} are overlapping".format(mu, nu)
+
+def ta_is_correct(phi, ta):
+    for mu in ta:
+        model = And(mu)
+        formula = And(phi, model)
+        assert _is_sat(formula)
+
+
+def ta_is_complete(phi, ta):
+    equiv = Iff(phi, Or(map(And, ta)))
+    assert _is_valid(equiv)
+
+
+def _is_sat(phi):
+    phi = IdentityDagWalker().walk(phi)
+    return is_sat(phi)
+
+
+def _is_valid(phi):
+    phi = IdentityDagWalker().walk(phi)
+    return is_valid(phi)
 
 
 def is_atom(atom):
