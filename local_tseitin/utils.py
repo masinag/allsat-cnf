@@ -1,3 +1,4 @@
+from pprint import pformat
 from typing import Dict, Tuple, Iterable
 
 import funcy as fn
@@ -5,7 +6,7 @@ from aiger import AIG as _AIG, to_aig as _to_aig
 from aiger.aig import Input as _Input
 from pysmt.fnode import FNode
 from pysmt.shortcuts import *
-from pysmt.shortcuts import Not, Symbol, And, Bool
+from pysmt.shortcuts import Not, Symbol, And, Bool, Iff
 from pysmt.typing import PySMTType, BOOL
 from pysmt.walkers import IdentityDagWalker
 
@@ -13,7 +14,25 @@ from pysmt.walkers import IdentityDagWalker
 def get_allsat(formula: FNode, use_ta=False, atoms=None, options=None):
     if options is None:
         options = {}
+    if atoms is None:
+        atoms = get_boolean_variables(formula)
+    atoms = sorted(atoms, key=lambda x: x.symbol_name())
 
+    solver_options = get_solver_options(use_ta)
+    solver_options.update(options)
+
+    models = []
+    with Solver(name="msat", solver_options=solver_options) as solver:
+        solver.add_assertion(formula)
+        solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, models))
+
+    total_models_count = sum(
+        map(lambda model: 2 ** (len(atoms) - len(model)), models)
+    )
+    return models, total_models_count
+
+
+def get_solver_options(use_ta):
     if use_ta:
         solver_options = {
             "dpll.allsat_minimize_model": "true",
@@ -23,23 +42,7 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options=None):
         }
     else:
         solver_options = {}
-
-    solver_options.update(options)
-    if atoms is None:
-        atoms = get_boolean_variables(formula)
-
-    atoms = sorted(atoms, key=lambda x: x.symbol_name())
-
-    with Solver(name="msat", solver_options=solver_options) as solver:
-        converter = solver.converter
-        assert formula == IdentityDagWalker().walk(formula)
-        solver.add_assertion(formula)
-        models = []
-        solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, converter, models))
-
-    total_models_count = sum(
-        map(lambda model: 2 ** (len(atoms) - len(model)), models))
-    return models, total_models_count
+    return solver_options
 
 
 def get_boolean_variables(formula: FNode):
@@ -81,20 +84,22 @@ def get_dict_model(mu):
 
 def check_models(ta, phi):
     # check every model in ta satisfies phi
-    ta_is_correct(phi, ta)
-    ta_is_complete(phi, ta)
+    assert ta_is_correct(phi, ta), "ta is not correct: {}\n{}".format(phi, pformat(ta))
+    assert ta_is_complete(phi, ta), "ta is not complete: {}\n{}".format(phi, pformat(ta))
 
 
 def ta_is_correct(phi, ta):
     for mu in ta:
         model = And(mu)
         formula = And(phi, model)
-        assert _is_sat(formula)
+        if not _is_sat(formula):
+            return False
+    return True
 
 
 def ta_is_complete(phi, ta):
     equiv = Iff(phi, Or(map(And, ta)))
-    assert _is_valid(equiv)
+    return _is_valid(equiv)
 
 
 def _is_sat(phi):
@@ -127,7 +132,7 @@ def negate_literal(literal):
     return Not(literal).simplify()
 
 
-class AIG:
+class AIGAdapter:
     def __init__(self, aig: _AIG):
         assert len(aig.outputs) == 1
         # assert len(aig.latches) == 0
@@ -138,7 +143,7 @@ class AIG:
         return repr(self.aig)
 
     @classmethod
-    def from_file(cls, file) -> "AIG":
+    def from_file(cls, file) -> "AIGAdapter":
         return cls(_to_aig(file))
 
     def gates(self) -> Tuple[Dict[int, str], int, Iterable[Tuple[int, int, int]]]:
@@ -153,12 +158,9 @@ class AIG:
             def __and__(self, other):
                 nonlocal count
                 nonlocal gates
-
                 count += 1
                 new = NodeAlg(count << 1)
-
                 right, left = sorted([self.lit, other.lit])
-
                 gates.append((new.lit, left, right))
                 return new
 

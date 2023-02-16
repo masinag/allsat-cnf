@@ -5,7 +5,7 @@ from local_tseitin.utils import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", help="increase output verbosity",
-                        action="store_true")
+                    action="store_true")
 parser.add_argument("-i", help="name of AIGER (AAG format) file", required=True)
 args = parser.parse_args()
 
@@ -23,14 +23,12 @@ cnf_models_basic, count_part_basic = get_allsat(cnf_basic, use_ta=True, atoms=im
 
 print("CNFIZED MODEL COUNT (BASIC TSEITIN): {}".format(count_part_basic))
 print("RETRIEVED MODELS: {}".format(len(cnf_models_basic)))
-#for assignment in cnf_models_basic:
+# for assignment in cnf_models_basic:
 #    print(assignment)
 
 print("***********************************")
 
 print("CNFIZED MODEL COUNT (GUARDED TSEITIN): {}".format(count_part))
 print("RETRIEVED MODELS: {}".format(len(cnf_models)))
-#for assignment in cnf_models:
+# for assignment in cnf_models:
 #    print(assignment)
-
-

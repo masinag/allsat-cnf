@@ -7,7 +7,7 @@ from os import path
 from pysmt.shortcuts import read_smtlib
 
 from benchmark.utils.parsing import get_full_name_mode
-from local_tseitin.utils import AIG
+from local_tseitin.utils import AIGAdapter
 
 
 def get_output_filename(args):
@@ -55,7 +55,7 @@ def write_result(args, res, output_file):
 
 
 def read_aig(filename):
-    return AIG.from_file(filename).to_pysmt()
+    return AIGAdapter.from_file(filename).to_pysmt()
 
 
 def read_formula_from_file(filename):

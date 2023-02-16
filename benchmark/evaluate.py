@@ -14,6 +14,7 @@ from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.utils import get_allsat as allsat
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
 from utils.run import run_with_timeout
+import sys
 
 MODELS_CHECK_MSG = "Checking models..."
 
@@ -41,6 +42,7 @@ def parse_args():
 
 
 def main():
+    sys.setrecursionlimit(10000)
     args = parse_args()
     output_file = get_output_filename(args)
     print("Output file: {}".format(output_file))

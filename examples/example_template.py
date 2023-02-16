@@ -22,9 +22,8 @@ for i in range(20):
     real_variables.append(x)
 
 cnfizers = {
-    "CND-CNF": (LocalTseitinCNFizerConds, {"expand_iff": False}),
-    "CND-CNF-EXPAND": (LocalTseitinCNFizerConds, {"expand_iff": True}),
-    "CND-CNF-AIG": (LocalTseitinCNFizerCondsAIG, {}),
+    "CND-CNF": (LocalTseitinCNFizerConds),
+    "CND-CNF-AIG": (LocalTseitinCNFizerCondsAIG),
 }
 i = 1
 
@@ -59,8 +58,8 @@ def make_example(formula, atoms=None):
     if args.v:
         pprint(non_cnf_models)
 
-    for cname, (cnfizer, kwargs) in cnfizers.items():
-        cnf = cnfizer(verbose=args.v, max_guards=args.g, **kwargs).convert_as_formula(formula)
+    for cname, cnfizer in cnfizers.items():
+        cnf = cnfizer(verbose=args.v, max_guards=args.g).convert_as_formula(formula)
         start_time = time.time()
         cnf_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
         final_time_cnf = time.time() - start_time

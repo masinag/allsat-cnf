@@ -4,7 +4,7 @@ from typing import Dict, Tuple, Iterable, Union, Optional
 from pysmt.shortcuts import *
 
 from local_tseitin.cnfizer import LocalTseitinCNFizer
-from local_tseitin.utils import is_cnf, AIG
+from local_tseitin.utils import is_cnf, AIGAdapter
 
 
 class GuardedAIG(LocalTseitinCNFizer):
@@ -101,9 +101,9 @@ class GuardedAIG(LocalTseitinCNFizer):
             #    print("{} and Not({}) and Not({}) -> Not({})".format(P, S, S1, P2))
             # self.all_clauses.append((Not(P), S, S1, Not(P2)))
 
-    def convert_as_formula(self, aig: Union[AIG, str], use_tseitin=False):
+    def convert_as_formula(self, aig: Union[AIGAdapter, str], use_tseitin=False):
         if isinstance(aig, str):
-            aig = AIG.from_file(aig)
+            aig = AIGAdapter.from_file(aig)
 
         inputs, output, gates = aig.gates()
         for i, name in inputs.items():
