@@ -2,10 +2,11 @@ import argparse
 import time
 from pprint import pprint
 
+from pysmt.shortcuts import *
+
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.conds_cnfizer_aig import LocalTseitinCNFizerCondsAIG
 from local_tseitin.utils import *
-from pysmt.shortcuts import *
 
 boolean_atoms = []
 for i in range(ord("A"), ord("Z") + 1):

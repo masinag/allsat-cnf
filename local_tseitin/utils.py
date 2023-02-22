@@ -1,3 +1,4 @@
+from itertools import filterfalse
 from pprint import pformat
 from typing import Dict, Tuple, Iterable
 
@@ -222,3 +223,20 @@ class AIGAdapter:
         output = omap.get(next(iter(circ.outputs))).node
 
         return output
+
+def unique_everseen(iterable, key=None):
+    """
+    Source: https://docs.python.org/3/library/itertools.html#itertools-recipes
+    """
+    seen = set()
+    seen_add = seen.add
+    if key is None:
+        for element in filterfalse(seen.__contains__, iterable):
+            seen_add(element)
+            yield element
+    else:
+        for element in iterable:
+            k = key(element)
+            if k not in seen:
+                seen_add(k)
+                yield element

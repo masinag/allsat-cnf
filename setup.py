@@ -13,7 +13,7 @@ VERSION = '0.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'pysmt @ git+ssh://git@github.com/masinag/pysmt@cnf-improve#egg=pysmt',
+    'pysmt',
     'py-aiger >= 6.2.0',
     'funcy >= 1.17',
     'psutil>=5.9.4',
@@ -21,6 +21,12 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
+    'test': ['pytest', 'pytest-cov', 'pytest-benchmark'],
+    'benchmark': [
+        'matplotlib',
+        'pandas',
+        'wmipa @ git+ssh://git@github.com/masinag/wmi-pa.git@uai22#egg=wmipa'
+    ],
 }
 
 here = os.path.abspath(os.path.dirname(__file__))

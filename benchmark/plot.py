@@ -19,6 +19,7 @@ label_step = 5
 ORDER = ["TTA", "AUTO", "NNF_AUTO", "ACT", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
 COLOR = {
     "AUTO": "red",
+    "NNF_AUTO": "black",
     "TTA": "blue",
     "ACT": "green",
     "POL": "orange",
@@ -69,7 +70,7 @@ def parse_inputs(input_files: List[str], with_repetitions: bool) -> pd.DataFrame
     return pd.DataFrame(data)
 
 
-def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_repetitions: bool, logscale=True):
+def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_repetitions: bool, logscale=False):
     data = data[param]
     ax = plt.gca()
     modes = data.columns.get_level_values(0).unique()
@@ -207,6 +208,12 @@ def main():
     scatter(output_dir, data, "time", filename, with_repetitions)
     scatter(output_dir, data, "models", filename, with_repetitions)
 
+    compare(output_dir, data, "time", "AUTO", "POL", filename, logscale=False)
+    compare(output_dir, data, "models", "AUTO", "POL", filename, logscale=False)
+
+    compare(output_dir, data, "time", "POL", "NNF_POL", filename, logscale=False)
+    compare(output_dir, data, "models", "POL", "NNF_POL", filename, logscale=False)
+
     compare(output_dir, data, "time", "CND", "NNF_CND", filename, logscale=False)
     compare(output_dir, data, "models", "CND", "NNF_CND", filename, logscale=False)
 
@@ -216,8 +223,8 @@ def main():
     compare(output_dir, data, "time", "NNF_POL", "CND", filename, logscale=False)
     compare(output_dir, data, "models", "NNF_POL", "CND", filename, logscale=False)
 
-    compare(output_dir, data, "time", "NNF_CND", "EXPAND_CND", filename, logscale=False)
-    compare(output_dir, data, "models", "NNF_CND", "EXPAND_CND", filename, logscale=False)
+    # compare(output_dir, data, "time", "NNF_CND", "EXPAND_CND", filename, logscale=False)
+    # compare(output_dir, data, "models", "NNF_CND", "EXPAND_CND", filename, logscale=False)
 
 
 if __name__ == "__main__":

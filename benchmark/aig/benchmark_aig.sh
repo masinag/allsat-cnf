@@ -17,8 +17,6 @@ dirname=$DIR/data/${archname%.*}
 # benchmarks with more than 1 model
 IFS=$'\n' read -d '' -r -a relevant_benchmarks <"relevant_benchmarks.txt"
 
-echo ${relevant_benchmarks[*]}
-
 # check if data DIR/data exists
 if [ ! -d $dirname ]; then
   tmpdata=$DIR/tmp_data.7z

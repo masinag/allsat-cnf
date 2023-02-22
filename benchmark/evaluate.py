@@ -1,9 +1,10 @@
 import argparse
 import os
+import sys
 import time
 
 from pysmt.environment import reset_env, get_env
-from pysmt.rewritings import PolarityCNFizer, nnf
+from pysmt.rewritings import nnf
 
 from benchmark.utils.fileio import get_output_filename, check_input_output, write_result, get_input_files, \
     read_formula_from_file
@@ -11,10 +12,10 @@ from benchmark.utils.logging import log
 from benchmark.utils.parsing import parse_mode
 from local_tseitin.cnfizer import Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
+from local_tseitin.polarity_cnfizer import PolarityCNFizer
 from local_tseitin.utils import get_allsat as allsat
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
 from utils.run import run_with_timeout
-import sys
 
 MODELS_CHECK_MSG = "Checking models..."
 
