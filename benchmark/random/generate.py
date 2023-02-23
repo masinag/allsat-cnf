@@ -9,9 +9,10 @@ from random import choice, randint, random, sample, seed, uniform
 from pysmt.shortcuts import (BOOL, LT, REAL, And, Bool, Not, Or, Plus, Real,
                              Symbol, Times, is_sat, write_smtlib)
 
+from benchmark.utils.fileio import check_output_input
+
 
 class ModelGenerator:
-
     TEMPL_REALS = "x_{}"
     TEMPL_BOOLS = "A_{}"
 
@@ -21,7 +22,7 @@ class ModelGenerator:
     def __init__(self, n_reals, n_bools, seedn,
                  templ_bools=TEMPL_BOOLS,
                  templ_reals=TEMPL_REALS):
-        assert(n_reals + n_bools > 0)
+        assert (n_reals + n_bools > 0)
 
         # initialize the real/boolean variables
         self.reals = []
@@ -127,23 +128,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def check_input_output(output_path, output_dir):
-    # check if dir exists
-    if (not path.exists(output_path)):
-        print("Folder '{}' does not exists".format(output_path))
-        sys.exit(1)
-    # check if this model is already created
-    if (path.exists(output_dir)):
-        print("A dataset of models with this parameters already exists in the output folder. Remove it and retry")
-        sys.exit(1)
-    # create dir
-    os.mkdir(output_dir)
-    print("Created folder '{}'".format(output_dir))
-
-
 def main():
     args = parse_args()
-    
+
     if args.seed is None:
         args.seed = int(time.time())
 
@@ -151,7 +138,8 @@ def main():
         args.reals, args.booleans, args.depth, args.models, args.seed)
     output_dir = path.join(args.output, output_dir)
 
-    check_input_output(args.output, output_dir)
+    check_output_input(args.output, output_dir)
+    os.mkdir(output_dir)
 
     # init generator
     gen = ModelGenerator(args.reals, args.booleans, seedn=args.seed)
@@ -164,10 +152,10 @@ def main():
         r=args.reals, b=args.booleans, d=args.depth, s=args.seed, templ="{n:0{d}}")
     for i in range(args.models):
         problem = gen.generate_problem(args.depth)
-        file_name = path.join(output_dir, template.format(n=i+1, d=digits))
+        file_name = path.join(output_dir, template.format(n=i + 1, d=digits))
         write_smtlib(problem, file_name)
-        print("\r"*100, end='')
-        print("Model {}/{}".format(i+1, args.models), end='')
+        print("\r" * 100, end='')
+        print("Model {}/{}".format(i + 1, args.models), end='')
 
     print()
     time_end = time.time()

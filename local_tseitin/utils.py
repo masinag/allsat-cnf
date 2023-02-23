@@ -99,17 +99,33 @@ def ta_is_correct(phi, ta):
 
 
 def ta_is_complete(phi, ta):
-    equiv = Iff(phi, Or(map(And, ta)))
-    return _is_valid(equiv)
+    tta, _ = get_allsat(phi, use_ta=False)
+    # check that for every model in tta there is a corresponding supermodel in ta
+    for eta in tta:
+        if not any(eta.issuperset(rewalk(mu)) for mu in ta):
+            return False
+    return True
+    # equiv = Iff(phi, Or(map(And, ta)))
+    # return _is_valid(equiv)
 
 
 def _is_sat(phi):
-    phi = IdentityDagWalker().walk(phi)
+    phi = rewalk(phi)
     return is_sat(phi)
 
 
+def rewalk(phi):
+    if isinstance(phi, list):
+        return [rewalk(a) for a in phi]
+    if isinstance(phi, tuple):
+        return tuple(rewalk(a) for a in phi)
+    if isinstance(phi, set):
+        return {rewalk(a) for a in phi}
+    return IdentityDagWalker().walk(phi)
+
+
 def _is_valid(phi):
-    phi = IdentityDagWalker().walk(phi)
+    phi = rewalk(phi)
     return is_valid(phi)
 
 

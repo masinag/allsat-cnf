@@ -6,7 +6,7 @@ import time
 from pysmt.environment import reset_env, get_env
 from pysmt.rewritings import nnf
 
-from benchmark.utils.fileio import get_output_filename, check_input_output, write_result, get_input_files, \
+from benchmark.utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
     read_formula_from_file
 from benchmark.utils.logging import log
 from benchmark.utils.parsing import parse_mode
@@ -48,7 +48,7 @@ def main():
     output_file = get_output_filename(args)
     print("Output file: {}".format(output_file))
 
-    check_input_output(args.input, args.output, output_file)
+    check_output_input(args.output, output_file, args.input)
     input_files = get_input_files(args.input)
 
     time_start = time.time()
@@ -83,7 +83,10 @@ def setup():
 
 
 def get_allsat_or_timeout(phi, args):
-    atoms = get_lra_atoms(phi).union(get_boolean_variables(phi))
+    atoms = get_boolean_variables(phi).union(
+        {a for a in get_lra_atoms(phi) if not a.is_equals()}
+    )
+
     mode, expand_iff, do_nnf = parse_mode(args.mode)
     phi = preprocess_formula(phi, expand_iff, do_nnf, mode)
     options = {}

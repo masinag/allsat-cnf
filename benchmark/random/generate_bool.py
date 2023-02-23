@@ -8,6 +8,8 @@ from os import path
 import sys
 import os
 
+from benchmark.utils.fileio import check_output_input
+
 
 def random_formula(depth, atoms, operators, weights):
     if depth == 0:
@@ -59,19 +61,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def check_input_output(output_path, output_dir):
-    # check if dir exists
-    if (not path.exists(output_path)):
-        print("Folder '{}' does not exists".format(output_path))
-        sys.exit(1)
-    # check if this model is already created
-    if (path.exists(output_dir)):
-        print("A dataset of models with this parameters already exists in the output folder. Remove it and retry")
-        sys.exit(1)
-    # create dir
-    os.mkdir(output_dir)
-    print("Created folder '{}'".format(output_dir))
-
 
 def main():
     args = parse_args()
@@ -85,7 +74,8 @@ def main():
         args.booleans, args.depth, args.models, args.seed)
     output_dir = path.join(args.output, output_dir)
 
-    check_input_output(args.output, output_dir)
+    check_output_input(args.output, output_dir)
+    os.mkdir(output_dir)
 
     # init generator
     boolean_atoms = [Symbol(chr(i), BOOL) for i in range(ord("A"), ord("A") + args.booleans)]

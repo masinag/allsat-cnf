@@ -25,18 +25,18 @@ def generate_output_filename_from_args(args):
     return output_file
 
 
-def check_input_output(input_dir, output_dir, output_file):
-    if not path.exists(input_dir):
+def check_output_input(output_dir, output_file, input_dir=None):
+    if not path.exists(output_dir):
+        print("'{}' does not exists".format(output_dir))
+        sys.exit(1)
+
+    if path.exists(output_file):
+        print("'{}' already exists. Remove it and retry".format(output_file))
+        sys.exit(1)
+
+    if input_dir is not None and not path.exists(input_dir):
         print("Folder '{}' does not exists".format(input_dir))
         sys.exit(1)
-
-    if not path.exists(output_dir):
-        print("Folder '{}' does not exists".format(output_dir))
-        sys.exit(1)
-
-    if output_file is not None:
-        if path.exists(output_file):
-            print("File '{}' already exists".format(output_file))
 
 
 def write_result(args, res, output_file):
