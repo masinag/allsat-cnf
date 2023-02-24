@@ -3,10 +3,10 @@ def parse_mode(mode):
     do_nnf = False
     if mode.startswith("EXPAND_"):
         expand_iff = True
-        mode.lstrip("EXPAND_")
+        mode = mode.lstrip("EXPAND_")
     if mode.startswith("NNF_"):
         do_nnf = True
-        mode.lstrip("NNF_")
+        mode = mode.lstrip("NNF_")
 
     return mode, expand_iff, do_nnf
 
