@@ -59,12 +59,16 @@ def main():
         log(PARTIAL_MODELS_MSG, filename, i, input_files)
         try:
             total_time, models = get_allsat_or_timeout(phi, args)
-            if should_check_models(args):
-                log(MODELS_CHECK_MSG, filename, i, input_files, len(models))
-                check_models_or_timeout(models, phi, args)
         except TimeoutError:
             total_time = args.timeout
             models = []
+
+        if models and should_check_models(args):
+            log(MODELS_CHECK_MSG, filename, i, input_files, len(models))
+            try:
+                check_models_or_timeout(models, phi, args)
+            except TimeoutError:
+                pass
 
         res = {
             "filename": filename,
@@ -125,6 +129,7 @@ def preprocess_formula(phi, expand_iff, do_nnf, mode):
     if mode == "POL":
         phi = PolarityCNFizer().convert_as_formula(phi)
     elif mode == "CND":
+        phi = Preprocessor(binary_operators=True).convert_as_formula(phi)
         phi = LocalTseitinCNFizerConds().convert_as_formula(phi)
 
     return phi
