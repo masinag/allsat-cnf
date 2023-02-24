@@ -12,6 +12,7 @@ from benchmark.utils.logging import log
 from benchmark.utils.parsing import parse_mode
 from local_tseitin.cnfizer import Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
+from local_tseitin.label_cnf import LabelCNFizer
 from local_tseitin.polarity_cnfizer import PolarityCNFizer
 from local_tseitin.utils import get_allsat as allsat
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
@@ -23,7 +24,7 @@ PARTIAL_MODELS_MSG = "Generating partial models..."
 
 
 def parse_args():
-    modes = ["TTA", "AUTO", "NNF_AUTO", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
+    modes = ["TTA", "LAB", "NNF_LAB", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
 
     parser = argparse.ArgumentParser(description='Compute WMI on models')
     parser.add_argument('input', help='Folder with .json files')
@@ -128,6 +129,8 @@ def preprocess_formula(phi, expand_iff, do_nnf, mode):
         phi = nnf(phi)
     if mode == "POL":
         phi = PolarityCNFizer().convert_as_formula(phi)
+    if mode == "LAB":
+        phi = LabelCNFizer().convert_as_formula(phi)
     elif mode == "CND":
         phi = Preprocessor(binary_operators=True).convert_as_formula(phi)
         phi = LocalTseitinCNFizerConds().convert_as_formula(phi)

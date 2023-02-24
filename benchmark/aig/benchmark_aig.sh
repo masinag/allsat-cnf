@@ -48,7 +48,7 @@ for dir in $(ls -d $DIR/data/* | grep test); do
   res_dir=$(sed "s+data+results+g" <<<$dir)
   mkdir -p "$res_dir"
   echo $dir
-  for mode in NNF_POL POL; do
+  for mode in LAB NNF_LAB CND NNF_CND NNF_POL POL; do
     python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $REPETITIONS --timeout $TIMEOUT
   done
 done
