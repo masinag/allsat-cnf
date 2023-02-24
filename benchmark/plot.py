@@ -16,10 +16,10 @@ ticks_fs = 15
 lw = 2.5  # line width
 figsize = (10, 8)
 label_step = 5
-ORDER = ["TTA", "AUTO", "NNF_AUTO", "ACT", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
+ORDER = ["TTA", "LAB", "NNF_LAB", "ACT", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
 COLOR = {
-    "AUTO": "red",
-    "NNF_AUTO": "black",
+    "LAB": "red",
+    "NNF_LAB": "black",
     "TTA": "blue",
     "ACT": "green",
     "POL": "orange",
@@ -74,11 +74,11 @@ def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_r
     data = data[param]
     ax = plt.gca()
     modes = data.columns.get_level_values(0).unique()
-    auto_mode = f"AUTO{'_REP' if with_repetitions else ''}"
+    lab_mode = f"LAB{'_REP' if with_repetitions else ''}"
     tta_mode = f"TTA{'_REP' if with_repetitions else ''}"
     for mode in filter(lambda x: x in modes, ORDER):
-        if mode not in [auto_mode, tta_mode]:
-            ax = data.plot(kind="scatter", x=auto_mode, y=mode, logy=logscale, label=mode, color=COLOR[mode],
+        if mode not in [lab_mode, tta_mode]:
+            ax = data.plot(kind="scatter", x=lab_mode, y=mode, logy=logscale, label=mode, color=COLOR[mode],
                            marker="x", ax=ax)
     if not logscale:
         ax.set_aspect("equal")
@@ -208,8 +208,8 @@ def main():
     scatter(output_dir, data, "time", filename, with_repetitions)
     scatter(output_dir, data, "models", filename, with_repetitions)
 
-    compare(output_dir, data, "time", "AUTO", "POL", filename, logscale=False)
-    compare(output_dir, data, "models", "AUTO", "POL", filename, logscale=False)
+    compare(output_dir, data, "time", "LAB", "POL", filename, logscale=False)
+    compare(output_dir, data, "models", "LAB", "POL", filename, logscale=False)
 
     compare(output_dir, data, "time", "POL", "NNF_POL", filename, logscale=False)
     compare(output_dir, data, "models", "POL", "NNF_POL", filename, logscale=False)

@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import pysmt.operators as op
 import pysmt.typing as types
@@ -12,13 +12,13 @@ T_CNF = Tuple[Tuple[FNode]]
 
 
 class PolarityDagWalker(DagWalker):
-    def iter_walk(self, formula: FNode, **kwargs) -> FNode:
-        self.stack.append((False, formula, True))
+    def iter_walk(self, formula: FNode, top_pol: Optional[bool] = True, **kwargs) -> FNode:
+        self.stack.append((False, formula, top_pol))
         self._process_stack(**kwargs)
-        res_key = self._get_key(formula, pol=True, **kwargs)
+        res_key = self._get_key(formula, pol=top_pol, **kwargs)
         return self.memoization[res_key]
 
-    def _push_with_children_to_stack(self, formula: FNode, pol: bool = True, **kwargs) -> None:
+    def _push_with_children_to_stack(self, formula: FNode, pol: Optional[bool] = None, **kwargs) -> None:
         self.stack.append((True, formula, pol))
 
         for s, p in self._get_children(formula, pol):
@@ -35,10 +35,10 @@ class PolarityDagWalker(DagWalker):
             else:
                 self._push_with_children_to_stack(formula, pol, **kwargs)
 
-    def _get_key(self, formula: FNode, pol: bool = True, **kwargs) -> Tuple[FNode, bool]:
+    def _get_key(self, formula: FNode, pol: Optional[bool] = None, **kwargs) -> Tuple[FNode, bool]:
         return formula, pol
 
-    def _compute_node_result(self, formula: FNode, pol: bool = True, **kwargs):
+    def _compute_node_result(self, formula: FNode, pol: Optional[bool] = None, **kwargs):
         key = self._get_key(formula, pol, **kwargs)
         if key not in self.memoization:
             try:
@@ -53,24 +53,28 @@ class PolarityDagWalker(DagWalker):
         else:
             pass
 
-    def _get_children(self, formula: FNode, pol: bool = True):
+    def _get_children(self, formula: FNode, pol: Optional[bool] = None):
+        if pol is None:
+            eq_pol, inv_pol = None, None
+        else:
+            eq_pol, inv_pol = pol, not pol
+
         if formula.is_not():
-            return [(formula.arg(0), not pol)]
+            return [(formula.arg(0), inv_pol)]
 
         elif formula.is_implies():
-            return [(formula.arg(0), not pol), (formula.arg(1), pol)]
+            return [(formula.arg(0), inv_pol), (formula.arg(1), eq_pol)]
 
         elif formula.is_iff():
-            return [(formula.arg(0), pol), (formula.arg(0), not pol),
-                    (formula.arg(1), pol), (formula.arg(1), not pol)]
+            return [(formula.arg(0), None), (formula.arg(1), None)]
 
         elif formula.is_and() or formula.is_or() or formula.is_quantifier():
-            return [(a, pol) for a in formula.args()]
+            return [(a, eq_pol) for a in formula.args()]
 
         elif formula.is_ite():
             assert self.env.stc.get_type(formula).is_bool_type()
             i, t, e = formula.args()
-            return [(i, pol), (i, not pol), (t, pol), (e, not pol)]
+            return [(i, None), (t, eq_pol), (e, inv_pol)]
 
         else:
             assert formula.is_str_op() or \
@@ -136,31 +140,33 @@ class PolarityCNFizer(PolarityDagWalker):
     def walk_quantifier(self, formula: FNode, args, **kwargs):
         raise NotImplementedError("CNFizer does not support quantifiers")
 
-    def walk_and(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: bool = True, **kwargs):
+    def walk_and(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: Optional[bool] = None, **kwargs):
         if len(args) == 1:
             return args[0]
         args_labels, args_cnfs = zip(*args)
 
         k = self._key_var(formula)
-        if pol:
+        _cnf = self.TRUE_CNF
+        if pol is None or pol is True:
             # noinspection PyTypeChecker
-            _cnf = tuple(tuple([self.mgr.Not(k), a]) for a in args_labels)
-        else:
-            _cnf = tuple([tuple([k] + [self.mgr.Not(a).simplify() for a in args_labels])])
+            _cnf += tuple(tuple([self.mgr.Not(k), a]) for a in args_labels)
+        if pol is None or pol is False:
+            _cnf += tuple([tuple([k] + [self.mgr.Not(a).simplify() for a in args_labels])])
 
         return k, self._merge_cnfs(_cnf, *args_cnfs)
 
-    def walk_or(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: bool = True, **kwargs):
+    def walk_or(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: Optional[bool] = None, **kwargs):
         if len(args) == 1:
             return args[0]
         args_labels, args_cnfs = zip(*args)
 
         k = self._key_var(formula)
-        if pol:
-            _cnf = tuple([tuple([self.mgr.Not(k)] + [a for a in args_labels])])
-        else:
+        _cnf = self.TRUE_CNF
+        if pol is None or pol is True:
+            _cnf += tuple([tuple([self.mgr.Not(k)] + [a for a in args_labels])])
+        if pol is None or pol is False:
             # noinspection PyTypeChecker
-            _cnf = tuple(tuple([k, self.mgr.Not(a).simplify()]) for a in args_labels)
+            _cnf += tuple(tuple([k, self.mgr.Not(a).simplify()]) for a in args_labels)
 
         return k, self._merge_cnfs(_cnf, *args_cnfs)
 
@@ -173,7 +179,7 @@ class PolarityCNFizer(PolarityDagWalker):
         else:
             return self.mgr.Not(a).simplify(), _cnf
 
-    def walk_implies(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: bool = True, **kwargs):
+    def walk_implies(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: Optional[bool] = None, **kwargs):
         a, cnf_a = args[0]
         b, cnf_b = args[1]
 
@@ -181,18 +187,17 @@ class PolarityCNFizer(PolarityDagWalker):
         not_a = self.mgr.Not(a).simplify()
         not_b = self.mgr.Not(b).simplify()
         not_k = self.mgr.Not(k)
-        if pol:
-            _cnf = tuple([tuple([not_a, b, not_k])])
+        _cnf = self.TRUE_CNF
+        if pol is None or pol is True:
+            _cnf += tuple([tuple([not_a, b, not_k])])
         else:
-            _cnf = tuple([tuple([a, k]), tuple([not_b, k])])
+            _cnf += tuple([tuple([a, k]), tuple([not_b, k])])
 
         return k, self._merge_cnfs(_cnf, cnf_a, cnf_b)
 
-    def walk_iff(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: bool = True, **kwargs):
-        a, cnf_ap = args[0]
-        _, cnf_an = args[1]
-        b, cnf_bp = args[2]
-        _, cnf_bn = args[3]
+    def walk_iff(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], **kwargs):
+        a, cnf_a = args[0]
+        b, cnf_b = args[1]
 
         k = self._key_var(formula)
         not_a: FNode = self.mgr.Not(a).simplify()
@@ -204,7 +209,7 @@ class PolarityCNFizer(PolarityDagWalker):
                       tuple([a, not_b, not_k]),
                       tuple([a, b, k])])
 
-        return k, self._merge_cnfs(_cnf, cnf_ap, cnf_an, cnf_bp, cnf_bn)
+        return k, self._merge_cnfs(_cnf, cnf_a, cnf_b)
 
     def walk_symbol(self, formula: FNode, **kwargs):
         if formula.is_symbol(types.BOOL):
@@ -219,7 +224,7 @@ class PolarityCNFizer(PolarityDagWalker):
         else:
             return PolarityCNFizer.THEORY_PLACEHOLDER
 
-    def walk_ite(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: bool = True, **kwargs):
+    def walk_ite(self, formula: FNode, args: List[Tuple[FNode, T_CNF]], pol: Optional[bool] = None, **kwargs):
         if any(a == PolarityCNFizer.THEORY_PLACEHOLDER for a in args):
             return PolarityCNFizer.THEORY_PLACEHOLDER
         (i, cnf_ip), (_, cnf_in), (t, cnf_t), (e, cnf_e) = args
@@ -260,3 +265,5 @@ class PolarityCNFizer(PolarityDagWalker):
     def _merge_cnfs(self, *cnfs: T_CNF) -> T_CNF:
         """Merge CNFs into a single CNF."""
         return tuple(unique_everseen(chain(*cnfs)))
+
+
