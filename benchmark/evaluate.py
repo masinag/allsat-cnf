@@ -14,7 +14,7 @@ from local_tseitin.cnfizer import Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.label_cnf import LabelCNFizer
 from local_tseitin.polarity_cnfizer import PolarityCNFizer
-from local_tseitin.utils import get_allsat as allsat
+from local_tseitin.utils import get_allsat as allsat, is_cnf
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
 from utils.run import run_with_timeout
 
@@ -58,23 +58,30 @@ def main():
         setup()
         phi = read_formula_from_file(filename)
         log(PARTIAL_MODELS_MSG, filename, i, input_files)
+        enum_timed_out = False
         try:
-            total_time, models = get_allsat_or_timeout(phi, args)
+            n_clauses, total_time, models = get_allsat_or_timeout(phi, args)
         except TimeoutError:
+            n_clauses = 0
             total_time = args.timeout
             models = []
+            enum_timed_out = True
 
+        check_timed_out = False
         if models and should_check_models(args):
             log(MODELS_CHECK_MSG, filename, i, input_files, len(models))
             try:
                 check_models_or_timeout(models, phi, args)
             except TimeoutError:
-                pass
+                check_timed_out = True
 
         res = {
             "filename": filename,
+            "n_clauses": n_clauses,
             "models": len(models),
             "time": total_time,
+            "enum_timed_out": enum_timed_out,
+            "check_timed_out": check_timed_out,
         }
         write_result(args, res, output_file)
 
@@ -94,6 +101,8 @@ def get_allsat_or_timeout(phi, args):
 
     mode, expand_iff, do_nnf = parse_mode(args.mode)
     phi = preprocess_formula(phi, expand_iff, do_nnf, mode)
+    assert is_cnf(phi)
+    n_clauses = len(phi.args())
     options = {}
     if args.with_repetitions:
         options["dpll.allsat_allow_duplicates"] = "true"
@@ -111,11 +120,11 @@ def get_allsat_or_timeout(phi, args):
     )
     time_total = time.time() - time_init
 
-    return time_total, models
+    return n_clauses, time_total, models
 
 
 def should_check_models(args):
-    return not args.no_check and args.mode not in ["TTA", "AUTO"]
+    return not args.no_check and args.mode != "TTA"
 
 
 def check_models_or_timeout(models, phi, args):
