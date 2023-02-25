@@ -59,12 +59,15 @@ def main():
         phi = read_formula_from_file(filename)
         log(PARTIAL_MODELS_MSG, filename, i, input_files)
         enum_timed_out = False
+        n_clauses = 0
+        total_time = 0
+        models = []
         try:
-            n_clauses, total_time, models = get_allsat_or_timeout(phi, args)
+            res_gen = get_allsat_or_timeout(phi, args)
+            n_clauses = next(res_gen)
+            models = next(res_gen)
+            total_time = next(res_gen)
         except TimeoutError:
-            n_clauses = 0
-            total_time = args.timeout
-            models = []
             enum_timed_out = True
 
         check_timed_out = False
@@ -103,6 +106,7 @@ def get_allsat_or_timeout(phi, args):
     phi = preprocess_formula(phi, expand_iff, do_nnf, mode)
     assert is_cnf(phi)
     n_clauses = len(phi.args())
+    yield n_clauses
     options = {}
     if args.with_repetitions:
         options["dpll.allsat_allow_duplicates"] = "true"
@@ -119,8 +123,8 @@ def get_allsat_or_timeout(phi, args):
         options=options
     )
     time_total = time.time() - time_init
-
-    return n_clauses, time_total, models
+    yield models
+    yield time_total
 
 
 def should_check_models(args):
