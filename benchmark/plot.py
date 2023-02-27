@@ -8,51 +8,30 @@ import matplotlib.pyplot as plt
 # import numpy as np
 import pandas as pd
 
-Param = Literal["time", "models"]
+from benchmark.utils.fileio import get_input_files, check_output_input
+from benchmark.utils.parsing import Mode
+from benchmark.utils.plotting.cactus_plotter import CactusPlotter
+from benchmark.utils.plotting.scatter_plotter import ScatterPlotter
 
 plt.style.use("ggplot")
-fs = 10  # font size
-ticks_fs = 15
-lw = 2.5  # line width
-figsize = (10, 8)
-label_step = 5
-ORDER = ["TTA", "LAB", "NNF_LAB", "ACT", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
+
+ORDER: List[Mode] = [Mode.TTA, Mode.LAB, Mode.NNF_LAB, Mode.POL, Mode.NNF_POL, Mode.CND, Mode.NNF_CND, Mode.EXPAND_CND]
+
 COLOR = {
-    "LAB": "red",
-    "NNF_LAB": "black",
-    "TTA": "blue",
-    "ACT": "green",
-    "POL": "orange",
-    "NNF_POL": "purple",
-    "CND": "brown",
-    "NNF_CND": "teal",
-    "EXPAND_CND": "gray",
+    Mode.LAB: "red",
+    Mode.NNF_LAB: "black",
+    Mode.TTA: "blue",
+    Mode.POL: "orange",
+    Mode.NNF_POL: "purple",
+    Mode.CND: "brown",
+    Mode.NNF_CND: "teal",
+    Mode.EXPAND_CND: "gray",
 }
-ORDER += [f"{mode}_REP" for mode in ORDER]
-COLOR.update({f"{mode}_REP": COLOR[mode] for mode in COLOR})
 
 
 def error(msg=""):
     print(msg)
     sys.exit(1)
-
-
-def get_input_files(input_dirs: List[str]) -> List[str]:
-    input_files = []
-    for input_dir in input_dirs:
-        if not os.path.exists(input_dir):
-            error("Input folder '{}' does not exists".format(input_dir))
-        for filename in os.listdir(input_dir):
-            filepath = os.path.join(input_dir, filename)
-            if os.path.isfile(filepath):
-                _, ext = os.path.splitext(filepath)
-                if ext == ".json":
-                    input_files.append(filepath)
-    if not input_files:
-        error("No .json file found")
-    input_files = sorted(input_files)
-    print("Files found:\n\t{}".format("\n\t".join(input_files)))
-    return input_files
 
 
 def parse_inputs(input_files: List[str], with_repetitions: bool) -> pd.DataFrame:
@@ -68,92 +47,6 @@ def parse_inputs(input_files: List[str], with_repetitions: bool) -> pd.DataFrame
         data.extend(result_out["results"])
 
     return pd.DataFrame(data)
-
-
-def scatter(outdir: str, data: pd.DataFrame, param: Param, filename: str, with_repetitions: bool, logscale=False):
-    data = data[param]
-    ax = plt.gca()
-    modes = data.columns.get_level_values(0).unique()
-    lab_mode = f"LAB{'_REP' if with_repetitions else ''}"
-    tta_mode = f"TTA{'_REP' if with_repetitions else ''}"
-    for mode in filter(lambda x: x in modes, ORDER):
-        if mode not in [lab_mode, tta_mode]:
-            ax = data.plot(kind="scatter", x=lab_mode, y=mode, logy=logscale, label=mode, color=COLOR[mode],
-                           marker="x", ax=ax)
-    if not logscale:
-        ax.set_aspect("equal")
-        x0, x1 = ax.get_xlim()
-        y0, y1 = ax.get_ylim()
-        ax.set_xlim(min(x0, y0), max(x1, y1))
-        ax.set_ylim(min(x0, y0), max(x1, y1))
-    plt.legend(loc=6, fontsize=fs)
-    # axes labels
-    plt.xlabel(f"MathSAT CNF ({param})", fontsize=fs)
-    plt.ylabel(f"Custom CNF ({param})", fontsize=fs)
-    # save figure
-    outfile = os.path.join(outdir, "{}_scatter{}.png".format(param, filename))
-    plt.savefig(outfile, bbox_inches='tight')
-    print("created {}".format(outfile))
-    plt.clf()
-
-
-def compare(outdir: str, data: pd.DataFrame, param: Param, modex: str, modey: str, filename: str, logscale=True):
-    data = data[param]
-    ax = data.plot(kind="scatter", x=modex, y=modey, logy=logscale, color=COLOR[modex],
-                   marker="x")
-    # plot bisector
-    x0, x1 = ax.get_xlim()
-    y0, y1 = ax.get_ylim()
-    ax.plot([min(x0, y0), max(x1, y1)], [min(x0, y0), max(x1, y1)], color="black", linestyle="--")
-    if not logscale:
-        ax.set_aspect("equal")
-        x0, x1 = ax.get_xlim()
-        y0, y1 = ax.get_ylim()
-        ax.set_xlim(min(x0, y0), max(x1, y1))
-        ax.set_ylim(min(x0, y0), max(x1, y1))
-    plt.legend(loc=6, fontsize=fs)
-    # axes labels
-    plt.xlabel(f"{modex} ({param})", fontsize=fs)
-    plt.ylabel(f"{modey} ({param})", fontsize=fs)
-    # save figure
-    outfile = os.path.join(outdir, "{}_compare_{}_vs_{}{}.png".format(param, modex, modey, filename))
-    plt.savefig(outfile, bbox_inches='tight')
-    print("created {}".format(outfile))
-    plt.clf()
-
-
-def plot_data(outdir: str, data: pd.DataFrame, param: Param, xlabel: str, ylabel: str, filename: str):
-    n_problems = max(data.index) + 1
-
-    plt.figure(figsize=figsize)
-
-    modes = data.columns.get_level_values(1).unique()
-    print(modes)
-    modes = [mode for mode in ORDER if mode in modes]
-    print(modes)
-    for mode in modes:
-        data[param][mode].sort_values(ignore_index=True).plot(linewidth=lw, color=COLOR[mode],
-                                                              label=mode)
-
-    # legend
-    plt.legend(loc=6, fontsize=fs)
-    # axes labels
-    plt.xlabel(xlabel, fontsize=fs)
-    plt.ylabel(ylabel, fontsize=fs)
-    # xticks
-    # positions = list(range(0, n_problems, label_step))
-    # labels = list(range(frm or 0, to or total_problems, label_step))
-
-    # plt.xticks(positions, labels, fontsize=ticks_fs)
-    # plt.yticks(fontsize=ticks_fs, rotation=0)
-    # plt.subplots_adjust(wspace=0.3, hspace=0.3)
-    # if title:
-    #     plt.title(title, fontsize=fs)
-
-    outfile = os.path.join(outdir, "{}{}.png".format(param, filename))
-    plt.savefig(outfile, bbox_inches='tight')
-    print("created {}".format(outfile))
-    plt.clf()
 
 
 def group_data(data: pd.DataFrame):
@@ -181,10 +74,8 @@ def parse_args():
                         help="Output folder where to put the plots (default: cwd)")
     parser.add_argument("-f", "--filename", default="",
                         help="Filename suffix (default: '')")
-    parser.add_argument("-r", "--with-repetitions", action="store_true", default=False,
-                        help="Plot results for TA with repetitions")
-    # parser.add_argument("--cactus", action="store_true",
-    #                     help="If true use cactus plot")
+    # parser.add_argument("-r", "--with-repetitions", action="store_true", default=False,
+    #                     help="Plot results for TA with repetitions")
     return parser.parse_args()
 
 
@@ -193,38 +84,20 @@ def main():
     inputs: List[str] = args.input
     output_dir: str = args.output
     filename: str = args.filename
-    with_repetitions: bool = args.with_repetitions
 
-    if not os.path.exists(output_dir):
-        error("Output folder '{}' does not exists".format(output_dir))
+    check_output_input(output_dir, "", inputs)
 
     input_files = get_input_files(inputs)
-    data: pd.DataFrame = parse_inputs(input_files, with_repetitions)
+    data: pd.DataFrame = parse_inputs(input_files, with_repetitions=False)
     data: pd.DataFrame = group_data(data)
-    xlabel = "Number of problems solved"
 
-    plot_data(output_dir, data, "time", xlabel, "Time (s)", filename)
-    plot_data(output_dir, data, "models", xlabel, "Number of models", filename)
-    scatter(output_dir, data, "time", filename, with_repetitions)
-    scatter(output_dir, data, "models", filename, with_repetitions)
+    cactus_plotter = CactusPlotter(data, output_dir, filename, COLOR, ORDER)
+    cactus_plotter.plot_models()
+    cactus_plotter.plot_time()
 
-    compare(output_dir, data, "time", "LAB", "POL", filename, logscale=False)
-    compare(output_dir, data, "models", "LAB", "POL", filename, logscale=False)
-
-    compare(output_dir, data, "time", "POL", "NNF_POL", filename, logscale=False)
-    compare(output_dir, data, "models", "POL", "NNF_POL", filename, logscale=False)
-
-    compare(output_dir, data, "time", "CND", "NNF_CND", filename, logscale=False)
-    compare(output_dir, data, "models", "CND", "NNF_CND", filename, logscale=False)
-
-    compare(output_dir, data, "time", "NNF_POL", "NNF_CND", filename, logscale=False)
-    compare(output_dir, data, "models", "NNF_POL", "NNF_CND", filename, logscale=False)
-
-    compare(output_dir, data, "time", "NNF_POL", "CND", filename, logscale=False)
-    compare(output_dir, data, "models", "NNF_POL", "CND", filename, logscale=False)
-
-    # compare(output_dir, data, "time", "NNF_CND", "EXPAND_CND", filename, logscale=False)
-    # compare(output_dir, data, "models", "NNF_CND", "EXPAND_CND", filename, logscale=False)
+    scatter_plotter = ScatterPlotter(data, output_dir, filename, COLOR, ORDER)
+    scatter_plotter.plot_models_all_vs_all()
+    scatter_plotter.plot_time_all_vs_all()
 
 
 if __name__ == "__main__":

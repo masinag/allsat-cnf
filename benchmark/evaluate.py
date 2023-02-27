@@ -6,16 +6,16 @@ import time
 from pysmt.environment import reset_env, get_env
 from pysmt.rewritings import nnf
 
-from benchmark.utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
-    read_formula_from_file
-from benchmark.utils.logging import log
-from benchmark.utils.parsing import parse_mode
 from local_tseitin.cnfizer import Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.label_cnf import LabelCNFizer
 from local_tseitin.polarity_cnfizer import PolarityCNFizer
 from local_tseitin.utils import get_allsat as allsat, is_cnf
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
+from utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
+    read_formula_from_file
+from utils.logging import log
+from utils.parsing import parse_mode, Mode
 from utils.run import run_with_timeout
 
 MODELS_CHECK_MSG = "Checking models..."
@@ -24,15 +24,13 @@ PARTIAL_MODELS_MSG = "Generating partial models..."
 
 
 def parse_args():
-    modes = ["TTA", "LAB", "NNF_LAB", "POL", "NNF_POL", "CND", "NNF_CND", "EXPAND_CND"]
-
-    parser = argparse.ArgumentParser(description='Compute WMI on models')
+    parser = argparse.ArgumentParser(description='Enumerate models of formulas')
     parser.add_argument('input', help='Folder with .json files')
     # parser.add_argument('-i', '--input-type', required=True,
     #                     help='Input type', choices=input_types.keys())
     parser.add_argument('-o', '--output', default=os.getcwd(),
                         help='Output folder where to save the result (default: cwd)')
-    parser.add_argument('-m', '--mode', choices=modes,
+    parser.add_argument('-m', '--mode', choices=[m.value for m in Mode],
                         required=True, help='Mode to use')
     parser.add_argument('-r', '--with-repetitions', action='store_true',
                         help='Allow generating models with repetitions')
@@ -50,7 +48,7 @@ def main():
     print("Output file: {}".format(output_file))
 
     check_output_input(args.output, output_file, args.input)
-    input_files = get_input_files(args.input)
+    input_files = get_input_files([args.input])
 
     time_start = time.time()
 
@@ -59,19 +57,20 @@ def main():
         phi = read_formula_from_file(filename)
         log(PARTIAL_MODELS_MSG, filename, i, input_files)
         enum_timed_out = False
-        n_clauses = 0
-        total_time = 0
-        models = []
+        n_clauses = None
+        total_time = None
+        models = None
         try:
             res_gen = get_allsat_or_timeout(phi, args)
             n_clauses = next(res_gen)
             models = next(res_gen)
             total_time = next(res_gen)
         except TimeoutError:
+            total_time = args.timeout
             enum_timed_out = True
 
         check_timed_out = False
-        if models and should_check_models(args):
+        if not enum_timed_out and should_check_models(args):
             log(MODELS_CHECK_MSG, filename, i, input_files, len(models))
             try:
                 check_models_or_timeout(models, phi, args)
