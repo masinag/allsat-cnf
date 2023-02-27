@@ -26,7 +26,7 @@ def generate_output_filename_from_args(args):
     return output_file
 
 
-def check_output_input(output_dir: str, output_file: str, input_dir: Optional[Union[str | List[str]]] = None):
+def check_output_input(output_dir: str, output_file: str, input_dir: Optional[Union[str, List[str]]] = None):
     if not path.exists(output_dir):
         print("'{}' does not exists".format(output_dir))
         sys.exit(1)
