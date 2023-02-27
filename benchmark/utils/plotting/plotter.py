@@ -4,7 +4,7 @@ import pandas as pd
 
 from ..parsing import Mode
 
-Param = Literal["time", "models"]
+Param = Literal["time", "models", "n_clauses"]
 
 
 class Plotter:

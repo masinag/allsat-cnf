@@ -15,6 +15,9 @@ class ScatterPlotter(Plotter):
     def plot_time_all_vs_all(self):
         self._plot_all_vs_all("time")
 
+    def plot_size_all_vs_all(self):
+        self._plot_all_vs_all("n_clauses")
+
     def _plot_all_vs_all(self, param: Param):
         modes = self.get_modes()
         for mode1, mode2 in itertools.combinations(modes, 2):

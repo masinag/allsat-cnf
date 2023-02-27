@@ -54,7 +54,8 @@ def group_data(data: pd.DataFrame):
     data = data \
         .groupby(["filename", "mode"]) \
         .aggregate(time=("time", "min"),
-                   models=("models", "min")) \
+                   models=("models", "min"),
+                   n_clauses=("n_clauses", "min")) \
         .unstack().reset_index(drop=True)
 
     # sort by increasing number of models
@@ -98,6 +99,7 @@ def main():
     scatter_plotter = ScatterPlotter(data, output_dir, filename, COLOR, ORDER)
     scatter_plotter.plot_models_all_vs_all()
     scatter_plotter.plot_time_all_vs_all()
+    scatter_plotter.plot_size_all_vs_all()
 
 
 if __name__ == "__main__":
