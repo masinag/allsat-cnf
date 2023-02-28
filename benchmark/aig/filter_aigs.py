@@ -18,7 +18,14 @@ def get_relevant_benchmarks(data_dir):
     return relevant_benchmarks
 
 
+def should_skip_by_name(filename):
+    basename = os.path.basename(filename)
+    return basename.startswith("count") or basename.startswith("mul")
+
+
 def is_relevant_benchmark(filename):
+    if should_skip_by_name(filename):
+        return False
     header = get_header(filename)
     m, i, l, o, a = parse_header(header)
     if not (0 < i <= MAX_VARS):
