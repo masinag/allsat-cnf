@@ -23,7 +23,10 @@ def is_relevant_benchmark(filename):
     m, i, l, o, a = parse_header(header)
     if not (0 < i <= MAX_VARS):
         return False
-    phi = read_formula_from_file(filename)
+    try:
+        phi = read_formula_from_file(filename)
+    except RecursionError:
+        return False
     return is_sat(phi)
 
 
