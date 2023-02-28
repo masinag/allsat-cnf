@@ -4,6 +4,7 @@ from tqdm import tqdm
 from pysmt.shortcuts import is_sat
 
 from benchmark.utils.fileio import read_formula_from_file
+from benchmark.utils.run import run_with_timeout
 
 MAX_VARS = 50
 
@@ -32,9 +33,9 @@ def is_relevant_benchmark(filename):
         return False
     try:
         phi = read_formula_from_file(filename)
-    except RecursionError:
+        return is_sat_or_timeout(phi)
+    except (RecursionError, TimeoutError):
         return False
-    return is_sat(phi)
 
 
 def get_header(filename):
@@ -48,6 +49,10 @@ def parse_header(header):
     header = header.split(" ")[1:]
     header = [int(x) for x in header]
     return header
+
+
+def is_sat_or_timeout(phi):
+    run_with_timeout(is_sat, 600, phi)
 
 
 def create_subdir_for_relevant_benchmarks(relevant_benchmarks, relevant_benchmarks_dir):

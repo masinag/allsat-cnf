@@ -31,20 +31,22 @@ if [ ! -d $dirname ]; then
 
 fi
 
-testdirname="$dirname-test"
-if [ ! -d $testdirname ]; then
-  mkdir $testdirname
-  for f in $(ls $dirname | grep test); do
-    # shellcheck disable=SC2076
-    if [[ " ${relevant_benchmarks[*]} " =~ " ${f} " ]]; then
-      ln -s $(realpath $dirname/$f) $testdirname/$f
-    fi
-  done
-fi
+#testdirname="$dirname-test"
+#if [ ! -d $testdirname ]; then
+#  mkdir $testdirname
+#  for f in $(ls $dirname | grep test); do
+#    # shellcheck disable=SC2076
+#    if [[ " ${relevant_benchmarks[*]} " =~ " ${f} " ]]; then
+#      ln -s $(realpath $dirname/$f) $testdirname/$f
+#    fi
+#  done
+#fi
+
+python3 filter_aigs.py
 
 mkdir -p $DIR/results $DIR/plots
 
-for dir in $(ls -d $DIR/data/* | grep test); do
+for dir in $(ls -d $DIR/data/* | grep small); do
   res_dir=$(sed "s+data+results+g" <<<$dir)
   mkdir -p "$res_dir"
   echo $dir
