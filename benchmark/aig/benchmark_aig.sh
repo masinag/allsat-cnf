@@ -15,7 +15,7 @@ TIMEOUT=600
 archname=$(basename $DATA_URL)
 dirname=$DIR/data/${archname%.*}
 # benchmarks with more than 1 model
-IFS=$'\n' read -d '' -r -a relevant_benchmarks <"relevant_benchmarks.txt"
+IFS=$'\n' read -d '' -r -a relevant_benchmarks <"small-benchmarks.txt"
 
 # check if data DIR/data exists
 if [ ! -d $dirname ]; then
@@ -31,18 +31,17 @@ if [ ! -d $dirname ]; then
 
 fi
 
-#testdirname="$dirname-test"
-#if [ ! -d $testdirname ]; then
-#  mkdir $testdirname
-#  for f in $(ls $dirname | grep test); do
-#    # shellcheck disable=SC2076
-#    if [[ " ${relevant_benchmarks[*]} " =~ " ${f} " ]]; then
-#      ln -s $(realpath $dirname/$f) $testdirname/$f
-#    fi
-#  done
-#fi
+relevant_benchmarks_dirname="$dirname-small"
+if [ ! -d $relevant_benchmarks_dirname ]; then
+  mkdir $relevant_benchmarks_dirname
+  for f in $(ls $dirname | grep test); do
+    # shellcheck disable=SC2076
+    if [[ " ${relevant_benchmarks[*]} " =~ " ${f} " ]]; then
+      ln -s $(realpath $dirname/$f) $relevant_benchmarks_dirname/$f
+    fi
+  done
+fi
 
-python3 filter_aigs.py
 
 mkdir -p $DIR/results $DIR/plots
 
