@@ -5,7 +5,7 @@ from pysmt.shortcuts import is_sat
 
 from benchmark.utils.fileio import read_formula_from_file
 
-MAX_VARS = 64
+MAX_VARS = 50
 
 
 def get_relevant_benchmarks(data_dir):
