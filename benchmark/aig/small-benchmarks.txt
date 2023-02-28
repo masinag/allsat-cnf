@@ -23,7 +23,7 @@ a223test0004.aig
 a127test0009.aig
 a332test0004.aig
 a667test0022.aig
-a397test0029.aig',                                                                                                        [93/198
+a397test0029.aig
 a409test0002.aig
 a607test0005.aig
 a616test0001.aig
@@ -68,7 +68,7 @@ a436test0050.aig
 a164test0005.aig
 isqrtaddnoifinvalidvc.aig
 a417test0013.aig
-a323test0005.aig',                                                                                                        [48/198
+a323test0005.aig
 a329test0006.aig
 a677test0037.aig
 a420test0006.aig
@@ -115,7 +115,7 @@ a241test0002.aig
 a671test0006.aig
 a410test0042.aig
 a311test0009.aig
-a429test0020.aig',                                                                                                         [0/198
+a429test0020.aig
 a438test0001.aig
 a503test0089.aig
 a419test0045.aig
