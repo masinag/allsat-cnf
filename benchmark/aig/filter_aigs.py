@@ -1,10 +1,14 @@
 import os
 
+from pysmt.logics import QF_BOOL
 from tqdm import tqdm
-from pysmt.shortcuts import is_sat, get_model, Or, Not, And
+from pysmt.shortcuts import is_sat, get_model, Or, Not, And, Solver
 
 from benchmark.utils.fileio import read_formula_from_file
 from benchmark.utils.run import run_with_timeout
+from local_tseitin.utils import rewalk
+
+from pysmt.shortcuts import get_model, is_sat, Or, Not, And, Solver
 
 MAX_VARS = 50
 
@@ -43,25 +47,37 @@ def get_header(filename):
     return header
 
 
-def has_at_least_two_models(filename):
-    phi = read_formula_from_file(filename)
-    model = get_model_or_timeout(phi)
-    if model is None:
-        return False
-    conflict_clause = Or([Not(a) for a in model])
-    phi = And(phi, conflict_clause)
-    return is_sat_or_timeout(phi)
-
-
-def get_model_or_timeout(phi):
-    return run_with_timeout(get_model, 600, phi)
-
-
 def parse_header(header):
     header = header.strip()
     header = header.split(" ")[1:]
     header = [int(x) for x in header]
     return header
+
+
+def has_at_least_two_models(filename):
+    phi = read_formula_from_file(filename)
+    return find_n_models_or_timeout(phi, 2)
+
+
+def find_n_models_or_timeout(phi, n):
+    return run_with_timeout(find_n_models, 600, phi, n)
+
+
+def find_n_models(phi, n):
+    with Solver(name="msat") as solver:
+        solver.add_assertion(phi)
+        for _ in range(n):
+            if not solver.solve():
+                return False
+            msat_model = solver.get_model()
+            model = {atom if value else Not(atom) for atom, value in msat_model}
+            conflict_clause = Or([Not(a) for a in model])
+            solver.add_assertion(conflict_clause)
+    return True
+
+
+def get_model_or_timeout(phi):
+    return run_with_timeout(get_model, 600, phi)
 
 
 def is_sat_or_timeout(phi):
