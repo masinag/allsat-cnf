@@ -31,14 +31,12 @@ if [ ! -d $dirname ]; then
 
 fi
 
-relevant_benchmarks_dirname="$dirname-small"
+relevant_benchmarks_dirname="${dirname}-small"
 if [ ! -d $relevant_benchmarks_dirname ]; then
   mkdir $relevant_benchmarks_dirname
-  for f in $(ls $dirname | grep test); do
+  for f in "${relevant_benchmarks[@]}"; do
     # shellcheck disable=SC2076
-    if [[ " ${relevant_benchmarks[*]} " =~ " ${f} " ]]; then
-      ln -s $(realpath $dirname/$f) $relevant_benchmarks_dirname/$f
-    fi
+    ln -s $(realpath $dirname/$f) $relevant_benchmarks_dirname/$f
   done
 fi
 
