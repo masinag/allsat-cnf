@@ -240,6 +240,7 @@ class AIGAdapter:
 
         return output
 
+
 def unique_everseen(iterable, key=None):
     """
     Source: https://docs.python.org/3/library/itertools.html#itertools-recipes

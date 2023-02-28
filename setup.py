@@ -25,6 +25,7 @@ EXTRAS = {
     'benchmark': [
         'matplotlib',
         'pandas',
+        'tqdm',
         'wmipa',
         'wmibench @ git+ssh://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench',
     ],
