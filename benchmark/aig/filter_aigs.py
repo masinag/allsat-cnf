@@ -12,7 +12,7 @@ MAX_VARS = 50
 def get_relevant_benchmarks(data_dir):
     relevant_benchmarks = []
     for filename in (pbar := tqdm(os.listdir(data_dir))):
-        pbar.set_description(f"Processing {filename}")
+        pbar.set_description(f"Found {len(relevant_benchmarks)}, processing {filename}")
         full_path = os.path.join(data_dir, filename)
         if is_relevant_benchmark(full_path):
             relevant_benchmarks.append(full_path)
@@ -52,7 +52,7 @@ def parse_header(header):
 
 
 def is_sat_or_timeout(phi):
-    run_with_timeout(is_sat, 600, phi)
+    return run_with_timeout(is_sat, 600, phi)
 
 
 def create_subdir_for_relevant_benchmarks(relevant_benchmarks, relevant_benchmarks_dir):
