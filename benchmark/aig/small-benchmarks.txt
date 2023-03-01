@@ -34,8 +34,8 @@ a613test0087.aig
 a335test0041.aig
 a418test0022.aig
 isqrtnoifinvalidvc.aig
-a501test0016.a
-iga423test0008.aig
+a501test0016.aig
+a423test0008.aig
 a611test0014.aig
 a435test0039.aig
 a434test0027.aig
@@ -112,8 +112,8 @@ a430test0028.aig
 a241test0002.aig
 a671test0006.aig
 a410test0042.aig
-a311test0009.ai
-ga429test0020.aig
+a311test0009.aig
+a429test0020.aig
 a438test0001.aig
 a503test0089.aig
 a419test0045.aig
