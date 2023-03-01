@@ -80,7 +80,7 @@ def main():
         res = {
             "filename": filename,
             "n_clauses": n_clauses,
-            "models": len(models),
+            "models": None if models is None else len(models),
             "time": total_time,
             "enum_timed_out": enum_timed_out,
             "check_timed_out": check_timed_out,
@@ -121,8 +121,8 @@ def get_allsat_or_timeout(phi, args):
         atoms=atoms,
         options=options
     )
-    time_total = time.time() - time_init
     yield models
+    time_total = time.time() - time_init
     yield time_total
 
 
