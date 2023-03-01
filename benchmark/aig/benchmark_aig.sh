@@ -10,7 +10,6 @@ if ! which py7zr >/dev/null; then
 fi
 
 REPETITIONS=""
-TIMEOUT=600
 
 archname=$(basename $DATA_URL)
 dirname=$DIR/data/${archname%.*}
@@ -48,7 +47,7 @@ for dir in $(ls -d $DIR/data/* | grep small); do
   mkdir -p "$res_dir"
   echo $dir
   for mode in LAB NNF_LAB CND NNF_CND NNF_POL POL; do
-    python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $REPETITIONS --timeout $TIMEOUT
+    python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $REPETITIONS
   done
 done
 
