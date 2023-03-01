@@ -86,7 +86,8 @@ def is_sat_or_timeout(phi):
 
 def write_relevant_benchmarks(relevant_benchmarks, filename):
     with open(filename, "w") as f:
-        f.writelines(map(os.path.basename, relevant_benchmarks))
+        for benchmark in relevant_benchmarks:
+            f.write(f"{os.path.basename(benchmark)}\n")
 
 
 def main():

@@ -1,4 +1,4 @@
-a641test0030.aig
+aig-bench/data/smtqfbv-aigs/a641test0030.aig
 a605test0062.aig
 a676test0004.aig
 a333test0009.aig
@@ -34,8 +34,8 @@ a613test0087.aig
 a335test0041.aig
 a418test0022.aig
 isqrtnoifinvalidvc.aig
-a501test0016.aig
-a423test0008.aig
+a501test0016.a
+iga423test0008.aig
 a611test0014.aig
 a435test0039.aig
 a434test0027.aig
@@ -72,7 +72,6 @@ a323test0005.aig
 a329test0006.aig
 a677test0037.aig
 a420test0006.aig
-a421test0007.aig
 problem_9.aig
 a629test0052.aig
 a395test0001.aig
@@ -89,7 +88,6 @@ a416test0038.aig
 isqrtaddinvalidvc.aig
 a167test0001.aig
 a636test0058.aig
-a427test0048.aig
 a664test0013.aig
 a634test0059.aig
 a211test0001.aig
@@ -114,8 +112,8 @@ a430test0028.aig
 a241test0002.aig
 a671test0006.aig
 a410test0042.aig
-a311test0009.aig
-a429test0020.aig
+a311test0009.ai
+ga429test0020.aig
 a438test0001.aig
 a503test0089.aig
 a419test0045.aig
@@ -133,7 +131,6 @@ a394test0036.aig
 a617test0018.aig
 a645test0042.aig
 a695test0015.aig
-a331test0008.aig
 a638test0043.aig
 a404test0017.aig
 a624test0012.aig
@@ -142,7 +139,6 @@ a405test0019.aig
 a327test0011.aig
 problem_1.aig
 a625test0095.aig
-bitops7.aig
 a648test0099.aig
 a675test0084.aig
 a328test0003.aig
