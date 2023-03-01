@@ -1,14 +1,10 @@
 import os
 
-from pysmt.logics import QF_BOOL
+from pysmt.shortcuts import Or, Not, Solver
 from tqdm import tqdm
-from pysmt.shortcuts import is_sat, get_model, Or, Not, And, Solver
 
 from benchmark.utils.fileio import read_formula_from_file
 from benchmark.utils.run import run_with_timeout
-from local_tseitin.utils import rewalk
-
-from pysmt.shortcuts import get_model, is_sat, Or, Not, And, Solver
 
 MAX_VARS = 50
 
@@ -24,8 +20,6 @@ def get_relevant_benchmarks(data_dir):
 
 
 def is_relevant_benchmark(filename):
-    if should_skip_by_name(filename):
-        return False
     header = get_header(filename)
     m, i, l, o, a = parse_header(header)
     if not (0 < i <= MAX_VARS):
@@ -34,11 +28,6 @@ def is_relevant_benchmark(filename):
         return has_at_least_two_models(filename)
     except (RecursionError, TimeoutError):
         return False
-
-
-def should_skip_by_name(filename):
-    basename = os.path.basename(filename)
-    return basename.startswith("count") or basename.startswith("mul")
 
 
 def get_header(filename):
@@ -70,18 +59,10 @@ def find_n_models(phi, n):
             if not solver.solve():
                 return False
             msat_model = solver.get_model()
-            model = {atom if value else Not(atom) for atom, value in msat_model}
+            model = [atom if value else Not(atom) for atom, value in msat_model]
             conflict_clause = Or([Not(a) for a in model])
             solver.add_assertion(conflict_clause)
     return True
-
-
-def get_model_or_timeout(phi):
-    return run_with_timeout(get_model, 600, phi)
-
-
-def is_sat_or_timeout(phi):
-    return run_with_timeout(is_sat, 600, phi)
 
 
 def write_relevant_benchmarks(relevant_benchmarks, filename):
