@@ -1,4 +1,4 @@
-aig-bench/data/smtqfbv-aigs/a641test0030.aig
+a641test0030.aig
 a605test0062.aig
 a676test0004.aig
 a333test0009.aig
