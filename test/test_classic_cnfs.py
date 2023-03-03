@@ -3,7 +3,7 @@ from itertools import product
 import pytest
 from pysmt.shortcuts import is_sat
 
-from local_tseitin.label_cnf import LabelCNFizer
+from local_tseitin.label_cnfizer import LabelCNFizer
 from local_tseitin.polarity_cnfizer import PolarityCNFizer
 from utils import identity_examples
 from utils import single_polarity_examples, double_polarity_examples

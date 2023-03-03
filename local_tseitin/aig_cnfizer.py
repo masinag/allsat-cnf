@@ -4,7 +4,8 @@ from typing import Dict, Tuple, Iterable, Union, Optional
 from pysmt.shortcuts import *
 
 from local_tseitin.cnfizer import LocalTseitinCNFizer
-from local_tseitin.utils import is_cnf, AIGAdapter
+from local_tseitin.utils import is_cnf
+from local_tseitin.aig_adapter import AIGAdapter
 
 
 class GuardedAIG(LocalTseitinCNFizer):

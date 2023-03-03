@@ -8,7 +8,7 @@ from pysmt.rewritings import nnf
 
 from local_tseitin.cnfizer import Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
-from local_tseitin.label_cnf import LabelCNFizer
+from local_tseitin.label_cnfizer import LabelCNFizer
 from local_tseitin.polarity_cnfizer import PolarityCNFizer
 from local_tseitin.utils import get_allsat as allsat, is_cnf
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
