@@ -5,5 +5,8 @@ from local_tseitin.polarity_walker import Polarity
 
 
 class LabelCNFizer(PolarityCNFizer):
-    def iter_walk(self, formula: FNode, **kwargs) -> FNode:
-        return super().iter_walk(formula, top_pol=Polarity.DOUBLE, **kwargs)
+    def _find_polarities(self, formula):
+        polarities = super()._find_polarities(formula)
+        for f in polarities:
+            polarities[f] = Polarity.DOUBLE
+        return polarities

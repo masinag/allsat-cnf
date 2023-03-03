@@ -21,7 +21,7 @@ class PolarityCNFizer(DagWalker):
 
     def convert(self, formula) -> T_CNF:
         self._clauses.clear()
-        polarities = self._polarity_finder.find(formula)
+        polarities = self._find_polarities(formula)
         tl: FNode = self.walk(formula, polarities=polarities)
 
         if len(self._clauses) == 0:
@@ -48,6 +48,9 @@ class PolarityCNFizer(DagWalker):
             if simp:
                 res.append(tuple(unique_everseen(simp)))
         return list(unique_everseen(res))
+
+    def _find_polarities(self, formula):
+        return self._polarity_finder.find(formula)
 
     def key_var(self, formula: FNode) -> FNode:
         if formula not in self._introduced_variables:
