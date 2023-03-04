@@ -13,6 +13,8 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options=None):
         options = {}
     if atoms is None:
         atoms = get_boolean_variables(formula)
+    if len(atoms) == 0:
+        return [], 0
     atoms = sorted(atoms, key=lambda x: x.symbol_name())
 
     solver_options = get_solver_options(use_ta)
