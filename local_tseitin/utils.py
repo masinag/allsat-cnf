@@ -95,7 +95,10 @@ def ta_is_correct(phi, ta):
 
 
 def ta_is_complete(phi, ta):
-    tta, _ = get_allsat(phi, use_ta=False)
+    atoms = get_boolean_variables(phi).union(
+        {a for a in get_lra_atoms(phi) if not a.is_equals()}
+    )
+    tta, _ = get_allsat(phi, use_ta=False, atoms=atoms)
     # check that for every model in tta there is a corresponding supermodel in ta
     for eta in tta:
         if not any(eta.issuperset(rewalk(mu)) for mu in ta):
