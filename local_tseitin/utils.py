@@ -9,6 +9,7 @@ from pysmt.walkers import IdentityDagWalker
 
 
 def get_allsat(formula: FNode, use_ta=False, atoms=None, options=None):
+    formula = rewalk(formula)
     if options is None:
         options = {}
     if atoms is None:

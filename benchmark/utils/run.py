@@ -1,4 +1,4 @@
-from multiprocessing import Queue, Process
+from multiprocessing import Queue, get_context
 
 import psutil as psutil
 
@@ -9,7 +9,7 @@ def wrap_fn(fn, q, *args, **kwargs):
 
 def run_with_timeout(fn, timeout, *args, **kwargs):
     q = Queue()
-    timed_proc = Process(
+    timed_proc = get_context("spawn").Process(
         target=wrap_fn,
         args=[fn, q, *args],
         kwargs=kwargs,
