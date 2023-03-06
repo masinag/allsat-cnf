@@ -101,8 +101,8 @@ def get_allsat_or_timeout(phi, args):
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
 
-    mode, expand_iff, do_nnf = parse_mode(args.mode)
-    phi = preprocess_formula(phi, expand_iff, do_nnf, mode)
+    mode, expand_iff, do_nnf, nnf_label_mutex = parse_mode(args.mode)
+    phi = preprocess_formula(phi, expand_iff, do_nnf, nnf_label_mutex, mode)
     assert is_cnf(phi)
     n_clauses = len(phi.args())
     yield n_clauses
@@ -134,15 +134,13 @@ def check_models_or_timeout(models, phi, args):
     return run_with_timeout(check_models, args.timeout, models, phi)
 
 
-def preprocess_formula(phi, expand_iff, do_nnf, mode):
+def preprocess_formula(phi, expand_iff, do_nnf, nnf_label_mutex, mode):
     if expand_iff:
         Preprocessor(expand_iff=True).convert_as_formula(phi)
-    if do_nnf:
-        phi = nnf(phi)
     if mode == "POL":
-        phi = PolarityCNFizer().convert_as_formula(phi)
+        phi = PolarityCNFizer(nnf=do_nnf, mutex_nnf_labels=nnf_label_mutex).convert_as_formula(phi)
     if mode == "LAB":
-        phi = LabelCNFizer().convert_as_formula(phi)
+        phi = LabelCNFizer(nnf=do_nnf, mutex_nnf_labels=nnf_label_mutex).convert_as_formula(phi)
     elif mode == "CND":
         phi = Preprocessor(binary_operators=True).convert_as_formula(phi)
         phi = LocalTseitinCNFizerConds().convert_as_formula(phi)

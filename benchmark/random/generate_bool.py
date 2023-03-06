@@ -11,7 +11,7 @@ import os
 from benchmark.utils.fileio import check_output_input
 
 
-def random_formula(depth, atoms, operators, weights):
+def random_formula(depth, atoms, operators):
     if depth == 0:
         operator = random.choice([Or, Not])
         if operator is Or:
@@ -19,11 +19,11 @@ def random_formula(depth, atoms, operators, weights):
         else:
             return Not(random.choice(atoms))
     # operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
-    operator = random.choices(operators, weights=weights, k=1)[0]
+    operator = random.choices(list(operators.keys()), weights=list(operators.values()), k=1)[0]
     if operator is Not:
-        return Not(random_formula(depth - 1, atoms, operators, weights))
-    left = random_formula(depth - 1, atoms, operators, weights)
-    right = random_formula(depth - 1, atoms, operators, weights)
+        return Not(random_formula(depth - 1, atoms, operators))
+    left = random_formula(depth - 1, atoms, operators)
+    right = random_formula(depth - 1, atoms, operators)
     return operator(left, right)
 
 
@@ -61,7 +61,6 @@ def parse_args():
     return parser.parse_args()
 
 
-
 def main():
     args = parse_args()
 
@@ -87,16 +86,19 @@ def main():
     template = "b{b}_d{d}_s{s}_{templ}.smt2".format(
         b=args.booleans, d=args.depth, s=args.seed, templ="{n:0{d}}")
 
-    operators = [Or, And, Iff]
-    weights = [10, 10, 2]
+    operators = {
+        Iff: 1 / 10,
+        Or: 9 / 20,
+        And: 9 / 20,
+    }
     if not args.no_xnnf:
-        operators += [Not]
-        weights += [4]
-    weights_sum = sum(weights)
-    normalized_weights = [w / weights_sum for w in weights]
+        operators[Not] = 1 / 10
+    weights_sum = sum(operators.values())
+    for k in operators:
+        operators[k] /= weights_sum
 
     for i in range(args.models):
-        problem = random_formula(args.depth, boolean_atoms, operators, normalized_weights)
+        problem = random_formula(args.depth, boolean_atoms, operators)
         file_name = path.join(output_dir, template.format(n=i + 1, d=digits))
         write_smtlib(problem, file_name)
         print("\r" * 100, end='')

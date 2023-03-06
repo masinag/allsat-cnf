@@ -24,7 +24,7 @@ python3 generate_bool.py -b "$BOOL" -d "$DEPTH" -s 666 -o $DIR/data -m 100 $NOXN
 for dir in $(ls -d $DIR/data/*b${BOOL}_d${DEPTH}*); do
   res_dir=$(sed "s+data+results+g" <<<$dir)
   mkdir -p "$res_dir"
-  for mode in LAB NNF_LAB CND NNF_CND POL NNF_POL; do
+  for mode in NNF_MUTEX_POL LAB POL NNF_POL; do
     python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $REPETITIONS
   done
 done

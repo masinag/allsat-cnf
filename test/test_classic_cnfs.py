@@ -23,8 +23,15 @@ def test_identity(cnfizer, phi):
 @pytest.mark.parametrize("cnfizer, phi, n, n_vars",
                          [(PolarityCNFizer(), e.formula, e.pol_expected_clauses, e.pol_expected_variables)
                           for e in single_polarity_examples] +
+                         [(PolarityCNFizer(label_neg_polarity=True), e.formula, e.pol_expected_clauses,
+                           e.pol_expected_variables) for e in single_polarity_examples] +
                          [(LabelCNFizer(), e.formula, e.lab_expected_clauses, e.lab_expected_variables)
-                          for e in single_polarity_examples])
+                          for e in single_polarity_examples] +
+                         [(PolarityCNFizer(nnf=True), e.formula, e.nnf_pol_expected_clauses,
+                           e.nnf_pol_expected_variables) for e in single_polarity_examples] +
+                         [(LabelCNFizer(nnf=True), e.formula, e.nnf_lab_expected_clauses,
+                           e.nnf_lab_expected_variables) for e in single_polarity_examples]
+                         )
 def test_number_of_clauses_single_polarity(cnfizer, phi, n, n_vars):
     cnf = cnfizer.convert_as_formula(phi)
     assert n == len(cnf.args())
@@ -35,8 +42,14 @@ def test_number_of_clauses_single_polarity(cnfizer, phi, n, n_vars):
 @pytest.mark.parametrize("cnfizer, phi, n, n_vars",
                          [(PolarityCNFizer(), e.formula, e.pol_expected_clauses, e.pol_expected_variables)
                           for e in double_polarity_examples] +
+                         [(PolarityCNFizer(label_neg_polarity=True), e.formula, e.pol_expected_clauses, e.pol_expected_variables)
+                          for e in double_polarity_examples] +
                          [(LabelCNFizer(), e.formula, e.lab_expected_clauses, e.lab_expected_variables)
-                          for e in double_polarity_examples])
+                          for e in double_polarity_examples] +
+                         [(PolarityCNFizer(nnf=True), e.formula, e.nnf_pol_expected_clauses,
+                           e.nnf_pol_expected_variables) for e in double_polarity_examples] +
+                         [(LabelCNFizer(nnf=True), e.formula, e.nnf_lab_expected_clauses,
+                           e.nnf_lab_expected_variables) for e in double_polarity_examples])
 def test_number_of_clauses_double_polarity(cnfizer, phi, n, n_vars):
     cnf = cnfizer.convert_as_formula(phi)
     assert n == len(cnf.args())
