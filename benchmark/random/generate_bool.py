@@ -20,7 +20,7 @@ def random_formula(depth, atoms, operators):
             return Not(random.choice(atoms))
     # operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
     operator = random.choices(list(operators.keys()), weights=list(operators.values()), k=1)[0]
-    if operator is Not:
+    if operator.is_not():
         return Not(random_formula(depth - 1, atoms, operators))
     left = random_formula(depth - 1, atoms, operators)
     right = random_formula(depth - 1, atoms, operators)
@@ -50,8 +50,8 @@ def parse_args():
                         help='Maximum number of bool variables (default: 3)')
     parser.add_argument('-d', '--depth', default=3, type=positive,
                         help='Depth of the formula tree (default: 3)')
-    parser.add_argument('--no-xnnf', action='store_true', default=False,
-                        help='Set this flag to generate formulas with negations also not '
+    parser.add_argument('--xnnf', action='store_true', default=False,
+                        help='Set this flag to generate formulas in XNNF, i.e. formulas where negations occur only '
                              'at literal level (default: False)')
     parser.add_argument('-m', '--models', default=20, type=positive,
                         help='Number of model files (default: 20)')
@@ -91,7 +91,7 @@ def main():
         Or: 9 / 20,
         And: 9 / 20,
     }
-    if not args.no_xnnf:
+    if not args.xnnf:
         operators[Not] = 1 / 10
     weights_sum = sum(operators.values())
     for k in operators:

@@ -179,7 +179,8 @@ class PolarityCNFizer(DagWalker):
             self._add_mutex_on_nnf_labels(polarities)
 
     def _add_mutex_on_nnf_labels(self, polarities):
-        double_polarity_sub_formulas = [f for f, p in polarities.items() if p == Polarity.DOUBLE]
+        double_polarity_sub_formulas = [f for f, p in polarities.items() if p == Polarity.DOUBLE
+                                        and f in self._introduced_variables]
         for f in double_polarity_sub_formulas:
             f_pos = self._nnfizer.convert(f)
             f_neg = self._nnfizer.convert(self.mgr.Not(f))
