@@ -20,7 +20,7 @@ def random_formula(depth, atoms, operators):
             return Not(random.choice(atoms))
     # operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
     operator = random.choices(list(operators.keys()), weights=list(operators.values()), k=1)[0]
-    if operator.is_not():
+    if operator is Not:
         return Not(random_formula(depth - 1, atoms, operators))
     left = random_formula(depth - 1, atoms, operators)
     right = random_formula(depth - 1, atoms, operators)
