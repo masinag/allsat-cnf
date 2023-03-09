@@ -7,6 +7,7 @@ class Mode(enum.Enum):
     POL = "POL"
     NNF_POL = "NNF_POL"
     NNF_MUTEX_POL = "NNF_MUTEX_POL"
+    NNF_LABELNEGPOL_POL = "NNF_LABELNEGPOL_POL"
     CND = "CND"
     NNF_CND = "NNF_CND"
     EXPAND_CND = "EXPAND_CND"
@@ -16,7 +17,9 @@ class Mode(enum.Enum):
 def parse_mode(mode):
     expand_iff = False
     do_nnf = False
-    nnf_label_mutex = False
+    mutex_nnf_labels = False
+    label_neg_polarity = False
+
     if mode.startswith("EXPAND_"):
         expand_iff = True
         mode = mode.lstrip("EXPAND_")
@@ -25,9 +28,12 @@ def parse_mode(mode):
         mode = mode.lstrip("NNF_")
         if mode.startswith("MUTEX_"):
             mode = mode.lstrip("MUTEX_")
-            nnf_label_mutex = True
+            mutex_nnf_labels = True
+        if mode.startswith("LABELNEGPOL_"):
+            mode = mode.lstrip("LABELNEGPOL_")
+            label_neg_polarity = True
 
-    return mode, expand_iff, do_nnf, nnf_label_mutex
+    return mode, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity
 
 
 def get_full_name_mode(args):
