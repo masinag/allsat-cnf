@@ -20,8 +20,6 @@ def parse_mode(mode):
     mutex_nnf_labels = False
     label_neg_polarity = False
 
-    print("Mode to parse: {}".format(mode))
-
     if mode.startswith("EXPAND_"):
         expand_iff = True
         mode = mode.lstrip("EXPAND_")
