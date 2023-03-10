@@ -101,7 +101,7 @@ def get_allsat_or_timeout(phi, args):
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
 
-    mode, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity = parse_mode(args.mode)
+    mode, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity, phase_caching = parse_mode(args.mode)
     phi = preprocess_formula(phi, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity, mode)
     assert is_cnf(phi)
     n_clauses = len(phi.args())
@@ -109,6 +109,10 @@ def get_allsat_or_timeout(phi, args):
     options = {}
     if args.with_repetitions:
         options["dpll.allsat_allow_duplicates"] = "true"
+    if not phase_caching:
+        options["dpll.branching_cache_phase"] = "0"
+        options["dpll.branching_initial_phase"] = "0"
+        options["dpll.branching_random_frequency"] = "0"
     use_ta = mode != "TTA"
 
     time_init = time.time()
