@@ -15,7 +15,7 @@ from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_mode
 from utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
     read_formula_from_file
 from utils.logging import log
-from utils.parsing import parse_mode, Mode
+from utils.parsing import parse_mode, Mode, arg_positive
 from utils.run import run_with_timeout
 
 MODELS_CHECK_MSG = "Checking models..."
@@ -36,7 +36,7 @@ def parse_args():
                         help='Allow generating models with repetitions')
     parser.add_argument('--no-check', action='store_true',
                         help='Do not check the models')
-    parser.add_argument('--timeout', type=int, default=1200,
+    parser.add_argument('--timeout', type=arg_positive, default=1200,
                         help='Timeout for the solver')
     return parser.parse_args()
 

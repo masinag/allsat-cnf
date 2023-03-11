@@ -10,16 +10,17 @@ from wmipa.weightconverter import WeightConverterEUF as WeightConverter
 from wmipa.wmivariables import WMIVariables
 
 from benchmark.utils.fileio import check_output_input
+from benchmark.utils.parsing import arg_positive_0, arg_positive
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output', type=str, default=os.getcwd(),
                         help='Folder where all models will be created (default: cwd)')
-    parser.add_argument("-b", "--booleans", required=True, help="number of boolean variables", type=int)
-    parser.add_argument("-r", "--reals", required=True, help="number of real variables", type=int)
-    parser.add_argument("-d", "--depth", required=True, help="depth of the formula tree", type=int)
-    parser.add_argument("-n", "--number", help="number of problems to generate", type=int, default=20)
+    parser.add_argument("-b", "--booleans", required=True, help="number of boolean variables", type=arg_positive_0)
+    parser.add_argument("-r", "--reals", required=True, help="number of real variables", type=arg_positive_0)
+    parser.add_argument("-d", "--depth", required=True, help="depth of the formula tree", type=arg_positive)
+    parser.add_argument("-n", "--number", help="number of problems to generate", type=arg_positive, default=20)
     parser.add_argument("-s", "--seed", help="random seed", type=int, default=666)
     return parser.parse_args()
 

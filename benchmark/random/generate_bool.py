@@ -1,61 +1,48 @@
+import argparse
+import os
 import random
+import time
 from math import log10
+from os import path
 
 from pysmt.shortcuts import Symbol, BOOL, Or, Not, And, Iff, write_smtlib
-import argparse
-import time
-from os import path
-import sys
-import os
 
 from benchmark.utils.fileio import check_output_input
+from benchmark.utils.parsing import arg_positive_0, arg_positive
 
 
-def random_formula(depth, atoms, operators):
+def random_formula(depth, atoms, operators, neg_prob):
     if depth == 0:
-        operator = random.choice([Or, Not])
-        if operator is Or:
-            return random.choice(atoms)
-        else:
-            return Not(random.choice(atoms))
-    # operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
-    operator = random.choices(list(operators.keys()), weights=list(operators.values()), k=1)[0]
-    if operator is Not:
-        return Not(random_formula(depth - 1, atoms, operators))
-    left = random_formula(depth - 1, atoms, operators)
-    right = random_formula(depth - 1, atoms, operators)
-    return operator(left, right)
+        leaf = random.choice(atoms)
+        if random.random() < 0.5:
+            leaf = Not(leaf)
+        return leaf
+    operator = random.choices(list(operators.keys()), weights=list(operators.values()))[0]
+
+    left = random_formula(depth - 1, atoms, operators, neg_prob)
+    right = random_formula(depth - 1, atoms, operators, neg_prob)
+    node = operator(left, right)
+    negate = random.random() < neg_prob
+    if negate:
+        node = Not(node)
+    return node
 
 
 def parse_args():
-    def positive_0(value):
-        ivalue = int(value)
-        if ivalue < 0:
-            raise argparse.ArgumentTypeError(
-                'Expected positive integer, found {}'.format(value))
-        return ivalue
-
-    def positive(value):
-        ivalue = int(value)
-        if ivalue <= 0:
-            raise argparse.ArgumentTypeError(
-                'Expected positive integer (no 0), found {}'.format(value))
-        return ivalue
-
     parser = argparse.ArgumentParser(
         description='Generates random support and models.')
     parser.add_argument('-o', '--output', default=os.getcwd(),
                         help='Folder where all models will be created (default: cwd)')
-    parser.add_argument('-b', '--booleans', default=3, type=positive_0,
+    parser.add_argument('-b', '--booleans', default=3, type=arg_positive_0,
                         help='Maximum number of bool variables (default: 3)')
-    parser.add_argument('-d', '--depth', default=3, type=positive,
+    parser.add_argument('-d', '--depth', default=3, type=arg_positive,
                         help='Depth of the formula tree (default: 3)')
     parser.add_argument('--xnnf', action='store_true', default=False,
                         help='Set this flag to generate formulas in XNNF, i.e. formulas where negations occur only '
                              'at literal level (default: False)')
-    parser.add_argument('-m', '--models', default=20, type=positive,
+    parser.add_argument('-m', '--models', default=20, type=arg_positive,
                         help='Number of model files (default: 20)')
-    parser.add_argument('-s', '--seed', type=positive_0,
+    parser.add_argument('-s', '--seed', type=arg_positive_0,
                         help='Random seed (optional)')
 
     return parser.parse_args()
@@ -91,14 +78,13 @@ def main():
         Or: 9 / 20,
         And: 9 / 20,
     }
-    if not args.xnnf:
-        operators[Not] = 1 / 10
     weights_sum = sum(operators.values())
     for k in operators:
         operators[k] /= weights_sum
+    neg_prob = 0.5 if args.xnnf else 0.0
 
     for i in range(args.models):
-        problem = random_formula(args.depth, boolean_atoms, operators)
+        problem = random_formula(args.depth, boolean_atoms, operators, neg_prob)
         file_name = path.join(output_dir, template.format(n=i + 1, d=digits))
         write_smtlib(problem, file_name)
         print("\r" * 100, end='')

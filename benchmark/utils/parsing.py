@@ -1,3 +1,4 @@
+import argparse
 import enum
 
 
@@ -55,3 +56,17 @@ def get_full_name_mode(args):
     if args.with_repetitions:
         full_mode += "_REP"
     return full_mode
+
+
+def arg_positive_0(value: str):
+    value = int(value)
+    if value < 0:
+        raise argparse.ArgumentTypeError('Expected positive integer, found {}'.format(value))
+    return value
+
+
+def arg_positive(value: str):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError('Expected positive integer (no 0), found {}'.format(value))
+    return ivalue
