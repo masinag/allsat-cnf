@@ -81,7 +81,7 @@ def main():
     weights_sum = sum(operators.values())
     for k in operators:
         operators[k] /= weights_sum
-    neg_prob = 0.5 if args.xnnf else 0.0
+    neg_prob = 0.0 if args.xnnf else 0.5
 
     for i in range(args.models):
         problem = random_formula(args.depth, boolean_atoms, operators, neg_prob)
