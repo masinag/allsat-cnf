@@ -59,7 +59,7 @@ def main():
         b=basename, s=args.seed, p="{p:03}", templ="{n:0{d}}")
     input_file = args.input
     _, circuit_outputs = BenchAdapter.from_file(input_file).to_pysmt()
-    for percentage in np.arange(0.1, 1.1, 0.1):
+    for percentage in np.arange(0.6, 1.1, 0.1):
         print("Generating {} instances for {} with {}% of the variables".format(
             args.models, input_file, percentage * 100))
         instances = generate_instances(circuit_outputs, percentage, args.models)
