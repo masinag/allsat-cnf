@@ -15,6 +15,7 @@ VERSION = '0.1'
 REQUIRED = [
     'pysmt',
     'py-aiger >= 6.2.0',
+    'circuitgraph >= 0.2.0',
     'funcy >= 1.17',
     'psutil>=5.9.4',
 ]
