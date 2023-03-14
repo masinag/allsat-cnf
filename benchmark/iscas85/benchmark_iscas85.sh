@@ -16,7 +16,7 @@ fi
 
 mkdir -p $DIR/data $DIR/results $DIR/plots
 for file in $(ls $DATA_DIR); do
-  python3 generate.py $DATA_DIR/$file -o $DIR/data -m 10
+  python3 generate.py $DATA_DIR/$file -o $DIR/data -m 5
 done
 
 for dir in $(ls -d $DIR/data/*); do

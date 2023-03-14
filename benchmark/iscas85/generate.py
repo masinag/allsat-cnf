@@ -1,18 +1,15 @@
-import numpy as np
-
-from benchmark.utils.logging import log
-from local_tseitin.bench_adapter import BenchAdapter
-
 import argparse
 import os
 import random
 import time
 from math import log10
 
+import numpy as np
 from pysmt.shortcuts import write_smtlib, Not, And
 
-from benchmark.utils.fileio import check_output_input, get_input_files
-from benchmark.utils.parsing import arg_positive_0, arg_positive
+from benchmark.utils.fileio import check_output_input
+from benchmark.utils.parsing import arg_positive
+from local_tseitin.bench_adapter import BenchAdapter
 
 
 def parse_args():
@@ -22,7 +19,7 @@ def parse_args():
                         help='Folder where all instances will be created (default: cwd)')
     parser.add_argument("-m", "--models",
                         help="Number of instances for each percentage to generate",
-                        type=arg_positive, default=10)
+                        type=arg_positive, default=5)
     parser.add_argument("-s", "--seed", help="random seed", type=int, default=666)
     return parser.parse_args()
 
@@ -67,7 +64,7 @@ def main():
             args.models, input_file, percentage * 100))
         instances = generate_instances(circuit_outputs, percentage, args.models)
         for i, instance in enumerate(instances):
-            file_name = os.path.join(output_dir, template.format(p=round(percentage * 10), n=i + 1, d=digits))
+            file_name = os.path.join(output_dir, template.format(p=round(percentage * 100), n=i + 1, d=digits))
             write_smtlib(instance, file_name)
             print("\r" * 100, end='')
             print("Model {}/{}".format(i + 1, args.models), end='')
