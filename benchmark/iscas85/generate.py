@@ -25,7 +25,7 @@ def parse_args():
 
 
 def generate_instances(circuit_outputs, percentage, n_instances):
-    n_outputs_to_sample = int(len(circuit_outputs) * percentage)
+    n_outputs_to_sample = int(len(circuit_outputs) * percentage / 100)
     instances = []
     for i in range(n_instances):
         model = []
@@ -59,12 +59,12 @@ def main():
         b=basename, s=args.seed, p="{p:03}", templ="{n:0{d}}")
     input_file = args.input
     _, circuit_outputs = BenchAdapter.from_file(input_file).to_pysmt()
-    for percentage in np.arange(0.6, 1.1, 0.1):
+    for percentage in range(60, 101, 10):
         print("Generating {} instances for {} with {}% of the variables".format(
-            args.models, input_file, percentage * 100))
+            args.models, input_file, percentage))
         instances = generate_instances(circuit_outputs, percentage, args.models)
         for i, instance in enumerate(instances):
-            file_name = os.path.join(output_dir, template.format(p=round(percentage * 100), n=i + 1, d=digits))
+            file_name = os.path.join(output_dir, template.format(p=round(percentage), n=i + 1, d=digits))
             write_smtlib(instance, file_name)
             print("\r" * 100, end='')
             print("Model {}/{}".format(i + 1, args.models), end='')
