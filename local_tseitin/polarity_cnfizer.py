@@ -28,11 +28,12 @@ class PolarityCNFizer(DagWalker):
         self._nnfizer = NNFizer(environment)
 
     def convert(self, formula) -> T_CNF:
-        self._clauses.clear()
+        self._clauses = []
+        pre_polarities = self._get_polarities(formula)
         formula = self._pre_process(formula)
         polarities = self._get_polarities(formula)
         tl: FNode = self.walk(formula, polarities=polarities)
-        self._post_process(polarities)
+        self._post_process(pre_polarities)
 
         clauses = self._simplify_clauses(tl)
         return list(unique_everseen(clauses))
@@ -179,11 +180,11 @@ class PolarityCNFizer(DagWalker):
             self._add_mutex_on_nnf_labels(polarities)
 
     def _add_mutex_on_nnf_labels(self, polarities):
-        double_polarity_sub_formulas = [f for f, p in polarities.items() if p == Polarity.DOUBLE
-                                        and f in self._introduced_variables]
+        double_polarity_sub_formulas = [f for f, p in polarities.items() if p == Polarity.DOUBLE]
         for f in double_polarity_sub_formulas:
             f_pos = self._nnfizer.convert(f)
             f_neg = self._nnfizer.convert(self.mgr.Not(f))
-            k_pos = self.key_var(f_pos, polarities)
-            k_neg = self.key_var(f_neg, polarities)
-            self._clauses.append((self.mgr.Not(k_pos), self.mgr.Not(k_neg)))
+            if f_pos in self._introduced_variables and f_neg in self._introduced_variables:
+                k_pos = self.key_var(f_pos, polarities)
+                k_neg = self.key_var(f_neg, polarities)
+                self._clauses.append((self.mgr.Not(k_pos), self.mgr.Not(k_neg)))

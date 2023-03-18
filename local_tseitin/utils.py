@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 from itertools import filterfalse
 from pprint import pformat
+from typing import Optional, Iterable, Dict
 
 from pysmt.fnode import FNode
 from pysmt.shortcuts import *
@@ -8,21 +10,31 @@ from pysmt.typing import PySMTType, BOOL
 from pysmt.walkers import IdentityDagWalker
 
 
-def get_allsat(formula: FNode, use_ta=False, atoms=None, options=None):
+@dataclass
+class SolverOptions:
+    timeout: int = None
+    with_repetitions: bool = False
+    use_ta: bool = True
+    phase_caching: bool = True
+
+
+def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
+               solver_options: Optional[SolverOptions] = None):
     formula = rewalk(formula)
-    if options is None:
-        options = {}
+
     if atoms is None:
         atoms = get_boolean_variables(formula)
     if len(atoms) == 0:
         return [], 0
     atoms = sorted(atoms, key=lambda x: x.symbol_name())
 
-    solver_options = get_solver_options(use_ta)
-    solver_options.update(options)
+    if solver_options is not None:
+        solver_options_dict = get_solver_options_dict(solver_options)
+    else:
+        solver_options_dict = {}
 
     models = []
-    with Solver(name="msat", solver_options=solver_options) as solver:
+    with Solver(name="msat", solver_options=solver_options_dict) as solver:
         solver.add_assertion(formula)
         solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, models))
 
@@ -32,17 +44,20 @@ def get_allsat(formula: FNode, use_ta=False, atoms=None, options=None):
     return models, total_models_count
 
 
-def get_solver_options(use_ta):
-    if use_ta:
-        solver_options = {
-            "dpll.allsat_minimize_model": "true",
-            "dpll.allsat_allow_duplicates": "false",
-            "preprocessor.toplevel_propagation": "false",
-            "dpll.branching_initial_phase": "0",
-        }
-    else:
-        solver_options = {}
-    return solver_options
+def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
+    solver_options_dict = {}
+    if solver_options.with_repetitions:
+        solver_options_dict["dpll.allsat_allow_duplicates"] = "true"
+    if not solver_options.phase_caching:
+        solver_options_dict["dpll.branching_cache_phase"] = "0"
+        solver_options_dict["dpll.branching_initial_phase"] = "0"
+        solver_options_dict["dpll.branching_random_frequency"] = "0"
+    if solver_options.use_ta:
+        solver_options_dict["dpll.allsat_minimize_model"] = "true"
+        solver_options_dict["dpll.allsat_allow_duplicates"] = "false"
+        solver_options_dict["preprocessor.toplevel_propagation"] = "false"
+        solver_options_dict["dpll.branching_initial_phase"] = "0"
+    return solver_options_dict
 
 
 def get_boolean_variables(formula: FNode):
@@ -101,7 +116,7 @@ def ta_is_complete(phi, ta):
     atoms = get_boolean_variables(phi).union(
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
-    tta, _ = get_allsat(phi, use_ta=False, atoms=atoms)
+    tta, _ = get_allsat(phi, atoms=atoms)
     # check that for every model in tta there is a corresponding supermodel in ta
     for eta in tta:
         if not any(eta.issuperset(rewalk(mu)) for mu in ta):

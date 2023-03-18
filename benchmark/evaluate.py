@@ -2,20 +2,21 @@ import argparse
 import os
 import sys
 import time
+from typing import Iterable, List, Set, Tuple
 
 from pysmt.environment import reset_env, get_env
-from pysmt.rewritings import nnf
+from pysmt.fnode import FNode
 
 from local_tseitin.cnfizer import Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.label_cnfizer import LabelCNFizer
 from local_tseitin.polarity_cnfizer import PolarityCNFizer
-from local_tseitin.utils import get_allsat as allsat, is_cnf
+from local_tseitin.utils import get_allsat, is_cnf, SolverOptions
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
 from utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
     read_formula_from_file
 from utils.logging import log
-from utils.parsing import parse_mode, Mode, arg_positive
+from utils.parsing import get_options, Mode, arg_positive, PreprocessOptions
 from utils.run import run_with_timeout
 
 MODELS_CHECK_MSG = "Checking models..."
@@ -57,14 +58,14 @@ def main():
         phi = read_formula_from_file(filename)
         log(PARTIAL_MODELS_MSG, filename, i, input_files)
         enum_timed_out = False
-        n_clauses = None
-        total_time = None
         models = None
+        preprocess_options, solver_options = get_options(args)
+        phi_cnf, atoms = preprocess_formula(phi, preprocess_options)
+        n_clauses = len(phi_cnf.args())
         try:
-            res_gen = get_allsat_or_timeout(phi, args)
-            n_clauses = next(res_gen)
-            models = next(res_gen)
-            total_time = next(res_gen)
+            time_init = time.time()
+            models = get_allsat_or_timeout(phi_cnf, atoms, solver_options)
+            total_time = time.time() - time_init
         except TimeoutError:
             total_time = args.timeout
             enum_timed_out = True
@@ -96,61 +97,46 @@ def setup():
     get_env().enable_infix_notation = True
 
 
-def get_allsat_or_timeout(phi, args):
-    atoms = get_boolean_variables(phi).union(
-        {a for a in get_lra_atoms(phi) if not a.is_equals()}
-    )
-
-    mode, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity, phase_caching = parse_mode(args.mode)
-    phi = preprocess_formula(phi, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity, mode)
-    assert is_cnf(phi)
-    n_clauses = len(phi.args())
-    yield n_clauses
-    options = {}
-    if args.with_repetitions:
-        options["dpll.allsat_allow_duplicates"] = "true"
-    if not phase_caching:
-        options["dpll.branching_cache_phase"] = "0"
-        options["dpll.branching_initial_phase"] = "0"
-        options["dpll.branching_random_frequency"] = "0"
-    use_ta = mode != "TTA"
-
-    time_init = time.time()
-
+def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions) -> List[Set[FNode]]:
     models, _ = run_with_timeout(
-        allsat,
-        args.timeout,
+        get_allsat,
+        solver_options.timeout,
         phi,
-        use_ta=use_ta,
         atoms=atoms,
-        options=options
+        solver_options=solver_options,
     )
-    yield models
-    time_total = time.time() - time_init
-    yield time_total
+    return models
 
 
-def should_check_models(args):
+def should_check_models(args) -> bool:
     return not args.no_check and args.mode != "TTA"
 
 
-def check_models_or_timeout(models, phi, args):
+def check_models_or_timeout(models, phi, args) -> None:
     return run_with_timeout(check_models, args.timeout, models, phi)
 
 
-def preprocess_formula(phi, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity, mode):
-    if expand_iff:
+def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> Tuple[FNode, Iterable[FNode]]:
+    atoms = get_boolean_variables(phi).union(
+        {a for a in get_lra_atoms(phi) if not a.is_equals()}
+    )
+    print(preprocess_options)
+    if preprocess_options.expand_iff:
         Preprocessor(expand_iff=True).convert_as_formula(phi)
-    if mode == "POL":
-        phi = PolarityCNFizer(nnf=do_nnf, mutex_nnf_labels=mutex_nnf_labels,
-                              label_neg_polarity=label_neg_polarity).convert_as_formula(phi)
-    if mode == "LAB":
-        phi = LabelCNFizer(nnf=do_nnf, mutex_nnf_labels=mutex_nnf_labels).convert_as_formula(phi)
-    elif mode == "CND":
+    if preprocess_options.cnf_type == "POL":
+        phi = PolarityCNFizer(nnf=preprocess_options.do_nnf, mutex_nnf_labels=preprocess_options.mutex_nnf_labels,
+                              label_neg_polarity=preprocess_options.label_neg_polarity).convert_as_formula(phi)
+    elif preprocess_options.cnf_type == "LAB":
+        phi = LabelCNFizer(nnf=preprocess_options.do_nnf,
+                           mutex_nnf_labels=preprocess_options.mutex_nnf_labels).convert_as_formula(phi)
+    elif preprocess_options.cnf_type == "CND":
         phi = Preprocessor(binary_operators=True).convert_as_formula(phi)
         phi = LocalTseitinCNFizerConds().convert_as_formula(phi)
+    else:
+        raise ValueError("Unknown CNF type: {}".format(preprocess_options.cnf_type))
+    assert is_cnf(phi)
 
-    return phi
+    return phi, atoms
 
 
 if __name__ == '__main__':

@@ -1,5 +1,18 @@
 import argparse
 import enum
+from dataclasses import dataclass
+from typing import Tuple
+
+from local_tseitin.utils import SolverOptions
+
+
+@dataclass
+class PreprocessOptions:
+    cnf_type: str
+    expand_iff: bool
+    do_nnf: bool
+    mutex_nnf_labels: bool
+    label_neg_polarity: bool
 
 
 class Mode(enum.Enum):
@@ -19,12 +32,13 @@ class Mode(enum.Enum):
     TTA = "TTA"
 
 
-def parse_mode(mode):
+def get_options(args) -> Tuple[PreprocessOptions, SolverOptions]:
     expand_iff = False
     do_nnf = False
     mutex_nnf_labels = False
     label_neg_polarity = False
     phase_caching = True
+    mode = args.mode
 
     if mode.startswith("NOPC_"):
         phase_caching = False
@@ -42,16 +56,23 @@ def parse_mode(mode):
         mode = remove_prefix(mode, "LABELNEG_")
         label_neg_polarity = True
 
-    return mode, expand_iff, do_nnf, mutex_nnf_labels, label_neg_polarity, phase_caching
+    preprocess_options = PreprocessOptions(cnf_type=mode, expand_iff=expand_iff, do_nnf=do_nnf,
+                                           mutex_nnf_labels=mutex_nnf_labels,
+                                           label_neg_polarity=label_neg_polarity)
+    solver_options = SolverOptions(timeout=args.timeout, with_repetitions=args.with_repetitions,
+                                   use_ta=mode != Mode.TTA,
+                                   phase_caching=phase_caching)
+
+    return preprocess_options, solver_options
 
 
-def remove_prefix(txt, prefix):
+def remove_prefix(txt: str, prefix: str) -> str:
     if txt.startswith(prefix):
         return txt[len(prefix):]
     return txt
 
 
-def get_full_name_mode(args):
+def get_full_name_mode(args) -> str:
     full_mode = args.mode
     if args.with_repetitions:
         full_mode += "_REP"

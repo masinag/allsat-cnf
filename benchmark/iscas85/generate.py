@@ -4,7 +4,6 @@ import random
 import time
 from math import log10
 
-import numpy as np
 from pysmt.shortcuts import write_smtlib, Not, And
 
 from benchmark.utils.fileio import check_output_input

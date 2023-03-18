@@ -18,7 +18,7 @@ class PolarityFinder(PolarityDagWalker):
         self.polarity: PolarityDict = {}
 
     def find(self, formula: FNode) -> PolarityDict:
-        self.polarity.clear()
+        self.polarity = {}
         self.walk(formula)
         return self.polarity
 

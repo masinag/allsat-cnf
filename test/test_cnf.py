@@ -7,7 +7,7 @@ from pysmt.shortcuts import *
 
 from local_tseitin.cnfizer import LocalTseitinCNFizer, Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
-from local_tseitin.utils import check_models, get_allsat
+from local_tseitin.utils import check_models, get_allsat, SolverOptions
 from local_tseitin.utils import get_boolean_variables, get_lra_atoms
 from utils import boolean_variables
 
@@ -41,10 +41,10 @@ def test_correctness(preprocess: Callable[[FNode], FNode], cnfizer: LocalTseitin
     atoms = get_boolean_variables(phi) | get_lra_atoms(phi)
     phi = preprocess(phi)
 
-    total_models, count_tot = get_allsat(phi, use_ta=False, atoms=atoms)
+    total_models, count_tot = get_allsat(phi, atoms=atoms)
     assert count_tot == len(total_models)
     cnf = cnfizer.convert_as_formula(phi)
-    partial_models, count_part = get_allsat(cnf, use_ta=True, atoms=atoms)
+    partial_models, count_part = get_allsat(cnf, atoms=atoms, solver_options=SolverOptions(use_ta=True))
     assert count_part == count_tot, f"{phi.serialize()}\n{cnf.serialize()}"
 
     check_models(partial_models, phi)
