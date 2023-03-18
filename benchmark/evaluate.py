@@ -120,7 +120,6 @@ def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> Tuple[FNod
     atoms = get_boolean_variables(phi).union(
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
-    print(preprocess_options)
     if preprocess_options.expand_iff:
         Preprocessor(expand_iff=True).convert_as_formula(phi)
     if preprocess_options.cnf_type == "POL":
