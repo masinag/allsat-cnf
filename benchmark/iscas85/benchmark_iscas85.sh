@@ -28,4 +28,4 @@ for dir in $(ls -d $DIR/data/*); do
   done
 done
 
-python3 ../plot.py $DIR/results/* -o $DIR/plots
+python3 ../plot.py iscas85-bench/results/* -o iscas85-bench/plots --timeout 1200 --timeout-models 1000000

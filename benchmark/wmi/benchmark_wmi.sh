@@ -17,3 +17,5 @@ for dir in $(ls -d $DIR/data/*); do
     python3 ../evaluate.py "$dir" -m $mode -o "$res_dir"
   done
 done
+
+python3 ../plot.py wmi-bench/results/models_b10_r0_d* -o wmi-bench/plots
