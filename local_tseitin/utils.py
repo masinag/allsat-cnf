@@ -18,8 +18,7 @@ class SolverOptions:
     phase_caching: bool = True
 
 
-def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
-               solver_options: Optional[SolverOptions] = None):
+def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None, solver_options: Optional[SolverOptions] = None):
     formula = rewalk(formula)
 
     if atoms is None:
@@ -42,6 +41,12 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
         map(lambda model: 2 ** (len(atoms) - len(model)), models)
     )
     return models, total_models_count
+
+
+def check_sat(formula: FNode):
+    formula = rewalk(formula)
+    with Solver(name="msat") as solver:
+        return solver.is_sat(formula)
 
 
 def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:

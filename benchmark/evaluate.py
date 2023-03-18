@@ -11,7 +11,7 @@ from local_tseitin.cnfizer import Preprocessor
 from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
 from local_tseitin.label_cnfizer import LabelCNFizer
 from local_tseitin.polarity_cnfizer import PolarityCNFizer
-from local_tseitin.utils import get_allsat, is_cnf, SolverOptions
+from local_tseitin.utils import get_allsat, is_cnf, SolverOptions, check_sat
 from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
 from utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
     read_formula_from_file
@@ -39,6 +39,7 @@ def parse_args():
                         help='Do not check the models')
     parser.add_argument('--timeout', type=arg_positive, default=1200,
                         help='Timeout for the solver')
+    parser.add_argument('--sat', action='store_true', help='Only check satisfiability')
     return parser.parse_args()
 
 
@@ -64,7 +65,14 @@ def main():
         n_clauses = len(phi_cnf.args())
         try:
             time_init = time.time()
-            models = get_allsat_or_timeout(phi_cnf, atoms, solver_options)
+            if args.sat:
+                is_sat = check_sat_or_timeout(phi_cnf, solver_options)
+                if is_sat:
+                    models = [set()]
+                else:
+                    models = []
+            else:
+                models = get_allsat_or_timeout(phi_cnf, atoms, solver_options)
             total_time = time.time() - time_init
         except TimeoutError:
             total_time = args.timeout
@@ -108,8 +116,17 @@ def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: So
     return models
 
 
+def check_sat_or_timeout(phi: FNode, solver_options: SolverOptions) -> List[Set[FNode]]:
+    is_sat = run_with_timeout(
+        check_sat,
+        solver_options.timeout,
+        phi,
+    )
+    return is_sat
+
+
 def should_check_models(args) -> bool:
-    return not args.no_check and args.mode != "TTA"
+    return not args.sat and not args.no_check and args.mode != "TTA"
 
 
 def check_models_or_timeout(models, phi, args) -> None:
