@@ -3,6 +3,7 @@
 ##  Install dependencies
 ```bash
 pip install -e ".[benchmarks]"
+pysmt-install --msat
 ```
 
 ##  Run benchmarks

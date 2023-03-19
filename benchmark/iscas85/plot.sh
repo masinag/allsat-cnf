@@ -1,5 +1,9 @@
 #!/bin/bash
 
-mkdir -p $DIR/plots
+source config.sh
 
-python3 ../plot.py iscas85-bench/results/* -o iscas85-bench/plots --timeout 1200 --timeout-models 1000000
+mkdir -p $DIR/plots $DIR/plots-sat
+
+python3 ../plot.py $DIR/results/* -o $DIR/plots --timeout 1200 --timeout-models 1000000
+
+python3 ../plot.py $DIR/results-sat/* -o $DIR/plots-sat
