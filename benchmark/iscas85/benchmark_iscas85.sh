@@ -6,9 +6,6 @@ DATA_DIR=data
 
 REPETITIONS=""
 
-# benchmarks with more than 1 model
-IFS=$'\n' read -d '' -r -a relevant_benchmarks <"small-benchmarks.txt"
-
 # check if data DIR/data exists
 if [ ! -d ${DATA_DIR}/ ]; then
   wget --directory-prefix=$DATA_DIR --input-file=$DATA_FILE
@@ -23,7 +20,7 @@ for dir in $(ls -d $DIR/data/*); do
   res_dir=$(sed "s+data+results+g" <<<$dir)
   mkdir -p "$res_dir"
   echo $dir
-  for mode in LAB NNF_LAB CND NNF_CND NNF_POL POL; do
+  for mode in LAB POL NNF_POL NNF_MUTEX_POL LABELNEG_POL; do
     python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $REPETITIONS
   done
 done
