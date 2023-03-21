@@ -2,7 +2,7 @@
 
 ##  Install dependencies
 ```bash
-pip install -e ".[benchmarks]"
+pip install -e .
 pysmt-install --msat
 ```
 
