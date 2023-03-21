@@ -8,7 +8,7 @@ from typing import List, Optional, Union
 from pysmt.shortcuts import read_smtlib
 
 from benchmark.utils.parsing import get_full_name_mode
-from local_tseitin.aig_adapter import AIGAdapter
+from allsat_cnf.aig_adapter import AIGAdapter
 
 
 def get_output_filename(args):

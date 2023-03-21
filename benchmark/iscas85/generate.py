@@ -8,7 +8,7 @@ from pysmt.shortcuts import write_smtlib, Not, And
 
 from benchmark.utils.fileio import check_output_input
 from benchmark.utils.parsing import arg_positive
-from local_tseitin.bench_adapter import BenchAdapter
+from allsat_cnf.bench_adapter import BenchAdapter
 
 
 def parse_args():

@@ -1,8 +1,8 @@
 import random
+
 from example_template import *
 
 A, B, C, D, E, *_ = boolean_atoms
-random.seed(666)
 
 boolean_atoms = list(boolean_atoms)[:4]
 
@@ -23,6 +23,8 @@ def random_formula(depth):
     return operator(left, right)
 
 
-for i in range(1, 2):
+random.seed(666)
+for i in range(0, 5):
     formula = random_formula(3)
-    nmodels_mathsat, time_mathsat, nmodels_local, time_local = make_example(formula)
+    make_example(formula)
+    print()

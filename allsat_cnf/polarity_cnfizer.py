@@ -5,9 +5,9 @@ from pysmt.fnode import FNode
 from pysmt.rewritings import NNFizer
 from pysmt.walkers import DagWalker, handles
 
-from local_tseitin.polarity_finder import PolarityFinder, PolarityDict
-from local_tseitin.polarity_walker import Polarity
-from local_tseitin.utils import unique_everseen
+from allsat_cnf.polarity_finder import PolarityFinder, PolarityDict
+from allsat_cnf.polarity_walker import Polarity
+from allsat_cnf.utils import unique_everseen
 
 T_CNF = List[Tuple[FNode]]
 

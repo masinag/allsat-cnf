@@ -7,12 +7,10 @@ from typing import Iterable, List, Set, Tuple
 from pysmt.environment import reset_env, get_env
 from pysmt.fnode import FNode
 
-from local_tseitin.cnfizer import Preprocessor
-from local_tseitin.conds_cnfizer import LocalTseitinCNFizerConds
-from local_tseitin.label_cnfizer import LabelCNFizer
-from local_tseitin.polarity_cnfizer import PolarityCNFizer
-from local_tseitin.utils import get_allsat, is_cnf, SolverOptions, check_sat
-from local_tseitin.utils import get_lra_atoms, get_boolean_variables, check_models
+from allsat_cnf.label_cnfizer import LabelCNFizer
+from allsat_cnf.polarity_cnfizer import PolarityCNFizer
+from allsat_cnf.utils import get_allsat, is_cnf, SolverOptions, check_sat
+from allsat_cnf.utils import get_lra_atoms, get_boolean_variables, check_models
 from utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
     read_formula_from_file
 from utils.logging import log
@@ -27,8 +25,6 @@ PARTIAL_MODELS_MSG = "Generating partial models..."
 def parse_args():
     parser = argparse.ArgumentParser(description='Enumerate models of formulas')
     parser.add_argument('input', help='Folder with .json files')
-    # parser.add_argument('-i', '--input-type', required=True,
-    #                     help='Input type', choices=input_types.keys())
     parser.add_argument('-o', '--output', default=os.getcwd(),
                         help='Output folder where to save the result (default: cwd)')
     parser.add_argument('-m', '--mode', choices=[m.value for m in Mode],
@@ -137,17 +133,13 @@ def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> Tuple[FNod
     atoms = get_boolean_variables(phi).union(
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
-    if preprocess_options.expand_iff:
-        Preprocessor(expand_iff=True).convert_as_formula(phi)
+
     if preprocess_options.cnf_type == "POL":
         phi = PolarityCNFizer(nnf=preprocess_options.do_nnf, mutex_nnf_labels=preprocess_options.mutex_nnf_labels,
                               label_neg_polarity=preprocess_options.label_neg_polarity).convert_as_formula(phi)
     elif preprocess_options.cnf_type == "LAB":
         phi = LabelCNFizer(nnf=preprocess_options.do_nnf,
                            mutex_nnf_labels=preprocess_options.mutex_nnf_labels).convert_as_formula(phi)
-    elif preprocess_options.cnf_type == "CND":
-        phi = Preprocessor(binary_operators=True).convert_as_formula(phi)
-        phi = LocalTseitinCNFizerConds().convert_as_formula(phi)
     else:
         raise ValueError("Unknown CNF type: {}".format(preprocess_options.cnf_type))
     assert is_cnf(phi)

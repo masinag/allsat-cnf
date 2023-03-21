@@ -1,7 +1,5 @@
-from pysmt.fnode import FNode
-
-from local_tseitin.polarity_cnfizer import PolarityCNFizer
-from local_tseitin.polarity_walker import Polarity
+from allsat_cnf.polarity_cnfizer import PolarityCNFizer
+from allsat_cnf.polarity_walker import Polarity
 
 
 class LabelCNFizer(PolarityCNFizer):

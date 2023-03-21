@@ -9,7 +9,6 @@ import pandas as pd
 
 from benchmark.utils.fileio import get_input_files, check_output_input
 from benchmark.utils.parsing import Mode
-from benchmark.utils.plotting.cactus_plotter import CactusPlotter
 from benchmark.utils.plotting.ecdf_plotter import ECDFPlotter
 from benchmark.utils.plotting.scatter_plotter import ScatterPlotter
 
@@ -21,19 +20,15 @@ matplotlib.rcParams.update({
     'pgf.rcfonts': False,
 })
 
-ORDER: List[Mode] = [Mode.TTA, Mode.LAB, Mode.NNF_LAB, Mode.POL, Mode.NNF_POL, Mode.CND, Mode.NNF_CND, Mode.EXPAND_CND,
-                     Mode.LABELNEG_POL, Mode.NNF_MUTEX_POL, Mode.NOPC_POL, Mode.NOPC_LABELNEG_POL, Mode.NOPC_NNF_POL,
-                     Mode.NOPC_NNF_MUTEX_POL]
-'', '', ''
+ORDER: List[Mode] = [Mode.TTA, Mode.LAB, Mode.NNF_LAB, Mode.POL, Mode.NNF_POL, Mode.LABELNEG_POL, Mode.NNF_MUTEX_POL,
+                     Mode.NOPC_POL, Mode.NOPC_LABELNEG_POL, Mode.NOPC_NNF_POL, Mode.NOPC_NNF_MUTEX_POL]
+
 COLOR = {
     Mode.LAB: "#ff7f00",
     Mode.NNF_LAB: "black",
     Mode.TTA: "blue",
     Mode.POL: "orange",
     Mode.NNF_POL: "purple",
-    Mode.CND: "brown",
-    Mode.NNF_CND: "teal",
-    Mode.EXPAND_CND: "gray",
     Mode.NNF_MUTEX_POL: "#4daf4a",
     Mode.LABELNEG_POL: "#377eb8",
     Mode.NOPC_POL: "olive",

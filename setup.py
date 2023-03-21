@@ -3,7 +3,7 @@ from os import path
 
 from setuptools import find_packages, setup
 
-NAME = 'local-tseitin'
+NAME = 'allsat_cnf'
 DESCRIPTION = ''
 URL = 'http://gitlab.com/giuspek/local-tseitin'
 EMAIL = ''
@@ -18,19 +18,17 @@ REQUIRED = [
     'circuitgraph >= 0.2.0',
     'funcy >= 1.17',
     'psutil>=5.9.4',
+    'pytest',
+    'pytest-cov',
+    'pytest-benchmark',
+    'matplotlib',
+    'pandas',
+    'tqdm',
+    'wmipa',
+    'wmibench @ git+ssh://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench',
 ]
 
-# What packages are optional?
-EXTRAS = {
-    'test': ['pytest', 'pytest-cov', 'pytest-benchmark'],
-    'benchmark': [
-        'matplotlib',
-        'pandas',
-        'tqdm',
-        'wmipa',
-        'wmibench @ git+ssh://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench',
-    ],
-}
+EXTRAS = {}
 
 here = os.path.abspath(os.path.dirname(__file__))
 

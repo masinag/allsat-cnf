@@ -6,7 +6,7 @@ run() {
     res_dir=$(sed "s+data+${RES_DIR}+g" <<<$dir)
     mkdir -p "$res_dir"
     echo $dir
-    for mode in LAB POL NNF_POL NNF_MUTEX_POL LABELNEG_POL; do
+    for mode in LAB NNF_MUTEX_POL LABELNEG_POL; do
       python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $SAT
     done
   done

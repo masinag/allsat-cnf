@@ -3,9 +3,9 @@ from itertools import product
 import pytest
 from pysmt.shortcuts import is_sat
 
-from local_tseitin.label_cnfizer import LabelCNFizer
-from local_tseitin.polarity_cnfizer import PolarityCNFizer
-from local_tseitin.utils import check_models, get_allsat, SolverOptions
+from allsat_cnf.label_cnfizer import LabelCNFizer
+from allsat_cnf.polarity_cnfizer import PolarityCNFizer
+from allsat_cnf.utils import check_models, get_allsat, SolverOptions
 from utils import identity_examples
 from utils import single_polarity_examples, double_polarity_examples
 

@@ -3,13 +3,12 @@ import enum
 from dataclasses import dataclass
 from typing import Tuple
 
-from local_tseitin.utils import SolverOptions
+from allsat_cnf.utils import SolverOptions
 
 
 @dataclass
 class PreprocessOptions:
     cnf_type: str
-    expand_iff: bool
     do_nnf: bool
     mutex_nnf_labels: bool
     label_neg_polarity: bool
@@ -26,14 +25,10 @@ class Mode(enum.Enum):
     NOPC_LABELNEG_POL = "NOPC_LABELNEG_POL"
     NOPC_NNF_POL = "NOPC_NNF_POL"
     NOPC_NNF_MUTEX_POL = "NOPC_NNF_MUTEX_POL"
-    CND = "CND"
-    NNF_CND = "NNF_CND"
-    EXPAND_CND = "EXPAND_CND"
     TTA = "TTA"
 
 
 def get_options(args) -> Tuple[PreprocessOptions, SolverOptions]:
-    expand_iff = False
     do_nnf = False
     mutex_nnf_labels = False
     label_neg_polarity = False
@@ -43,9 +38,6 @@ def get_options(args) -> Tuple[PreprocessOptions, SolverOptions]:
     if mode.startswith("NOPC_"):
         phase_caching = False
         mode = remove_prefix(mode, "NOPC_")
-    if mode.startswith("EXPAND_"):
-        expand_iff = True
-        mode = remove_prefix(mode, "EXPAND_")
     if mode.startswith("NNF_"):
         do_nnf = True
         mode = remove_prefix(mode, "NNF_")
@@ -56,7 +48,7 @@ def get_options(args) -> Tuple[PreprocessOptions, SolverOptions]:
         mode = remove_prefix(mode, "LABELNEG_")
         label_neg_polarity = True
 
-    preprocess_options = PreprocessOptions(cnf_type=mode, expand_iff=expand_iff, do_nnf=do_nnf,
+    preprocess_options = PreprocessOptions(cnf_type=mode, do_nnf=do_nnf,
                                            mutex_nnf_labels=mutex_nnf_labels,
                                            label_neg_polarity=label_neg_polarity)
     solver_options = SolverOptions(timeout=args.timeout, with_repetitions=args.with_repetitions,

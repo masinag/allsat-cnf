@@ -4,7 +4,7 @@ from pysmt import operators as op, typing as types
 from pysmt.fnode import FNode
 from pysmt.walkers import DagWalker, handles
 
-from local_tseitin.polarity_walker import PolarityDagWalker, Polarity
+from allsat_cnf.polarity_walker import PolarityDagWalker, Polarity
 
 PolarityDict = Dict[FNode, Polarity]
 
