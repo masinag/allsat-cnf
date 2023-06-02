@@ -1,6 +1,14 @@
-# Code for the paper "On CNF encoding for SAT enumeration"
+# On CNF encoding for SAT enumeration
+Code for the paper "On CNF encoding for SAT enumeration"
 
-##  Install dependencies
+Short version: [On CNF encoding for Disjoint SAT enumeration](TODO)<br/>
+Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, SAT '23.
+
+Extended version: [On CNF encoding for SAT enumeration](https://arxiv.org/abs/2303.14971)<br/>
+Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, ArXiv.
+
+##  Install
+Requires Python >= 3.8.
 ```bash
 pip install -e .
 pysmt-install --msat
@@ -8,3 +16,9 @@ pysmt-install --msat
 
 ##  Run benchmarks
 See the README.md in the `benchmark/` directory.
+
+## Run examples
+E.g., to run the example analyzed in the paper:
+```bash
+python3 examples/example0.py
+```

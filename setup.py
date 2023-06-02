@@ -8,7 +8,7 @@ DESCRIPTION = ''
 URL = 'http://gitlab.com/giuspek/local-tseitin'
 EMAIL = ''
 AUTHOR = ''
-REQUIRES_PYTHON = '>=3.5.0'
+REQUIRES_PYTHON = '>=3.8'
 VERSION = '0.1'
 
 # What packages are required for this module to be executed?
