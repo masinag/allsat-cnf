@@ -22,3 +22,8 @@ E.g., to run the example analyzed in the paper:
 ```bash
 python3 examples/example0.py
 ```
+
+##  Run tests
+```bash
+pytest test/
+``` 

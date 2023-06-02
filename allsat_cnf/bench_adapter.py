@@ -6,6 +6,7 @@ from pysmt.shortcuts import Symbol, FALSE, TRUE, Not, And, Or, Xor
 
 
 class BenchAdapter:
+    """Reads a circuit from a .bench file and converts it to a PySMT formula."""
     def __init__(self, circuit: cg.Circuit):
         self._circuit = circuit
 

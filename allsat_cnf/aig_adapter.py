@@ -9,6 +9,7 @@ from pysmt.typing import BOOL
 
 
 class AIGAdapter:
+    """Reads an AIG from a .aig or .aag file and converts it to a PySMT formula."""
     def __init__(self, aig: _AIG):
         assert len(aig.outputs) == 1
         # assert len(aig.latches) == 0

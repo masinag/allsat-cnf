@@ -10,7 +10,9 @@ PolarityDict = Dict[FNode, Polarity]
 
 
 class PolarityFinder(PolarityDagWalker):
-    """Finds the polarity of each subformula in a formula."""
+    """Finds the polarity of each subformula in a formula.
+    See the main method `find` for more information.
+    """
 
     def __init__(self, environment=None):
         DagWalker.__init__(self, environment, invalidate_memoization=True)
@@ -18,6 +20,10 @@ class PolarityFinder(PolarityDagWalker):
         self.polarity: PolarityDict = {}
 
     def find(self, formula: FNode) -> PolarityDict:
+        """Finds the polarity of each subformula in a formula.
+        :param formula: The formula to analyze.
+        :return: A dictionary mapping each subformula to its polarity.
+        """
         self.polarity = {}
         self.walk(formula)
         return self.polarity

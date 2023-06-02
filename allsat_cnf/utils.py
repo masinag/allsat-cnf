@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from itertools import filterfalse
 from pprint import pformat
-from typing import Optional, Iterable, Dict
+from typing import Optional, Iterable, Dict, Tuple, Set
 
 from pysmt.fnode import FNode
 from pysmt.shortcuts import *
@@ -18,7 +18,16 @@ class SolverOptions:
     phase_caching: bool = True
 
 
-def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None, solver_options: Optional[SolverOptions] = None):
+def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
+               solver_options: Optional[SolverOptions] = None) -> \
+        Tuple[Iterable[Set[FNode]], int]:
+    """
+    Enumerates a list of (partial) models of the given formula.
+    :param formula: the formula to enumerate models for
+    :param atoms: the atoms to project the models on (if None, all atoms in the formula are used)
+    :param solver_options: options for the solver
+    :return: a list of models and the total number of models
+    """
     formula = rewalk(formula)
 
     if atoms is None:
@@ -41,6 +50,13 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None, solver_o
         map(lambda model: 2 ** (len(atoms) - len(model)), models)
     )
     return models, total_models_count
+
+
+def _allsat_callback(model, converter, models):
+    py_model = {converter.back(v) for v in model}
+    assert IdentityDagWalker().walk(And(py_model)) == And(py_model)
+    models.append(py_model)
+    return 1
 
 
 def check_sat(formula: FNode):
@@ -85,13 +101,6 @@ def get_functions(formula: FNode):
     return {a for a in formula.get_atoms() if a.is_function_application()}
 
 
-def _allsat_callback(model, converter, models):
-    py_model = {converter.back(v) for v in model}
-    assert IdentityDagWalker().walk(And(py_model)) == And(py_model)
-    models.append(py_model)
-    return 1
-
-
 def get_dict_model(mu):
     mu_dict = {}
     for a in mu:
@@ -103,21 +112,38 @@ def get_dict_model(mu):
 
 
 def check_models(ta, phi):
-    # check every model in ta satisfies phi
+    """
+    Check that the given list of models is correct and complete for the given formula.
+    :param ta: the list of models
+    :param phi: the formula
+    :return: True if the list of models is correct and complete for the given formula, False otherwise
+    """
     assert ta_is_correct(phi, ta), "ta is not correct: {}\n{}".format(phi, pformat(ta))
     assert ta_is_complete(phi, ta), "ta is not complete: {}\n{}".format(phi, pformat(ta))
 
 
 def ta_is_correct(phi, ta):
+    """
+    Check that each model in the list satisfies the formula.
+    :param phi: the formula
+    :param ta: the list of models
+    :return: True if each model in the list satisfies the formula, False otherwise
+    """
     for mu in ta:
         model = And(mu)
         formula = And(phi, model)
-        if not _is_sat(formula):
+        if not check_sat(formula):
             return False
     return True
 
 
 def ta_is_complete(phi, ta):
+    """
+    Check that each total model of the formula is a super-model of one of the models in the list.
+    :param phi: the formula
+    :param ta: the list of models
+    :return: True if each total model of the formula is a super-model of one of the models in the list, False otherwise
+    """
     atoms = get_boolean_variables(phi).union(
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
@@ -129,11 +155,6 @@ def ta_is_complete(phi, ta):
     return True
     # equiv = Iff(phi, Or(map(And, ta)))
     # return _is_valid(equiv)
-
-
-def _is_sat(phi):
-    phi = rewalk(phi)
-    return is_sat(phi)
 
 
 def rewalk(phi):

@@ -13,6 +13,8 @@ T_CNF = List[Tuple[FNode]]
 
 
 class PolarityCNFizer(DagWalker):
+    """Converts a formula into CNF using the Plaisted and Greenbaum algorithm."""
+
     def __init__(self, environment=None, nnf=False, mutex_nnf_labels=False, label_neg_polarity=False):
         DagWalker.__init__(self, environment, invalidate_memoization=True)
         self.mgr = self.env.formula_manager
