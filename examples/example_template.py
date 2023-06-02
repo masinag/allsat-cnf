@@ -20,8 +20,8 @@ for i in range(20):
 
 cnfizers = {
     "LAB": LabelCNFizer(),
-    "POL": PolarityCNFizer(),
-    # "LABELNEG_POL": PolarityCNFizer(label_neg_polarity=True),
+    # "POL": PolarityCNFizer(),
+    "LABELNEG_POL": PolarityCNFizer(label_neg_polarity=True),
     # "NNF_POL": PolarityCNFizer(nnf=True),
     "NNF_MUTEX_POL": PolarityCNFizer(nnf=True, mutex_nnf_labels=True),
 }
