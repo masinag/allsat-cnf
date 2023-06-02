@@ -1,5 +1,4 @@
 import time
-from pprint import pprint
 
 from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
@@ -22,8 +21,8 @@ for i in range(20):
 cnfizers = {
     "LAB": LabelCNFizer(),
     "POL": PolarityCNFizer(),
-    "LABELNEG_POL": PolarityCNFizer(label_neg_polarity=True),
-    "NNF_POL": PolarityCNFizer(nnf=True),
+    # "LABELNEG_POL": PolarityCNFizer(label_neg_polarity=True),
+    # "NNF_POL": PolarityCNFizer(nnf=True),
     "NNF_MUTEX_POL": PolarityCNFizer(nnf=True, mutex_nnf_labels=True),
 }
 

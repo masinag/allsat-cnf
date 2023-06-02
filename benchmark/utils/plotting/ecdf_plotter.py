@@ -18,7 +18,7 @@ class ECDFPlotter(Plotter):
         modes = self.get_modes()
 
         for i, mode in enumerate(modes):
-            ls = ['-.', '-', '--'][i % 3]
+            ls = self.linestyles[mode]
             series = data[mode.value].sort_values(ignore_index=True).cumsum()
             plt.plot(series, range(1, len(series) + 1), linewidth=self.LINEWIDTH,
                      color=self.colors[mode], label=self.name_mapping[mode], linestyle=ls)

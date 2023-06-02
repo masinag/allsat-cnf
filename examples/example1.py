@@ -1,4 +1,4 @@
-from pysmt.shortcuts import *
+from pysmt.shortcuts import And, Or, Not, Iff
 
 from example_template import boolean_atoms, make_example
 

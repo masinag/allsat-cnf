@@ -38,9 +38,15 @@ COLOR = {
 }
 
 NAME_MAPPING = {
-    Mode.LAB: r"$\mathsf{CNF_{TS}}(\varphi)$",
+    Mode.LAB: r"$\mathsf{CNF_{Ts}}(\varphi)$",
     Mode.LABELNEG_POL: r"$\mathsf{CNF_{PG}}(\varphi)$",
     Mode.NNF_MUTEX_POL: r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$",
+}
+
+LINESTYLES = {
+    Mode.LAB: "--",
+    Mode.LABELNEG_POL: "-",
+    Mode.NNF_MUTEX_POL: "-.",
 }
 
 

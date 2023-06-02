@@ -1,10 +1,10 @@
 import random
 
-from example_template import *
+from pysmt.shortcuts import And, Or, Not, Iff
 
-A, B, C, D, E, *_ = boolean_atoms
+from example_template import boolean_atoms, make_example
 
-boolean_atoms = list(boolean_atoms)[:4]
+boolean_atoms = list(boolean_atoms)[:5]
 
 
 def random_formula(depth):
@@ -14,7 +14,6 @@ def random_formula(depth):
             return random.choice(boolean_atoms)
         else:
             return Not(random.choice(boolean_atoms))
-            # operator = random.choice([Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Or, And, Iff])
     operator = random.choices([Or, And, Iff], weights=[8 / 17, 8 / 17, 1 / 17], k=1)[0]
     if operator is Not:
         return Not(random_formula(depth - 1))
