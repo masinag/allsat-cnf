@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 NAME = 'allsat_cnf'
 DESCRIPTION = ''
-URL = 'http://gitlab.com/giuspek/local-tseitin'
+URL = 'https://github.com/masinag/allsat-cnf'
 EMAIL = ''
 AUTHOR = ''
 REQUIRES_PYTHON = '>=3.8'
