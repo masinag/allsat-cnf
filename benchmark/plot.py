@@ -55,15 +55,12 @@ def error(msg=""):
     sys.exit(1)
 
 
-def parse_inputs(input_files: List[str], with_repetitions: bool, timeout: Optional[int],
-                 timeout_models: Optional[int]) -> pd.DataFrame:
+def parse_inputs(input_files: List[str], timeout: Optional[int], timeout_models: Optional[int]) -> pd.DataFrame:
     data = []
     for filename in input_files:
         with open(filename) as f:
             result_out = json.load(f)
         mode = result_out["mode"]
-        if with_repetitions != ("REP" in mode):
-            continue
         for result in result_out["results"]:
             result["mode"] = mode
             if result["enum_timed_out"]:
@@ -128,15 +125,14 @@ def main():
     check_output_input(output_dir, "", inputs)
 
     input_files = get_input_files(inputs)
-    data: pd.DataFrame = parse_inputs(input_files, with_repetitions=False, timeout=timeout,
-                                      timeout_models=timeout_models)
+    data: pd.DataFrame = parse_inputs(input_files, timeout=timeout, timeout_models=timeout_models)
     data: pd.DataFrame = group_data(data)
 
     ecdf_plotter = ECDFPlotter(data, output_dir, filename, COLOR, [Mode.NNF_MUTEX_POL, Mode.LABELNEG_POL, Mode.LAB],
-                               timeout, timeout_models, NAME_MAPPING)
+                               timeout, timeout_models, NAME_MAPPING, LINESTYLES)
     ecdf_plotter.plot_time()
 
-    scatter_plotter = ScatterPlotter(data, output_dir, filename, COLOR, ORDER, timeout, timeout_models, NAME_MAPPING)
+    scatter_plotter = ScatterPlotter(data, output_dir, filename, COLOR, ORDER, timeout, timeout_models, NAME_MAPPING, LINESTYLES)
     scatter_plotter.plot_models_all_vs_all()
     scatter_plotter.plot_time_all_vs_all()
     # scatter_plotter.plot_size_all_vs_all()

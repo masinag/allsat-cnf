@@ -47,7 +47,8 @@ def check_output_input(output_dir: str, output_file: str, input_dir: Optional[Un
 def write_result(args, res, output_file):
     if not os.path.exists(output_file):
         info = {
-            "mode": get_full_name_mode(args),
+            "mode": args.mode,
+            "with_repetitions": args.with_repetitions,
             "results": [res]
         }
     else:
