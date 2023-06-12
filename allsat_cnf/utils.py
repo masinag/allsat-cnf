@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from itertools import filterfalse
 from pprint import pformat
-from typing import Optional, Iterable, Dict, Tuple, Set
+from typing import Optional, Iterable, Dict, Tuple, Set, List
 
 from pysmt.fnode import FNode
 from pysmt.shortcuts import *
@@ -20,7 +20,7 @@ class SolverOptions:
 
 def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
                solver_options: Optional[SolverOptions] = None) -> \
-        Tuple[Iterable[Set[FNode]], int]:
+        Tuple[List[Set[FNode]], int]:
     """
     Enumerates a list of (partial) models of the given formula.
     :param formula: the formula to enumerate models for
@@ -71,13 +71,11 @@ def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
         solver_options_dict["dpll.allsat_allow_duplicates"] = "true"
     if not solver_options.phase_caching:
         solver_options_dict["dpll.branching_cache_phase"] = "0"
-        solver_options_dict["dpll.branching_initial_phase"] = "0"
         solver_options_dict["dpll.branching_random_frequency"] = "0"
     if solver_options.use_ta:
         solver_options_dict["dpll.allsat_minimize_model"] = "true"
-        solver_options_dict["dpll.allsat_allow_duplicates"] = "false"
         solver_options_dict["preprocessor.toplevel_propagation"] = "false"
-        solver_options_dict["dpll.branching_initial_phase"] = "0"
+    solver_options_dict["dpll.branching_initial_phase"] = "0"
     return solver_options_dict
 
 

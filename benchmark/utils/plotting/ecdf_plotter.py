@@ -12,9 +12,9 @@ class ECDFPlotter(Plotter):
         self._plot("time", "Time(s)", "Number of problems solved")
 
     def _plot(self, param: Param, xlabel: str, ylabel: str):
-        # set the value of param where "enum_timed_out" is True to None
         data = self.data[param].copy()
-        data[self.data["enum_timed_out"]] = None
+        # fill with None where "enum_timed_out" is True or None
+        data[self.data["enum_timed_out"].any(axis=1)] = None
         modes = self.get_modes()
 
         for i, mode in enumerate(modes):

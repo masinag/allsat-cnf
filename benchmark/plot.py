@@ -55,14 +55,18 @@ def error(msg=""):
     sys.exit(1)
 
 
-def parse_inputs(input_files: List[str], timeout: Optional[int], timeout_models: Optional[int]) -> pd.DataFrame:
+def parse_inputs(input_files: List[str], with_repetitions: bool, timeout: Optional[int], timeout_models: Optional[int]) -> pd.DataFrame:
     data = []
     for filename in input_files:
         with open(filename) as f:
             result_out = json.load(f)
+        if result_out["with_repetitions"] != with_repetitions:
+            continue
         mode = result_out["mode"]
         for result in result_out["results"]:
             result["mode"] = mode
+            if type(result["enum_timed_out"]) != bool:
+                print("--------------", result)
             if result["enum_timed_out"]:
                 result["models"] = timeout_models
                 result["time"] = timeout
@@ -103,6 +107,8 @@ def parse_args():
     parser.add_argument("-t", "--timeout", type=int, default=None, help="Timeout (default: None)")
     parser.add_argument("-tm", "--timeout-models", type=int, default=None,
                         help="Number of models to plot for timeouts (default: None)")
+    parser.add_argument("--with-repetitions", action="store_true",
+                        help="Whether to plot results allowing non-disjoint models (default: False)")
     return parser.parse_args()
 
 
@@ -121,11 +127,12 @@ def main():
     filename: str = args.filename
     timeout: int = args.timeout
     timeout_models: int = args.timeout_models
+    with_repetitions: bool = args.with_repetitions
 
     check_output_input(output_dir, "", inputs)
 
     input_files = get_input_files(inputs)
-    data: pd.DataFrame = parse_inputs(input_files, timeout=timeout, timeout_models=timeout_models)
+    data: pd.DataFrame = parse_inputs(input_files, with_repetitions, timeout=timeout, timeout_models=timeout_models)
     data: pd.DataFrame = group_data(data)
 
     ecdf_plotter = ECDFPlotter(data, output_dir, filename, COLOR, [Mode.NNF_MUTEX_POL, Mode.LABELNEG_POL, Mode.LAB],
