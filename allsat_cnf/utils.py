@@ -3,6 +3,7 @@ from itertools import filterfalse
 from pprint import pformat
 from typing import Optional, Iterable, Dict, Tuple, Set, List
 
+import mathsat
 from pysmt.fnode import FNode
 from pysmt.shortcuts import *
 from pysmt.shortcuts import Not, And
@@ -31,10 +32,10 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
     formula = rewalk(formula)
 
     if atoms is None:
-        atoms = get_boolean_variables(formula)
+        atoms = get_atoms(formula)
     if len(atoms) == 0:
         return [], 0
-    atoms = sorted(atoms, key=lambda x: x.symbol_name())
+    atoms = sorted(atoms, key=lambda x: x.serialize())
 
     if solver_options is not None:
         solver_options_dict = get_solver_options_dict(solver_options)
@@ -44,7 +45,9 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
     models = []
     with Solver(name="msat", solver_options=solver_options_dict) as solver:
         solver.add_assertion(formula)
-        solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, models))
+        # solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, models))
+        mathsat.msat_all_sat(solver.msat_env(), [solver.converter.convert(a) for a in atoms],
+                             lambda model: _allsat_callback(model, solver.converter, models))
 
     total_models_count = sum(
         map(lambda model: 2 ** (len(atoms) - len(model)), models)

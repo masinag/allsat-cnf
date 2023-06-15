@@ -1,0 +1,155 @@
+from collections import namedtuple
+
+from pysmt.shortcuts import *
+from pysmt.shortcuts import And, Or, Not
+
+Example = namedtuple('Example', ['formula', 'pol_expected_clauses', 'pol_expected_variables',
+                                 'lab_expected_clauses', 'lab_expected_variables',
+                                 'nnf_pol_expected_clauses', 'nnf_pol_expected_variables',
+                                 'nnf_lab_expected_clauses', 'nnf_lab_expected_variables',
+                                 'nnf_mutex_pol_expected_clauses', 'nnf_mutex_pol_expected_variables'])
+
+
+def make_identity_examples(atoms):
+    A, B, C, D, *_ = atoms
+    return [
+        A,
+        And(A, B),
+        Or(A, B),
+        And(A, B, C, D),
+        Or(A, B, C, D),
+        Not(A),
+        Not(Not(A)),
+        Not(Not(And(A, B))),
+        Not(Not(Or(A, B))),
+    ]
+
+
+def make_single_polarity_examples(atoms):
+    A, B, C, D, E, F, G, H, *_ = atoms
+    return [
+        Example(formula=And(Or(A, B), Or(C, D)),
+                pol_expected_clauses=4,
+                pol_expected_variables=6,
+                lab_expected_clauses=8,
+                lab_expected_variables=6,
+                nnf_pol_expected_clauses=4,
+                nnf_pol_expected_variables=6,
+                nnf_lab_expected_clauses=8,
+                nnf_lab_expected_variables=6,
+                nnf_mutex_pol_expected_clauses=4,
+                nnf_mutex_pol_expected_variables=6),
+        Example(formula=Or(And(A, B), And(C, D)),
+                pol_expected_clauses=5,
+                pol_expected_variables=6,
+                lab_expected_clauses=7,
+                lab_expected_variables=6,
+                nnf_pol_expected_clauses=5,
+                nnf_pol_expected_variables=6,
+                nnf_lab_expected_clauses=7,
+                nnf_lab_expected_variables=6,
+                nnf_mutex_pol_expected_clauses=5,
+                nnf_mutex_pol_expected_variables=6),
+        Example(formula=Not(Or(A, Not(And(B, Not(Or(C, D)))))),
+                pol_expected_clauses=6,
+                pol_expected_variables=6,
+                lab_expected_clauses=8,
+                lab_expected_variables=6,
+                nnf_pol_expected_clauses=6,
+                nnf_pol_expected_variables=6,
+                nnf_lab_expected_clauses=8,
+                nnf_lab_expected_variables=6,
+                nnf_mutex_pol_expected_clauses=6,
+                nnf_mutex_pol_expected_variables=6),
+        Example(formula=Or(Or(Or(And(A, B), And(C, D)), And(E, F)), Not(And(G, H))),
+                pol_expected_clauses=10,
+                pol_expected_variables=14,
+                lab_expected_clauses=19,
+                lab_expected_variables=14,
+                nnf_pol_expected_clauses=10,
+                nnf_pol_expected_variables=14,
+                nnf_lab_expected_clauses=19,
+                nnf_lab_expected_variables=14,
+                nnf_mutex_pol_expected_clauses=10,
+                nnf_mutex_pol_expected_variables=14),
+    ]
+
+
+def make_double_polarity_examples(atoms):
+    A, B, C, D, E, F, G, H, *_ = atoms
+    return [
+        Example(formula=Or(And(A, B), And(C, Or(Not(And(A, B)), D))),
+                pol_expected_clauses=7,
+                pol_expected_variables=7,
+                lab_expected_clauses=10,
+                lab_expected_variables=7,
+                nnf_pol_expected_clauses=7,
+                nnf_pol_expected_variables=8,
+                nnf_lab_expected_clauses=13,
+                nnf_lab_expected_variables=8,
+                nnf_mutex_pol_expected_clauses=8,
+                nnf_mutex_pol_expected_variables=8),
+        Example(formula=Iff(And(C, D), Or(D, And(B, A))),
+                pol_expected_clauses=11,
+                pol_expected_variables=7,
+                lab_expected_clauses=11,
+                lab_expected_variables=7,
+                nnf_pol_expected_clauses=13,
+                nnf_pol_expected_variables=12,
+                nnf_lab_expected_clauses=26,
+                nnf_lab_expected_variables=12,
+                nnf_mutex_pol_expected_clauses=16,
+                nnf_mutex_pol_expected_variables=12),
+        Example(formula=Or(And(C, D), Not(Iff(And(C, D), Or(D, And(B, A))))),
+                pol_expected_clauses=12,
+                pol_expected_variables=8,
+                lab_expected_clauses=14,
+                lab_expected_variables=8,
+                nnf_pol_expected_clauses=15,
+                nnf_pol_expected_variables=13,
+                nnf_lab_expected_clauses=28,
+                nnf_lab_expected_variables=13,
+                nnf_mutex_pol_expected_clauses=18,
+                nnf_mutex_pol_expected_variables=13),
+        Example(
+            formula=Not(
+                Iff(And(Not(And(Not(A), C)), Or(Not(B), Not(D))), And(Not(And(D, Not(E))), Not(And(Not(B), E))))),
+            pol_expected_clauses=20,
+            pol_expected_variables=11,
+            lab_expected_clauses=20,
+            lab_expected_variables=11,
+            nnf_pol_expected_clauses=23,
+            nnf_pol_expected_variables=19,
+            nnf_lab_expected_clauses=43,
+            nnf_lab_expected_variables=19,
+            nnf_mutex_pol_expected_clauses=32,
+            nnf_mutex_pol_expected_variables=19),
+    ]
+
+
+# initialize bool variables
+boolean_variables = [Symbol(chr(i), BOOL) for i in range(ord("A"), ord("Z") + 1)]
+real_variables = [Symbol(chr(i), REAL) for i in range(ord("a"), ord("z") + 1)]
+
+boolean_atoms = boolean_variables
+A, B, *_ = boolean_variables
+x, y, z, *_ = real_variables
+real_atoms = [
+    x <= 0.5,
+    y <= 0.5,
+    x + 3 * y <= 0.5,
+    x + 3 * y + 2 * z <= 0.5,
+    x + 3 * y + 2 * z + 1 <= 0.5,
+    A,
+    B,
+    x + 3 * y + 2 * z + 1 <= x + 3 * y + 2 * z,
+]
+
+bool_identity_examples = make_identity_examples(boolean_atoms)
+lra_identity_examples = make_identity_examples(real_atoms)
+
+bool_single_polarity_examples = make_single_polarity_examples(boolean_atoms)
+lra_single_polarity_examples = make_single_polarity_examples(real_atoms)
+
+bool_double_polarity_examples = make_double_polarity_examples(boolean_atoms)
+lra_double_polarity_examples = make_double_polarity_examples(real_atoms)

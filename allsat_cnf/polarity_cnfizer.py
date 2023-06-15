@@ -58,7 +58,7 @@ class PolarityCNFizer(DagWalker):
                     # Prune clauses as ~tl -> l1 v ... v lk
                     simp = None
                     break
-                elif lit == self.mgr.Not(tl).simplify():
+                elif lit == self.negate(tl):
                     # Simplify tl -> l1 v ... v lk
                     # into l1 v ... v lk
                     continue
@@ -96,7 +96,7 @@ class PolarityCNFizer(DagWalker):
         if Polarity.POS in polarities[formula]:
             self._clauses += [tuple([self.mgr.Not(k), a]) for a in args]
         if Polarity.NEG in polarities[formula]:
-            self._clauses += [tuple([k] + [self.mgr.Not(a).simplify() for a in args])]
+            self._clauses += [tuple([k] + [self.negate(a) for a in args])]
         return k
 
     def walk_or(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
@@ -107,24 +107,28 @@ class PolarityCNFizer(DagWalker):
         if Polarity.POS in polarities[formula]:
             self._clauses += [tuple([self.mgr.Not(k)] + [a for a in args])]
         if Polarity.NEG in polarities[formula]:
-            self._clauses += [tuple([k, self.mgr.Not(a).simplify()]) for a in args]
+            self._clauses += [tuple([k, self.negate(a)]) for a in args]
         return k
 
     def walk_not(self, formula: FNode, args, **kwargs):
-        a = args[0]
-        if a.is_true():
+        return self.negate(args[0])
+
+    def negate(self, formula):
+        if formula.is_true():
             return self.mgr.FALSE()
-        elif a.is_false():
+        elif formula.is_false():
             return self.mgr.TRUE()
+        elif formula.is_not():
+            return formula.arg(0)
         else:
-            return self.mgr.Not(a).simplify()
+            return self.mgr.Not(formula)
 
     def walk_implies(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
         a, b = args
         k = self.key_var(formula, polarities)
         not_k = self.mgr.Not(k)
-        not_a = self.mgr.Not(a).simplify()
-        not_b = self.mgr.Not(b).simplify()
+        not_a = self.negate(a)
+        not_b = self.negate(b)
 
         if Polarity.POS in polarities[formula]:
             self._clauses += [tuple([not_k, not_a, b])]
@@ -136,8 +140,8 @@ class PolarityCNFizer(DagWalker):
         a, b = args
         k = self.key_var(formula, polarities)
         not_k: FNode = self.mgr.Not(k)
-        not_a: FNode = self.mgr.Not(a).simplify()
-        not_b: FNode = self.mgr.Not(b).simplify()
+        not_a: FNode = self.negate(a)
+        not_b: FNode = self.negate(b)
 
         if Polarity.POS in polarities[formula]:
             self._clauses += [tuple([not_k, not_a, b]),
@@ -154,9 +158,9 @@ class PolarityCNFizer(DagWalker):
         i, t, e = args
         k = self.key_var(formula, polarities)
         not_k = self.mgr.Not(k)
-        not_i = self.mgr.Not(i).simplify()
-        not_t = self.mgr.Not(t).simplify()
-        not_e = self.mgr.Not(e).simplify()
+        not_i = self.negate(i)
+        not_t = self.negate(t)
+        not_e = self.negate(e)
 
         if Polarity.POS in polarities[formula]:
             self._clauses += [tuple([not_k, not_i, t]), tuple([not_k, i, e])]
