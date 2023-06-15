@@ -29,8 +29,8 @@ class FormulaGenerator:
     # maximum (absolute) value a variable can take
     DOMAIN_BOUNDS = [0, 1]
 
-    def __init__(self, n_reals, n_bools, seed):
-        assert n_reals + n_bools > 0
+    def __init__(self, n_bools, n_reals, seed):
+        assert n_bools + n_reals > 0
 
         # initialize the real/boolean variables
         self.reals = []
