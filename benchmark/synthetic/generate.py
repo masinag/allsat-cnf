@@ -138,7 +138,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    output_dir = 'problem_b{}_r{}_d{}_m{}_s{}'.format(args.booleans, args.reals, args.depth, args.models, args.seed)
+    output_dir = 'problems_b{}_r{}_d{}_m{}_s{}'.format(args.booleans, args.reals, args.depth, args.models, args.seed)
     output_dir = path.join(args.output, output_dir)
 
     check_output_input(args.output, output_dir)
