@@ -2,7 +2,7 @@
 
 source config.sh
 
-source generate.sh
+source generate.sh 20  0 8
 
 source ../run-utils.sh
 

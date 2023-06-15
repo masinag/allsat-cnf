@@ -83,3 +83,10 @@ def arg_positive(value: str):
     if ivalue <= 0:
         raise argparse.ArgumentTypeError('Expected positive integer (no 0), found {}'.format(value))
     return ivalue
+
+
+def arg_probability(value: str):
+    fvalue = float(value)
+    if fvalue < 0 or fvalue > 1:
+        raise argparse.ArgumentTypeError('Expected probability in [0, 1], found {}'.format(value))
+    return fvalue
