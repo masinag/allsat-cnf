@@ -69,7 +69,10 @@ class FormulaGenerator:
         :param theta: the probability of generating a Boolean atom rather than a LRA atom
         """
         if depth <= 0:
-            return self._random_atom(theta)
+            leaf = self._random_atom(theta)
+            if random.random() < neg_prob:
+                leaf = Not(leaf)
+            return leaf
         else:
             operator = random.choices(list(operators.keys()), weights=list(operators.values()))[0]
 
