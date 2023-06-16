@@ -33,6 +33,8 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
 
     if atoms is None:
         atoms = get_atoms(formula)
+    else:
+        atoms = rewalk(atoms)
     if len(atoms) == 0:
         return [], 0
     atoms = sorted(atoms, key=lambda x: x.serialize())
