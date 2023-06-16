@@ -85,7 +85,7 @@ class FormulaGenerator:
             return node
 
     def _random_atom(self, theta=0.5):
-        if len(self.bools) == 0 or random.random() < theta:
+        if len(self.bools) == 0 or (len(self.reals) > 0 and random.random() < theta):
             return self._random_inequality()
         else:
             return self._random_boolean()
