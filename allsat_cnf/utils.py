@@ -72,14 +72,15 @@ def check_sat(formula: FNode):
 
 def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
     solver_options_dict = {}
-    if solver_options.with_repetitions:
-        solver_options_dict["dpll.allsat_allow_duplicates"] = "true"
+
+    solver_options_dict["dpll.allsat_allow_duplicates"] = "true" if solver_options.with_repetitions else "false"
     if not solver_options.phase_caching:
         solver_options_dict["dpll.branching_cache_phase"] = "0"
         solver_options_dict["dpll.branching_random_frequency"] = "0"
     if solver_options.use_ta:
         solver_options_dict["dpll.allsat_minimize_model"] = "true"
         solver_options_dict["preprocessor.toplevel_propagation"] = "false"
+        solver_options_dict["preprocessor.simplification"] = "0"
     solver_options_dict["dpll.branching_initial_phase"] = "0"
     return solver_options_dict
 
@@ -161,13 +162,9 @@ def ta_is_complete(phi, ta):
 
 
 def rewalk(phi):
-    if isinstance(phi, list):
-        return [rewalk(a) for a in phi]
-    if isinstance(phi, tuple):
-        return tuple(rewalk(a) for a in phi)
-    if isinstance(phi, set):
-        return {rewalk(a) for a in phi}
-    return IdentityDagWalker().walk(phi)
+    if isinstance(phi, FNode):
+        return IdentityDagWalker().walk(phi)
+    return phi.__class__(rewalk(a) for a in phi)
 
 
 def _is_valid(phi):
