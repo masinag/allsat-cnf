@@ -8,8 +8,8 @@ Param = Literal["time", "models", "n_clauses"]
 
 
 class Plotter:
-    FONTSIZE = 20
-    TICKSIZE = 15
+    FONTSIZE = 22
+    TICKSIZE = 16
     LINEWIDTH = 2.5
     FIGSIZE = (10, 8)
 

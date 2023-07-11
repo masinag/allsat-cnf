@@ -62,6 +62,7 @@ def parse_inputs(input_files: List[str], with_repetitions: bool, timeout: Option
             result_out = json.load(f)
         if result_out["with_repetitions"] != with_repetitions:
             continue
+        print(f"Found {filename}")
         mode = result_out["mode"]
         for result in result_out["results"]:
             result["mode"] = mode

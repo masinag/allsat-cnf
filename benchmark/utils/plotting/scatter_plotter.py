@@ -26,7 +26,7 @@ class CustomTicker(LogFormatterSciNotation):
 class ScatterPlotter(Plotter):
 
     def plot_models_all_vs_all(self):
-        self._plot_all_vs_all("models", r"\# of models")
+        self._plot_all_vs_all("models", r"Size of $\mathcal{T}\hspace{-.1cm}\mathcal{A}$")
 
     def plot_time_all_vs_all(self):
         self._plot_all_vs_all("time", "Time (s)")
