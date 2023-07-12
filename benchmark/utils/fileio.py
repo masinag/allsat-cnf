@@ -65,7 +65,7 @@ def read_aig(filename):
 
 
 def read_formula_from_file(filename):
-    if filename.endswith(".aig"):
+    if filename.endswith(".aig") or filename.endswith(".aag"):
         return read_aig(filename)
     elif filename.endswith(".smt2"):
         return read_smtlib(filename)
