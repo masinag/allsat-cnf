@@ -17,6 +17,7 @@ if [ ! -d ${DATA_DIR}/ ]; then
   git config core.sparseCheckout true # enable sparse checkout
   echo "$BENCH_DIR/" >> .git/info/sparse-checkout # set the sparse checkout to the data directory
   git pull origin b57c2d6cba244460008dc6400beef2604a720c24
+  cd ..
 fi
 
 # Expected structure:
