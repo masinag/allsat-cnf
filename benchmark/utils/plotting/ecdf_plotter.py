@@ -17,20 +17,23 @@ class ECDFPlotter(Plotter):
         data[self.data["enum_timed_out"].any(axis=1)] = None
         modes = self.get_modes()
 
+        lines = []
         for i, mode in enumerate(modes):
             ls = self.linestyles[mode]
             series = data[mode.value].sort_values(ignore_index=True).cumsum()
-            plt.plot(series, range(1, len(series) + 1), linewidth=self.LINEWIDTH,
+            line, = plt.plot(series, range(1, len(series) + 1), linewidth=self.LINEWIDTH,
                      color=self.colors[mode], label=self.name_mapping[mode], linestyle=ls)
+            lines.append(line)
 
         n_instances = len(data)
-        plt.axhline(y=n_instances, color="black", linestyle="--", label="Total number of problems")
+        line = plt.axhline(y=n_instances, color="black", linestyle="--", label="Total number of problems")
+        lines.append(line)
 
         # if self.logscale:
         #     plt.xscale("log")
 
         # legend
-        plt.legend(loc="lower right", fontsize=self.FONTSIZE*0.95)
+        # plt.legend(loc="lower right", fontsize=self.FONTSIZE*0.95)
         # axes labels
         plt.xlabel(xlabel, fontsize=self.FONTSIZE)
         plt.ylabel(ylabel, fontsize=self.FONTSIZE)
@@ -40,5 +43,9 @@ class ECDFPlotter(Plotter):
 
         outfile = os.path.join(self.output_dir, "{}_ecdf{}.pdf".format(param, self.filename))
         plt.savefig(outfile, bbox_inches='tight')
+        # plot *only* the legend on a different file
+        legendFig = plt.figure("Legend plot")
+        legendFig.legend(lines, [l.get_label() for l in lines], loc="center", fontsize=self.FONTSIZE, ncol=len(lines))
+        legendFig.savefig(os.path.join(self.output_dir, "legend.pdf".format(param)), bbox_inches='tight')
         print("created {}".format(outfile))
         plt.clf()
