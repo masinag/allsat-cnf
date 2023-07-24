@@ -3,13 +3,13 @@ run() {
   DIR=$1
   SAT=$2
   RES_DIR=$3
-  REP_FLAG=$4
+  OTHER_OPT=$4
   for dir in $(ls -d $DIR/data/*); do
     res_dir=$(sed "s+data+${RES_DIR}+g" <<<$dir)
     mkdir -p "$res_dir"
     echo $dir
     for mode in LAB NNF_MUTEX_POL LABELNEG_POL; do
-      python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $SAT $REP_FLAG
+      python3 ../evaluate.py "$dir" -m $mode -o "$res_dir" $SAT $OTHER_OPT
     done
   done
 }

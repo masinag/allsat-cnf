@@ -116,9 +116,10 @@ def parse_args():
 def count_timeouts(data: pd.DataFrame):
     modes = data.columns.get_level_values(1).unique()
     modes = [mode for mode in ORDER if mode.value in modes]
+    tot_data = data[("enum_timed_out", modes[0].value)].count()
     for mode in modes:
         n_timeouts = data[("enum_timed_out", mode.value)].sum()
-        print(f"{mode}: {n_timeouts} timeouts")
+        print(f"{mode}: {n_timeouts}/{tot_data} timeouts")
 
 
 def main():
