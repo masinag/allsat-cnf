@@ -19,5 +19,5 @@ get-allsat() {
 }
 
 check-sat() {
-  run $1 "--sat" "results-sat" ""
+  run $1 "--sat" "results-sat" ${@: 2}
 }
