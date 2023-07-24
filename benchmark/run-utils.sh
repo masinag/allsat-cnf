@@ -3,7 +3,7 @@ run() {
   DIR=$1
   SAT=$2
   RES_DIR=$3
-  OTHER_OPT=$4
+  OTHER_OPT=${@: 4}
   for dir in $(ls -d $DIR/data/*); do
     res_dir=$(sed "s+data+${RES_DIR}+g" <<<$dir)
     mkdir -p "$res_dir"
@@ -15,7 +15,7 @@ run() {
 }
 
 get-allsat() {
-  run $1 "" "results" $2
+  run $1 "" "results" ${@: 2}
 }
 
 check-sat() {
