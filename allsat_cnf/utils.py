@@ -53,8 +53,9 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
 
     preferred_atoms = set()
     if solver_options is not None:
+        boolean_variables = get_boolean_variables(formula)
         if solver_options.first_assign is SolverOptions.FirstAssign.RELEVANT:
-            preferred_atoms = atoms
+            preferred_atoms = boolean_variables & atoms # MathSAT allows only boolean variables to be relevant
         elif solver_options.first_assign is SolverOptions.FirstAssign.IRRELEVANT:
             preferred_atoms = get_boolean_variables(formula) - set(atoms)
     preferred_atoms = sorted(preferred_atoms, key=lambda x: x.node_id())
