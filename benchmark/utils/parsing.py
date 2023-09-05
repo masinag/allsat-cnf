@@ -21,10 +21,15 @@ class Mode(enum.Enum):
     NNF_POL = "NNF_POL"
     NNF_MUTEX_POL = "NNF_MUTEX_POL"
     LABELNEG_POL = "LABELNEG_POL"
-    NOPC_POL = "NOPC_POL"
-    NOPC_LABELNEG_POL = "NOPC_LABELNEG_POL"
-    NOPC_NNF_POL = "NOPC_NNF_POL"
-    NOPC_NNF_MUTEX_POL = "NOPC_NNF_MUTEX_POL"
+
+    RF_LAB = "RF_LAB"
+    RF_LABELNEG_POL = "RF_LABELNEG_POL"
+    RF_NNF_MUTEX_POL = "RF_NNF_MUTEX_POL"
+
+    IF_LAB = "IF_LAB"
+    IF_LABELNEG_POL = "IF_LABELNEG_POL"
+    IF_NNF_MUTEX_POL = "IF_NNF_MUTEX_POL"
+
     TTA = "TTA"
 
 
@@ -33,11 +38,15 @@ def get_options(args) -> Tuple[PreprocessOptions, SolverOptions]:
     mutex_nnf_labels = False
     label_neg_polarity = False
     phase_caching = True
+    first_assign = SolverOptions.FirstAssign.NONE
     mode = args.mode
 
-    if mode.startswith("NOPC_"):
-        phase_caching = False
-        mode = remove_prefix(mode, "NOPC_")
+    if mode.startswith("RF_"):
+        mode = remove_prefix(mode, "RF_")
+        first_assign = SolverOptions.FirstAssign.RELEVANT
+    elif mode.startswith("IF_"):
+        mode = remove_prefix(mode, "IF_")
+        first_assign = SolverOptions.FirstAssign.IRRELEVANT
     if mode.startswith("NNF_"):
         do_nnf = True
         mode = remove_prefix(mode, "NNF_")
@@ -48,12 +57,10 @@ def get_options(args) -> Tuple[PreprocessOptions, SolverOptions]:
         mode = remove_prefix(mode, "LABELNEG_")
         label_neg_polarity = True
 
-    preprocess_options = PreprocessOptions(cnf_type=mode, do_nnf=do_nnf,
-                                           mutex_nnf_labels=mutex_nnf_labels,
+    preprocess_options = PreprocessOptions(cnf_type=mode, do_nnf=do_nnf, mutex_nnf_labels=mutex_nnf_labels,
                                            label_neg_polarity=label_neg_polarity)
     solver_options = SolverOptions(timeout=args.timeout, with_repetitions=args.with_repetitions,
-                                   use_ta=mode != Mode.TTA,
-                                   phase_caching=phase_caching)
+                                   use_ta=mode != Mode.TTA, phase_caching=phase_caching, first_assign=first_assign)
 
     return preprocess_options, solver_options
 
@@ -79,10 +86,10 @@ def arg_positive_0(value: str):
 
 
 def arg_positive(value: str):
-    ivalue = int(value)
-    if ivalue <= 0:
+    int_value = int(value)
+    if int_value <= 0:
         raise argparse.ArgumentTypeError('Expected positive integer (no 0), found {}'.format(value))
-    return ivalue
+    return int_value
 
 
 def arg_probability(value: str):

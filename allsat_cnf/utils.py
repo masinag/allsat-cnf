@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from itertools import filterfalse
 from pprint import pformat
 from typing import Optional, Iterable, Dict, Tuple, Set, List
@@ -7,21 +8,27 @@ import mathsat
 from pysmt.fnode import FNode
 from pysmt.shortcuts import *
 from pysmt.shortcuts import Not, And
+from pysmt.solvers.msat import MathSAT5Solver
 from pysmt.typing import PySMTType, BOOL
 from pysmt.walkers import IdentityDagWalker
 
 
 @dataclass
 class SolverOptions:
+    class FirstAssign(Enum):
+        NONE = 0
+        RELEVANT = 1
+        IRRELEVANT = 2
+
     timeout: int = None
     with_repetitions: bool = False
     use_ta: bool = True
     phase_caching: bool = True
+    first_assign: FirstAssign = FirstAssign.NONE
 
 
 def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
-               solver_options: Optional[SolverOptions] = None) -> \
-        Tuple[List[Set[FNode]], int]:
+               solver_options: Optional[SolverOptions] = None) -> Tuple[List[Set[FNode]], int]:
     """
     Enumerates a list of (partial) models of the given formula.
     :param formula: the formula to enumerate models for
@@ -37,16 +44,27 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
         atoms = rewalk(atoms)
     if len(atoms) == 0:
         return [], 0
-    atoms = sorted(atoms, key=lambda x: x.serialize())
+    atoms = sorted(atoms, key=lambda x: x.node_id())
 
     if solver_options is not None:
         solver_options_dict = get_solver_options_dict(solver_options)
     else:
         solver_options_dict = {}
 
+    preferred_atoms = set()
+    if solver_options.first_assign is SolverOptions.FirstAssign.RELEVANT:
+        preferred_atoms = atoms
+    elif solver_options.first_assign is SolverOptions.FirstAssign.IRRELEVANT:
+        preferred_atoms = get_boolean_variables(formula) - set(atoms)
+    preferred_atoms = sorted(preferred_atoms, key=lambda x: x.node_id())
+
+
     models = []
     with Solver(name="msat", solver_options=solver_options_dict) as solver:
+        solver: MathSAT5Solver
         solver.add_assertion(formula)
+        for atom in preferred_atoms:
+            solver.set_preferred_var(atom, False)
         # solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, models))
         mathsat.msat_all_sat(solver.msat_env(), [solver.converter.convert(a) for a in atoms],
                              lambda model: _allsat_callback(model, solver.converter, models))
@@ -85,15 +103,15 @@ def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
     return solver_options_dict
 
 
-def get_boolean_variables(formula: FNode):
+def get_boolean_variables(formula: FNode) -> Set[FNode]:
     return _get_variables(formula, BOOL)
 
 
-def get_real_variables(formula: FNode):
+def get_real_variables(formula: FNode) -> Set[FNode]:
     return _get_variables(formula, REAL)
 
 
-def _get_variables(formula: FNode, type_: PySMTType):
+def _get_variables(formula: FNode, type_: PySMTType) -> Set[FNode]:
     return {a for a in formula.get_free_variables() if a.get_type() == type_}
 
 
