@@ -52,10 +52,11 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
         solver_options_dict = {}
 
     preferred_atoms = set()
-    if solver_options.first_assign is SolverOptions.FirstAssign.RELEVANT:
-        preferred_atoms = atoms
-    elif solver_options.first_assign is SolverOptions.FirstAssign.IRRELEVANT:
-        preferred_atoms = get_boolean_variables(formula) - set(atoms)
+    if solver_options is not None:
+        if solver_options.first_assign is SolverOptions.FirstAssign.RELEVANT:
+            preferred_atoms = atoms
+        elif solver_options.first_assign is SolverOptions.FirstAssign.IRRELEVANT:
+            preferred_atoms = get_boolean_variables(formula) - set(atoms)
     preferred_atoms = sorted(preferred_atoms, key=lambda x: x.node_id())
 
 
@@ -64,7 +65,7 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
         solver: MathSAT5Solver
         solver.add_assertion(formula)
         for atom in preferred_atoms:
-            solver.set_preferred_var(atom, False)
+            solver.set_preferred_var(atom)
         # solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, models))
         mathsat.msat_all_sat(solver.msat_env(), [solver.converter.convert(a) for a in atoms],
                              lambda model: _allsat_callback(model, solver.converter, models))
