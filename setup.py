@@ -13,7 +13,7 @@ VERSION = '0.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'PySMT >= 0.9.6.dev14', # mathsat version >= 5.6.7
+    'PySMT >= 0.9.6.dev53',  # mathsat version >= 5.6.7
     'py-aiger >= 6.2.0',
     'circuitgraph >= 0.2.0',
     'funcy >= 1.17',
