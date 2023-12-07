@@ -10,11 +10,17 @@ from pysmt.typing import BOOL
 
 class AIGAdapter:
     """Reads an AIG from a .aig or .aag file and converts it to a PySMT formula."""
-    def __init__(self, aig: _AIG):
+
+    def __init__(self, aig: _AIG, env=None):
         assert len(aig.outputs) == 1
         # assert len(aig.latches) == 0
         self.aig = aig
         self.inputs: Dict[_Input, Symbol] = {}
+        if env is None:
+            import pysmt.environment
+            env = pysmt.environment.get_env()
+        self.env = env
+        self.mgr = self.env.formula_manager
 
     def __repr__(self):
         return repr(self.aig)
@@ -68,7 +74,7 @@ class AIGAdapter:
         return inputs, output, gates
 
     def to_pysmt(self) -> FNode:
-        count = 0
+        mgr = self.mgr
 
         class NodeAlg:
             def __init__(self, node: FNode):
@@ -76,10 +82,10 @@ class AIGAdapter:
 
             @fn.memoize
             def __and__(self, other):
-                return NodeAlg(And(self.node, other.node))
+                return NodeAlg(mgr.And(self.node, other.node))
 
             def __invert__(self):
-                return NodeAlg(Not(self.node))
+                return NodeAlg(mgr.Not(self.node))
 
         def lift(obj) -> NodeAlg:
             if isinstance(obj, bool):
@@ -96,7 +102,6 @@ class AIGAdapter:
         start = 1
         for i, k in enumerate(sorted(circ.inputs), start):
             inputs[k] = NodeAlg(Symbol(k, BOOL))
-        count += len(inputs)
 
         # Interpret circ over Algebra.
         omap, _ = circ(inputs=inputs, lift=lift)
