@@ -22,7 +22,7 @@ class SolverOptions:
 
     timeout: int = None
     with_repetitions: bool = False
-    use_ta: bool = True
+    use_ta: bool = False
     phase_caching: bool = True
     first_assign: FirstAssign = FirstAssign.NONE
 
@@ -30,11 +30,11 @@ class SolverOptions:
 def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
                solver_options: Optional[SolverOptions] = None) -> Tuple[List[Set[FNode]], int]:
     """
-    Enumerates a list of (partial) models of the given formula.
-    :param formula: the formula to enumerate models for
-    :param atoms: the atoms to project the models on (if None, all atoms in the formula are used)
+    Enumerates a list of (partial) assignments of the given formula.
+    :param formula: the formula to enumerate assignments for
+    :param atoms: the atoms to project the assignments on (if None, all atoms in the formula are used)
     :param solver_options: options for the solver
-    :return: a list of models and the total number of models
+    :return: a list of assignments and the total number of assignments
     """
     formula = rewalk(formula)
 
@@ -55,26 +55,25 @@ def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
     if solver_options is not None:
         boolean_variables = get_boolean_variables(formula)
         if solver_options.first_assign is SolverOptions.FirstAssign.RELEVANT:
-            preferred_atoms = boolean_variables & set(atoms) # MathSAT allows only boolean variables to be relevant
+            preferred_atoms = boolean_variables & set(atoms)  # MathSAT allows only boolean variables to be relevant
         elif solver_options.first_assign is SolverOptions.FirstAssign.IRRELEVANT:
-            preferred_atoms = get_boolean_variables(formula) - set(atoms)
+            preferred_atoms = boolean_variables - set(atoms)
     preferred_atoms = sorted(preferred_atoms, key=lambda x: x.node_id())
 
-
-    models = []
+    assignments = []
     with Solver(name="msat", solver_options=solver_options_dict) as solver:
         solver: MathSAT5Solver
         solver.add_assertion(formula)
         for atom in preferred_atoms:
             solver.set_preferred_var(atom)
-        # solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, models))
+        # solver.all_sat(important=atoms, callback=lambda model: _allsat_callback(model, solver.converter, assignments))
         mathsat.msat_all_sat(solver.msat_env(), [solver.converter.convert(a) for a in atoms],
-                             lambda model: _allsat_callback(model, solver.converter, models))
+                             lambda model: _allsat_callback(model, solver.converter, assignments))
 
     total_models_count = sum(
-        map(lambda model: 2 ** (len(atoms) - len(model)), models)
+        map(lambda assignment: 2 ** (len(atoms) - len(assignment)), assignments)
     )
-    return models, total_models_count
+    return assignments, total_models_count
 
 
 def _allsat_callback(model, converter, models):
@@ -102,6 +101,8 @@ def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
         solver_options_dict["preprocessor.toplevel_propagation"] = "false"
         solver_options_dict["preprocessor.simplification"] = "0"
     solver_options_dict["dpll.branching_initial_phase"] = "0"
+    # solver_options_dict["debug.api_call_trace"] = "3"
+    # solver_options_dict["verbosity"] = "2"
     return solver_options_dict
 
 
@@ -171,7 +172,7 @@ def ta_is_complete(phi, ta):
     atoms = get_boolean_variables(phi).union(
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
-    tta, _ = get_allsat(phi, atoms=atoms)
+    tta, _ = get_allsat(phi, atoms=atoms, solver_options=SolverOptions(with_repetitions=False, use_ta=False))
     # check that for every model in tta there is a corresponding supermodel in ta
     for eta in tta:
         if not any(eta.issuperset(rewalk(mu)) for mu in ta):

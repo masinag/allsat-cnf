@@ -1,7 +1,7 @@
 from typing import Dict, Tuple, Iterable
 
 import funcy as fn
-from aiger import AIG as _AIG, to_aig as _to_aig
+from aiger import AIG as _AIG, to_aig as _to_aig, BoolExpr as _BoolExpr
 from aiger.aig import Input as _Input
 from pysmt.fnode import FNode
 from pysmt.shortcuts import Symbol, And, Not, Bool
@@ -22,6 +22,10 @@ class AIGAdapter:
     @classmethod
     def from_file(cls, file) -> "AIGAdapter":
         return cls(_to_aig(file))
+
+    @classmethod
+    def from_boolexpr(cls, expr: _BoolExpr) -> "AIGAdapter":
+        return cls(_to_aig(expr))
 
     def gates(self) -> Tuple[Dict[int, str], int, Iterable[Tuple[int, int, int]]]:
         gates = []
