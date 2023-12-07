@@ -27,6 +27,27 @@ class SolverOptions:
     first_assign: FirstAssign = FirstAssign.NONE
 
 
+class Normalizer:
+    """A class for normalizing terms."""
+
+    def __init__(self):
+        self._solver = Solver(name="msat")
+        self._cache = {}
+
+    def __del__(self):
+        self._solver.exit()
+
+    def normalize(self, phi):
+        if phi not in self._cache:
+            converter = self._solver.converter
+            normalized_term = converter.back(converter.convert(phi))
+            self._cache[phi] = normalized_term
+        return self._cache[phi]
+
+    def normalize_assigment(self, mu):
+        return {self.normalize(literal) for literal in mu}
+
+
 def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
                solver_options: Optional[SolverOptions] = None) -> Tuple[List[Set[FNode]], int]:
     """
@@ -89,6 +110,12 @@ def check_sat(formula: FNode):
         return solver.is_sat(formula)
 
 
+def check_valid(formula: FNode):
+    formula = rewalk(formula)
+    with Solver(name="msat") as solver:
+        return solver.is_valid(formula)
+
+
 def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
     solver_options_dict = {}
 
@@ -143,8 +170,13 @@ def check_models(ta, phi):
     :param phi: the formula
     :return: True if the list of models is correct and complete for the given formula, False otherwise
     """
-    assert ta_is_correct(phi, ta), "ta is not correct: {}\n{}".format(phi, pformat(ta))
-    assert ta_is_complete(phi, ta), "ta is not complete: {}\n{}".format(phi, pformat(ta))
+    is_correct, err = ta_is_correct(phi, ta)
+    assert is_correct, "ta is not correct: {}\n{}\n{}".format(phi.serialize(), pformat(ta), err)
+    is_complete, err = ta_is_complete(phi, ta)
+    assert is_complete, "ta is not complete: {}\n{}\n{}".format(phi.serialize(), pformat(ta), err)
+
+
+normalizer = Normalizer()
 
 
 def ta_is_correct(phi, ta):
@@ -154,12 +186,20 @@ def ta_is_correct(phi, ta):
     :param ta: the list of models
     :return: True if each model in the list satisfies the formula, False otherwise
     """
+    phi = normalizer.normalize(phi)
     for mu in ta:
-        model = And(mu)
-        formula = And(phi, model)
-        if not check_sat(formula):
-            return False
-    return True
+        mu = normalizer.normalize_assigment(mu)
+        subs = {}
+        for literal in mu:
+            if literal.is_not():
+                subs[literal.arg(0)] = FALSE()
+            else:
+                subs[literal] = TRUE()
+        res = substitute(phi, subs).simplify()
+        err = "mu: {}\nsubstituting {}\ngot: {}".format(mu,subs, res)
+        if not check_valid(res):
+            return False, err
+    return True, None
 
 
 def ta_is_complete(phi, ta):
@@ -169,15 +209,16 @@ def ta_is_complete(phi, ta):
     :param ta: the list of models
     :return: True if each total model of the formula is a super-model of one of the models in the list, False otherwise
     """
-    atoms = get_boolean_variables(phi).union(
-        {a for a in get_lra_atoms(phi) if not a.is_equals()}
-    )
+    ta = [normalizer.normalize_assigment(mu) for mu in ta]
+    atoms = get_boolean_variables(phi).union({a for a in get_lra_atoms(phi)})
     tta, _ = get_allsat(phi, atoms=atoms, solver_options=SolverOptions(with_repetitions=False, use_ta=False))
     # check that for every model in tta there is a corresponding supermodel in ta
     for eta in tta:
+        eta = normalizer.normalize_assigment(eta)
+        err = "{} not covered"
         if not any(eta.issuperset(rewalk(mu)) for mu in ta):
-            return False
-    return True
+            return False, err
+    return True, None
     # equiv = Iff(phi, Or(map(And, ta)))
     # return _is_valid(equiv)
 
