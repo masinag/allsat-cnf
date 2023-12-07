@@ -82,8 +82,10 @@ def get_input_files(input_dirs: List[str]) -> List[str]:
             filepath = os.path.join(input_dir, filename)
             if not path.isdir(filepath):
                 input_files.append(filepath)
+            else:
+                input_dirs.append(filepath)
     if not input_files:
-        raise IOError("No file found")
+        raise IOError("No file found: {}".format(input_dirs))
     input_files = sorted(input_files)
     print(f"{len(input_files)} Files found")
     return input_files
