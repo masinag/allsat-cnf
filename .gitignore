@@ -179,5 +179,10 @@ cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode
 
-*.json
-*.png
+*.aag
+*.aig
+*.idea
+benchmark/**/*.smt2
+benchmark/**/*.aig
+benchmark/**/result*/**/*.json
+benchmark/**/plot*/**/*.pdf
