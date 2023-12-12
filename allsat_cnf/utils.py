@@ -163,14 +163,19 @@ def get_dict_model(mu):
     return mu_dict
 
 
-def check_models(ta, phi):
+def check_models(ta, phi, relevant_atoms=None):
     """
     Check that the given list of models is correct and complete for the given formula.
     :param ta: the list of models
     :param phi: the formula
+    :param relevant_atoms: the atoms relevant for the formula (if None, all atoms in the formula are used)
     :return: True if the list of models is correct and complete for the given formula, False otherwise
     """
-    is_correct, err = ta_is_correct(phi, ta)
+    ta = rewalk(ta)
+    phi = rewalk(phi)
+    if relevant_atoms is None:
+        relevant_atoms = get_atoms(phi)
+    is_correct, err = ta_is_correct(phi, ta, relevant_atoms)
     assert is_correct, "ta is not correct: {}\n{}\n{}".format(phi.serialize(), pformat(ta), err)
     is_complete, err = ta_is_complete(phi, ta)
     assert is_complete, "ta is not complete: {}\n{}\n{}".format(phi.serialize(), pformat(ta), err)
@@ -179,7 +184,7 @@ def check_models(ta, phi):
 normalizer = Normalizer()
 
 
-def ta_is_correct(phi, ta):
+def ta_is_correct(phi, ta, relevant_atoms):
     """
     Check that each model in the list satisfies the formula.
     :param phi: the formula
@@ -196,8 +201,10 @@ def ta_is_correct(phi, ta):
             else:
                 subs[literal] = TRUE()
         res = substitute(phi, subs).simplify()
-        err = "mu: {}\nsubstituting {}\ngot: {}".format(mu,subs, res)
-        if not check_valid(res):
+        err = "mu: {}\nsubstituting {}\ngot: {}".format(mu, subs, res)
+        res_atoms = get_atoms(res)
+        if len(res_atoms & relevant_atoms) != 0:
+            print("res_atoms: {}".format(res_atoms))
             return False, err
     return True, None
 
@@ -216,7 +223,7 @@ def ta_is_complete(phi, ta):
     for eta in tta:
         eta = normalizer.normalize_assigment(eta)
         err = "{} not covered"
-        if not any(eta.issuperset(rewalk(mu)) for mu in ta):
+        if not any(eta.issuperset(mu) for mu in ta):
             return False, err
     return True, None
     # equiv = Iff(phi, Or(map(And, ta)))
@@ -227,11 +234,6 @@ def rewalk(phi):
     if isinstance(phi, FNode):
         return IdentityDagWalker().walk(phi)
     return phi.__class__(rewalk(a) for a in phi)
-
-
-def _is_valid(phi):
-    phi = rewalk(phi)
-    return is_valid(phi)
 
 
 def is_atom(atom):

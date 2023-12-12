@@ -78,7 +78,7 @@ def main():
         if not enum_timed_out and should_check_models(args):
             log(MODELS_CHECK_MSG, filename, i, input_files, len(models))
             try:
-                check_models_or_timeout(models, phi, args)
+                check_models_or_timeout(models, phi, atoms, args)
             except TimeoutError:
                 check_timed_out = True
 
@@ -125,8 +125,8 @@ def should_check_models(args) -> bool:
     return not args.sat and not args.no_check and args.mode != "TTA"
 
 
-def check_models_or_timeout(models, phi, args) -> None:
-    return run_with_timeout(check_models, args.timeout, models, phi)
+def check_models_or_timeout(models, phi, relevant_atoms, args) -> None:
+    return run_with_timeout(check_models, args.timeout, models, phi, relevant_atoms=relevant_atoms)
 
 
 def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> Tuple[FNode, Iterable[FNode]]:
