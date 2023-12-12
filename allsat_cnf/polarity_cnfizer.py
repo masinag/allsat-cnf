@@ -77,7 +77,7 @@ class PolarityCNFizer(DagWalker):
         if formula not in self._introduced_variables:
             k = self.mgr.FreshSymbol()
             if self._label_neg_polarity and polarities[formula] == Polarity.NEG:
-                k = self.mgr.Not(k)
+                k = self.negate(k)
             self._introduced_variables[formula] = k
         return self._introduced_variables[formula]
 
@@ -94,7 +94,7 @@ class PolarityCNFizer(DagWalker):
 
         k = self.key_var(formula, polarities)
         if Polarity.POS in polarities[formula]:
-            self._clauses += [tuple([self.mgr.Not(k), a]) for a in args]
+            self._clauses += [tuple([self.negate(k), a]) for a in args]
         if Polarity.NEG in polarities[formula]:
             self._clauses += [tuple([k] + [self.negate(a) for a in args])]
         return k
@@ -105,7 +105,7 @@ class PolarityCNFizer(DagWalker):
 
         k = self.key_var(formula, polarities)
         if Polarity.POS in polarities[formula]:
-            self._clauses += [tuple([self.mgr.Not(k)] + [a for a in args])]
+            self._clauses += [tuple([self.negate(k)] + [a for a in args])]
         if Polarity.NEG in polarities[formula]:
             self._clauses += [tuple([k, self.negate(a)]) for a in args]
         return k
@@ -126,7 +126,7 @@ class PolarityCNFizer(DagWalker):
     def walk_implies(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
         a, b = args
         k = self.key_var(formula, polarities)
-        not_k = self.mgr.Not(k)
+        not_k = self.negate(k)
         not_a = self.negate(a)
         not_b = self.negate(b)
 
@@ -139,7 +139,7 @@ class PolarityCNFizer(DagWalker):
     def walk_iff(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
         a, b = args
         k = self.key_var(formula, polarities)
-        not_k: FNode = self.mgr.Not(k)
+        not_k: FNode = self.negate(k)
         not_a: FNode = self.negate(a)
         not_b: FNode = self.negate(b)
 
@@ -157,7 +157,7 @@ class PolarityCNFizer(DagWalker):
 
         i, t, e = args
         k = self.key_var(formula, polarities)
-        not_k = self.mgr.Not(k)
+        not_k = self.negate(k)
         not_i = self.negate(i)
         not_t = self.negate(t)
         not_e = self.negate(e)
@@ -189,8 +189,8 @@ class PolarityCNFizer(DagWalker):
         double_polarity_sub_formulas = [f for f, p in polarities.items() if p == Polarity.DOUBLE]
         for f in double_polarity_sub_formulas:
             f_pos = self._nnfizer.convert(f)
-            f_neg = self._nnfizer.convert(self.mgr.Not(f))
+            f_neg = self._nnfizer.convert(self.negate(f))
             if f_pos in self._introduced_variables and f_neg in self._introduced_variables:
                 k_pos = self.key_var(f_pos, polarities)
                 k_neg = self.key_var(f_neg, polarities)
-                self._clauses.append((self.mgr.Not(k_pos), self.mgr.Not(k_neg)))
+                self._clauses.append((self.negate(k_pos), self.negate(k_neg)))
