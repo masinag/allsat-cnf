@@ -11,8 +11,8 @@ from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
 from allsat_cnf.utils import get_allsat, is_cnf, SolverOptions, check_sat
 from allsat_cnf.utils import get_lra_atoms, get_boolean_variables, check_models
-from utils.fileio import get_output_filename, check_output_input, write_result, get_input_files, \
-    read_formula_from_file
+from utils.fileio import get_output_filename, check_inputs_exist, write_result, get_input_files, \
+    read_formula_from_file, check_output_can_be_created
 from utils.logging import log
 from utils.parsing import get_options, Mode, arg_positive, PreprocessOptions
 from utils.run import run_with_timeout
@@ -43,9 +43,10 @@ def main():
     sys.setrecursionlimit(10000)
     args = parse_args()
     output_file = get_output_filename(args)
+    check_output_can_be_created(output_file)
     print("Output file: {}".format(output_file))
 
-    check_output_input(args.output, output_file, args.input)
+    check_inputs_exist(args.input)
     input_files = get_input_files([args.input])
 
     time_start = time.time()

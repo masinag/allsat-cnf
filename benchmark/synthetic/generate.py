@@ -9,7 +9,7 @@ from pysmt.shortcuts import Symbol, BOOL, Or, Not, And, Iff, write_smtlib, LT, R
 from pysmt.typing import REAL
 
 from allsat_cnf.utils import check_sat
-from benchmark.utils.fileio import check_output_input
+from benchmark.utils.fileio import check_output_can_be_created
 from benchmark.utils.parsing import arg_positive_0, arg_positive, arg_probability
 
 DESCRIPTION = '''Generates random SMT(LRA) formulas.
@@ -144,7 +144,7 @@ def main():
     output_dir = 'problems_b{}_r{}_d{}_m{}_s{}'.format(args.booleans, args.reals, args.depth, args.models, args.seed)
     output_dir = path.join(args.output, output_dir)
 
-    check_output_input(args.output, output_dir)
+    check_output_can_be_created(output_dir)
     os.mkdir(output_dir)
 
     # init generator

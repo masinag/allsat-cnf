@@ -39,10 +39,18 @@ class ScatterPlotter(Plotter):
         for mode1, mode2 in itertools.combinations(modes, 2):
             if mode1 != mode2:
                 self._plot_scatter(param, param_label, mode1, mode2)
+        self._plot_legend()
 
     def _plot_scatter(self, param: Param, param_label: str, modex: Mode, modey: Mode):
-        data = self.data[param]
-        ax = data.plot(kind="scatter", x=modex.value, y=modey.value, color="blue", marker="x", loglog=self.logscale)
+        data = self.data
+
+        problem_sets = data.index.get_level_values(0).unique().sort_values()
+        color_map = dict(zip(problem_sets, plt.colormaps["Set2"].colors))
+
+        # for each index entry use a different color
+        ax = data.plot.scatter(x=(param, modex.value), y=(param, modey.value),
+                               c=data.index.get_level_values(0).map(color_map),
+                               alpha=0.8, marker="x", loglog=self.logscale)
 
         if param == "time" and self.timeout is not None:
             self.plot_timeout_lines(ax, self.timeout)
@@ -58,7 +66,7 @@ class ScatterPlotter(Plotter):
         y0, y1 = ax.get_ylim()
         ax.set_xlim(1, max(x1, y1))
         ax.set_ylim(1, max(x1, y1))
-        self.plot_diagonal_lines(ax, max(data[modex.value].max(), data[modey.value].max()))
+        self.plot_diagonal_lines(ax, max(data[(param, modex.value)].max(), data[(param, modey.value)].max()))
 
         # save figure
         outfile = os.path.join(self.output_dir,
@@ -71,7 +79,7 @@ class ScatterPlotter(Plotter):
     def plot_diagonal_lines(self, ax, limit):
         k = 1
         ax.axline((1, 1), (10, 10), color="black", linestyle=":", alpha=0.8)
-        for i in range(min(5, int(math.log10(limit)) + 1)):
+        for i in range(min(10, int(math.log10(limit)) + 1)):
             p1 = 10 ** i
             p2 = 10 ** (i + 1)
             ax.axline((p1, 1 * k), (p2, 10 * k), color="black", linestyle=":", alpha=0.2)
@@ -82,3 +90,21 @@ class ScatterPlotter(Plotter):
         ax.axvline(x=timeout, color="black", linestyle="--")
         ax.xaxis.set_major_formatter(CustomTicker(timeout))
         ax.yaxis.set_major_formatter(CustomTicker(timeout))
+
+    def _plot_legend(self):
+        color_map = self._get_color_map()
+        f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+        handles = [f("x", color) for color in color_map.values()]
+
+        legend = plt.legend(handles, color_map.keys(), loc=3, framealpha=1, frameon=False, ncols=len(color_map),
+                            mode="expand")
+
+        fig = legend.figure
+        fig.canvas.draw()
+        bbox = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+        filename = os.path.join(self.output_dir, "legend.pdf")
+        fig.savefig(filename, dpi="figure", bbox_inches=bbox)
+
+    def _get_color_map(self):
+        color_map = dict(zip(self.data.index.get_level_values(0).unique().sort_values(), plt.colormaps["Set2"].colors))
+        return color_map

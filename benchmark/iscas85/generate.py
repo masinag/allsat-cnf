@@ -6,9 +6,9 @@ from math import log10
 
 from pysmt.shortcuts import write_smtlib, Not, And
 
-from benchmark.utils.fileio import check_output_input
-from benchmark.utils.parsing import arg_positive
 from allsat_cnf.bench_adapter import BenchAdapter
+from benchmark.utils.fileio import check_inputs_exist, check_output_can_be_created
+from benchmark.utils.parsing import arg_positive
 
 
 def parse_args():
@@ -47,7 +47,8 @@ def main():
     output_dir = '{}_m{}_s{}'.format(basename, args.models, args.seed)
     output_dir = os.path.join(args.output, output_dir)
 
-    check_output_input(args.output, output_dir, args.input)
+    check_inputs_exist(args.input)
+    check_output_can_be_created(output_dir)
     os.mkdir(output_dir)
 
     # generate instances

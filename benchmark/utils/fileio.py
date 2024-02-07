@@ -26,15 +26,7 @@ def generate_output_filename_from_args(args):
     return output_file
 
 
-def check_output_input(output_dir: str, output_file: str, input_dir: Optional[Union[str, List[str]]] = None):
-    if not path.exists(output_dir):
-        print("'{}' does not exists".format(output_dir))
-        sys.exit(1)
-
-    if path.exists(output_file):
-        print("'{}' already exists. Remove it and retry".format(output_file))
-        sys.exit(1)
-
+def check_inputs_exist(input_dir: Union[str, List[str]]):
     if input_dir is not None:
         if isinstance(input_dir, str):
             input_dir = [input_dir]
@@ -42,6 +34,20 @@ def check_output_input(output_dir: str, output_file: str, input_dir: Optional[Un
             if not path.exists(input_dir):
                 print("Folder '{}' does not exists".format(input_dir))
                 sys.exit(1)
+
+
+def check_output_can_be_created(output_path):
+    """Given an output_path in the form <path>/<basename>, check that:
+    - path exists
+    - path/basename does not exist
+    """
+    path, basename = os.path.split(output_path)
+    if not path.exists(path):
+        print("'{}' does not exists".format(path))
+        sys.exit(1)
+    if path.exists(basename):
+        print("'{}' already exists. Remove it and retry".format(basename))
+        sys.exit(1)
 
 
 def write_result(args, res, output_file):

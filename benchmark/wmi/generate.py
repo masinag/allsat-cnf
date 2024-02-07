@@ -9,7 +9,7 @@ from wmibench.synthetic import synthetic_pa as synthetic_exp
 from wmipa.weightconverter import WeightConverterEUF as WeightConverter
 from wmipa.wmivariables import WMIVariables
 
-from benchmark.utils.fileio import check_output_input
+from benchmark.utils.fileio import check_output_can_be_created
 from benchmark.utils.parsing import arg_positive_0, arg_positive
 
 
@@ -43,7 +43,7 @@ def main():
         args.booleans, args.reals, args.depth, args.number, args.seed)
     output_dir = os.path.join(args.output, output_dir)
 
-    check_output_input(args.output, output_dir)
+    check_output_can_be_created(output_dir)
     os.mkdir(output_dir)
 
     # generate models
