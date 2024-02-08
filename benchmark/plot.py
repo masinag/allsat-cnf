@@ -2,9 +2,10 @@ import argparse
 import json
 import os
 import sys
-from typing import List, Optional
+from collections import namedtuple
 
 import matplotlib
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from benchmark.utils.fileio import get_input_files, check_inputs_exist
@@ -20,33 +21,26 @@ matplotlib.rcParams.update({
     'pgf.rcfonts': False,
 })
 
-ORDER: List[Mode] = [Mode.TTA, Mode.LAB, Mode.NNF_LAB, Mode.POL, Mode.NNF_POL, Mode.LABELNEG_POL, Mode.NNF_MUTEX_POL, ]
-# Mode.NOPC_POL, Mode.NOPC_LABELNEG_POL, Mode.NOPC_NNF_POL, Mode.NOPC_NNF_MUTEX_POL]
+Style = namedtuple("Style", ["color", "marker", "linestyle", "label", "order_index"])
 
-COLOR = {
-    Mode.LAB: "#ff7f00",
-    Mode.NNF_LAB: "black",
-    Mode.TTA: "blue",
-    Mode.POL: "orange",
-    Mode.NNF_POL: "purple",
-    Mode.NNF_MUTEX_POL: "#4daf4a",
-    Mode.LABELNEG_POL: "#377eb8",
-    # Mode.NOPC_POL: "olive",
-    # Mode.NOPC_LABELNEG_POL: "cyan",
-    # Mode.NOPC_NNF_POL: "magenta",
-    # Mode.NOPC_NNF_MUTEX_POL: "lime",
+MODE_STYLES = {
+    Mode.TTA: Style("blue", None, None, r"$\mathsf{TTA}(\varphi)$", 0),
+    Mode.LAB: Style("#ff7f00", None, "--", r"$\mathsf{CNF_{Ts}}(\varphi)$", 1),
+    Mode.NNF_LAB: Style("black", None, None, r"$\mathsf{CNF_{Ts}}(\mathsf{NNF}(\varphi))$", 2),
+    Mode.POL: Style("orange", None, None, r"$\mathsf{CNF_{PG}}(\varphi)$", 3),
+    Mode.NNF_POL: Style("purple", None, None, r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 4),
+    Mode.LABELNEG_POL: Style("#377eb8", None, "-", r"$\mathsf{CNF_{PG}}(\varphi)$", 5),
+    Mode.NNF_MUTEX_POL: Style("#4daf4a", None, "-.", r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 6),
 }
 
-NAME_MAPPING = {
-    Mode.LAB: r"$\mathsf{CNF_{Ts}}(\varphi)$",
-    Mode.LABELNEG_POL: r"$\mathsf{CNF_{PG}}(\varphi)$",
-    Mode.NNF_MUTEX_POL: r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$",
-}
+_cm = plt.colormaps["Set2"].colors
 
-LINESTYLES = {
-    Mode.LAB: "--",
-    Mode.LABELNEG_POL: "-",
-    Mode.NNF_MUTEX_POL: "-.",
+PROBLEM_SET_STYLES = {
+    "syn-bool": Style(_cm[2], "s", None, "Syn-Bool", 0),
+    "iscas85": Style(_cm[1], "o", None, "ISCAS85", 1),
+    "aig": Style(_cm[0], "^", None, "AIG", 2),
+    "syn-lra": Style(_cm[4], "D", None, "Syn-LRA", 3),
+    "wmi": Style(_cm[3], "v", None, "WMI", 4),
 }
 
 
@@ -55,8 +49,8 @@ def error(msg=""):
     sys.exit(1)
 
 
-def parse_inputs(input_files: dict[str, list[str]], with_repetitions: bool, timeout: Optional[int],
-                 timeout_models: Optional[int]) -> pd.DataFrame:
+def parse_inputs(input_files: dict[str, list[str]], with_repetitions: bool, timeout: int | None,
+                 timeout_models: int | None) -> pd.DataFrame:
     data = []
     for ps_name, input_files in input_files.items():
         print(f"Problem set: {ps_name}")
@@ -82,26 +76,9 @@ def parse_inputs(input_files: dict[str, list[str]], with_repetitions: bool, time
 
 
 def group_data(data: pd.DataFrame) -> pd.DataFrame:
-
-    # pivot
-    pivot_data = data.pivot(index=['problem_set', 'filename'], columns='mode', values=['time', 'models', 'enum_timed_out'])
-    # data = data \
-    #     .groupby(["problem_set", "filename", "mode"]) \
-    #     .aggregate(time=("time", "min"),
-    #                models=("models", "min"),
-    #                n_clauses=("n_clauses", "min"),
-    #                enum_timed_out=("enum_timed_out", "any"),
-    #                ) \
-    #     .unstack()  # .reset_index(drop=True)
+    pivot_data = data.pivot(index=['problem_set', 'filename'], columns='mode',
+                            values=['time', 'models', 'enum_timed_out'])
     return pivot_data
-
-    # # sort by increasing number of models
-    # modes = data.columns.get_level_values(0).unique()
-    # modes = [mode for mode in ORDER if mode in modes]
-    #
-    # sort_by = [("models", mode) for mode in modes]
-    # data.sort_values(by=sort_by, inplace=True, ignore_index=True)
-    # return data
 
 
 def parse_args():
@@ -131,18 +108,25 @@ def parse_args():
 
 
 def count_timeouts(data: pd.DataFrame):
-    modes = data.columns.get_level_values(1).unique()
-    modes = [mode for mode in ORDER if mode.value in modes]
-    tot_data = data[("enum_timed_out", modes[0].value)].count()
-    for mode in modes:
-        n_timeouts = data[("enum_timed_out", mode.value)].sum()
-        print(f"{mode}: {n_timeouts}/{tot_data} timeouts")
+    # for each problem set, count the number of timeouts and the number of problems
+    # remember: data has a multiindex with levels "problem_set" and "filename", and columns ("enum_timed_out", mode)
+    # for each mode
+    print(data["enum_timed_out"])
+
+    # compute sum and count of timeouts
+    timeouts = data["enum_timed_out"].groupby("problem_set").sum()
+    n_problems = data["enum_timed_out"].groupby("problem_set").count()
+
+    print("Timeouts:")
+    print(timeouts)
+    print("Total problems:")
+    print(n_problems)
 
 
 def main():
     args = parse_args()
     print(args.problem_set)
-    problem_sets: dict[str, List[str]] = args.problem_set
+    problem_sets: dict[str, list[str]] = args.problem_set
     output_dir: str = args.output
     filename: str = args.filename
     timeout: int = args.timeout
@@ -160,7 +144,6 @@ def main():
     # find entries where Mode.LABELNEG_POL < Mode.NNF_MUTEX_POL wrt 'models'
     anomalous = data[data[('models', Mode.LABELNEG_POL.value)] < data[('models', Mode.NNF_MUTEX_POL.value)]]
 
-
     # print("Anomalous entries filenames:")
     # print(anomalous.index.get_level_values(1).unique())
 
@@ -168,11 +151,14 @@ def main():
     #                            timeout, timeout_models, NAME_MAPPING, LINESTYLES)
     # ecdf_plotter.plot_time()
 
-    scatter_plotter = ScatterPlotter(data, output_dir, filename, COLOR, ORDER, timeout, timeout_models, NAME_MAPPING, LINESTYLES)
-    scatter_plotter.plot_models_all_vs_all()
-    scatter_plotter.plot_time_all_vs_all()
+    scatter_plotter = ScatterPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES, PROBLEM_SET_STYLES)
 
-    # count_timeouts(data)
+    scatter_plotter.plot_models_all_vs_all(separate_problem_sets=True)
+    scatter_plotter.plot_models_all_vs_all(separate_problem_sets=False)
+    scatter_plotter.plot_time_all_vs_all(separate_problem_sets=True)
+    scatter_plotter.plot_time_all_vs_all(separate_problem_sets=False)
+
+    count_timeouts(data)
 
 
 if __name__ == "__main__":

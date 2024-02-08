@@ -3,7 +3,6 @@ import math
 import os
 
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.ticker import LogFormatterSciNotation
 
 from .plotter import Plotter, Param
@@ -25,86 +24,94 @@ class CustomTicker(LogFormatterSciNotation):
 
 class ScatterPlotter(Plotter):
 
-    def plot_models_all_vs_all(self):
-        self._plot_all_vs_all("models", r"Size of $\mathcal{T}\hspace{-.1cm}\mathcal{A}$")
+    def plot_models_all_vs_all(self, separate_problem_sets=False):
+        self._plot_all_vs_all("models", r"Size of $\mathcal{T}\hspace{-.1cm}\mathcal{A}$", separate_problem_sets)
 
-    def plot_time_all_vs_all(self):
-        self._plot_all_vs_all("time", "Time (s)")
+    def plot_time_all_vs_all(self, separate_problem_sets=False):
+        self._plot_all_vs_all("time", "Time (s)", separate_problem_sets)
 
-    def plot_size_all_vs_all(self):
-        self._plot_all_vs_all("n_clauses", r"\# of clauses")
+    def plot_size_all_vs_all(self, separate_problem_sets=False):
+        self._plot_all_vs_all("n_clauses", r"\# of clauses", separate_problem_sets)
 
-    def _plot_all_vs_all(self, param: Param, param_label: str):
+    def _plot_all_vs_all(self, param: Param, param_label: str, separate_problem_sets):
         modes = self.get_modes()
+        size = len(self.data)
         for mode1, mode2 in itertools.combinations(modes, 2):
             if mode1 != mode2:
-                self._plot_scatter(param, param_label, mode1, mode2)
+                self._plot_scatter(param, param_label, mode1, mode2, separate_problem_sets)
+                assert size == len(self.data)
         self._plot_legend()
 
-    def _plot_scatter(self, param: Param, param_label: str, modex: Mode, modey: Mode):
-        data = self.data
+    def _plot_scatter(self, param: Param, param_label: str, modex: Mode, modey: Mode, separate_problem_sets):
+        if separate_problem_sets:
+            for problem_set in self.get_problem_sets():
+                data_set = self.data[self.data.index.get_level_values(0) == problem_set]
+                self._plot_scatter_data(data_set, param, param_label, modex, modey, f"_{problem_set}")
+        else:
+            self._plot_scatter_data(self.data, param, param_label, modex, modey, "_all")
 
-        problem_sets = data.index.get_level_values(0).unique().sort_values()
-        color_map = dict(zip(problem_sets, plt.colormaps["Set2"].colors))
+    def _plot_scatter_data(self, data, param, param_label, modex, modey, suffix=""):
+        fig, ax = plt.subplots()
 
-        # for each index entry use a different color
-        ax = data.plot.scatter(x=(param, modex.value), y=(param, modey.value),
-                               c=data.index.get_level_values(0).map(color_map),
-                               alpha=0.8, marker="x", loglog=self.logscale)
+        for problem_set in self.get_problem_sets():
+            style = self.problem_set_styles[problem_set]
+            color, marker = style.color, style.marker
+            data_set = data[data.index.get_level_values(0) == problem_set]
+            ax.scatter(x=data_set[(param, modex.value)],
+                       y=data_set[(param, modey.value)],
+                       color=color, alpha=0.5, marker=marker)
+            ax.set_xscale("log")
+            ax.set_yscale("log")
 
+        # plot timeout lines
         if param == "time" and self.timeout is not None:
             self.plot_timeout_lines(ax, self.timeout)
-        if param == "models" and self.timeout_models is not None:
+        elif param == "models" and self.timeout_models is not None:
             self.plot_timeout_lines(ax, self.timeout_models)
         # axes labels
-        plt.xlabel(f"{self.name_mapping[modex]} ({param_label})", fontsize=self.FONTSIZE)
-        plt.ylabel(f"{self.name_mapping[modey]} ({param_label})", fontsize=self.FONTSIZE)
+        plt.xlabel(f"{self.mode_styles[modex].label} ({param_label})", fontsize=self.FONTSIZE)
+        plt.ylabel(f"{self.mode_styles[modey].label} ({param_label})", fontsize=self.FONTSIZE)
         plt.xticks(fontsize=self.TICKSIZE)
         plt.yticks(fontsize=self.TICKSIZE)
-
         x0, x1 = ax.get_xlim()
         y0, y1 = ax.get_ylim()
         ax.set_xlim(1, max(x1, y1))
         ax.set_ylim(1, max(x1, y1))
         self.plot_diagonal_lines(ax, max(data[(param, modex.value)].max(), data[(param, modey.value)].max()))
-
         # save figure
         outfile = os.path.join(self.output_dir,
-                               "{}_compare_{}_vs_{}{}.pdf".format(param, modex.value, modey.value, self.filename))
+                               "{}_compare_{}_vs_{}{}{}.pdf".format(param, modex.value, modey.value, self.filename,
+                                                                    suffix))
         plt.gca().set_aspect("equal")
         plt.savefig(outfile, bbox_inches='tight')
         print("created {}".format(outfile))
-        plt.clf()
+        plt.close(fig)
 
     def plot_diagonal_lines(self, ax, limit):
         k = 1
-        ax.axline((1, 1), (10, 10), color="black", linestyle=":", alpha=0.8)
+        ax.axline((1, 1), (10, 10), color="black", linestyle=":", alpha=0.5, zorder=100000)
         for i in range(min(10, int(math.log10(limit)) + 1)):
             p1 = 10 ** i
             p2 = 10 ** (i + 1)
-            ax.axline((p1, 1 * k), (p2, 10 * k), color="black", linestyle=":", alpha=0.2)
-            ax.axline((1, p1 / k), (10, p2 / k), color="black", linestyle=":", alpha=0.2)
+            ax.axline((p1, 1 * k), (p2, 10 * k), color="black", linestyle=":", alpha=0.2, zorder=100000)
+            ax.axline((1, p1 / k), (10, p2 / k), color="black", linestyle=":", alpha=0.2, zorder=100000)
 
     def plot_timeout_lines(self, ax, timeout):
-        ax.axhline(y=timeout, color="black", linestyle="--")
-        ax.axvline(x=timeout, color="black", linestyle="--")
+        ax.axhline(y=timeout, color="black", linestyle="--", alpha=0.5, zorder=100000)
+        ax.axvline(x=timeout, color="black", linestyle="--", alpha=0.5, zorder=100000)
         ax.xaxis.set_major_formatter(CustomTicker(timeout))
         ax.yaxis.set_major_formatter(CustomTicker(timeout))
 
     def _plot_legend(self):
-        color_map = self._get_color_map()
-        f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
-        handles = [f("x", color) for color in color_map.values()]
-
-        legend = plt.legend(handles, color_map.keys(), loc=3, framealpha=1, frameon=False, ncols=len(color_map),
-                            mode="expand")
-
-        fig = legend.figure
-        fig.canvas.draw()
-        bbox = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-        filename = os.path.join(self.output_dir, "legend.pdf")
-        fig.savefig(filename, dpi="figure", bbox_inches=bbox)
-
-    def _get_color_map(self):
-        color_map = dict(zip(self.data.index.get_level_values(0).unique().sort_values(), plt.colormaps["Set2"].colors))
-        return color_map
+        # plot *only* the legend on a different file
+        legendFig = plt.figure("Legend plot")
+        problem_sets = self.get_problem_sets()
+        handles = [
+            plt.Line2D([0], [0], color=self.problem_set_styles[ps].color, marker=self.problem_set_styles[ps].marker,
+                       linestyle="None", label=ps, markersize=10, markeredgewidth=2, alpha=0.5) for ps in problem_sets]
+        legendFig.legend(handles, [self.problem_set_styles[ps].label for ps in problem_sets], loc="center",
+                         fontsize=self.FONTSIZE, ncol=len(problem_sets))
+        outfile = os.path.join(self.output_dir, "legend{}.pdf".format(self.filename))
+        legendFig.savefig(outfile, bbox_inches='tight')
+        print("created {}".format(outfile))
+        plt.close(legendFig)

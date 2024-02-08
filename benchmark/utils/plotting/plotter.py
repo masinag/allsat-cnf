@@ -1,8 +1,11 @@
-from typing import Literal, Dict, List, Optional
+from typing import Literal
 
 import pandas as pd
 
 from ..parsing import Mode
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...plot import Style
 
 Param = Literal["time", "models", "n_clauses"]
 
@@ -13,24 +16,21 @@ class Plotter:
     LINEWIDTH = 2.5
     FIGSIZE = (10, 8)
 
-    def __init__(self, data: pd.DataFrame, output_dir: str, filename: str, colors: Dict[Mode, str], order: List[Mode],
-                 timeout: Optional[int], timeout_models: Optional[int], name_mapping: Dict[Mode, str], linestyles: Dict[Mode, str]):
+    def __init__(self, data: pd.DataFrame, output_dir: str, filename: str, timeout: int | None,
+                 timeout_models: int | None, mode_styles: dict[Mode, "Style"], problem_set_styles: dict[str, "Style"]):
         self.data = data
         self.output_dir = output_dir
         self.filename = filename
-        self.colors = colors
-        self.order = order
         self.timeout = timeout
         self.timeout_models = timeout_models
         self.logscale = True
-        self.name_mapping = name_mapping
-        self.linestyles = linestyles
-        for mode in self.order:
-            if mode not in self.name_mapping:
-                self.name_mapping[mode] = mode.value
-            if mode not in self.linestyles:
-                self.linestyles[mode] = "-"
+        self.mode_styles = mode_styles
+        self.problem_set_styles = problem_set_styles
 
     def get_modes(self):
-        avail_modes = {Mode(m) for m in self.data.columns.get_level_values(1).unique()}
-        return [mode for mode in self.order if mode in avail_modes]
+        avail_modes = [Mode(m) for m in self.data.columns.get_level_values(1).unique()]
+        return sorted(avail_modes, key=lambda x: self.mode_styles[x].order_index)
+
+    def get_problem_sets(self):
+        avail_ps = self.data.index.get_level_values(0).unique()
+        return sorted(avail_ps, key=lambda x: self.problem_set_styles[x].order_index)

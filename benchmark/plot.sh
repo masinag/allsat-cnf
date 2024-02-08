@@ -20,16 +20,28 @@ python3 plot.py \
   -problem_set syn-bool $SYN_DIR/results/*r0*  \
   -problem_set aig      $AIG_DIR/results/* \
   -problem_set iscas85  $ISCAS_DIR/results/* \
+  -o plots/no-rep \
+  -f bool \
+  --timeout 3600 --timeout-models 100000000
+
+python3 plot.py \
   -problem_set syn-lra  $SYN_DIR/results/* \
   -problem_set wmi      $WMI_DIR/results/* \
   -o plots/no-rep \
+  -f smt \
   --timeout 3600 --timeout-models 100000000
 
 python3 plot.py \
   -problem_set syn-bool $SYN_DIR/results/*r0*  \
   -problem_set aig      $AIG_DIR/results/* \
   -problem_set iscas85  $ISCAS_DIR/results/* \
+  -o plots/rep \
+  -f bool \
+  --with-repetitions --timeout 3600 --timeout-models 100000000
+
+python3 plot.py \
   -problem_set syn-lra  $SYN_DIR/results/* \
   -problem_set wmi      $WMI_DIR/results/* \
   -o plots/rep \
+  -f smt \
   --with-repetitions --timeout 3600 --timeout-models 100000000
