@@ -3,12 +3,11 @@ import os
 import sys
 import time
 from os import path
-from typing import List, Optional, Union
 
 from pysmt.shortcuts import read_smtlib
 
-from benchmark.utils.parsing import get_full_name_mode
 from allsat_cnf.aig_adapter import AIGAdapter
+from benchmark.utils.parsing import get_full_name_mode
 
 
 def get_output_filename(args):
@@ -26,7 +25,7 @@ def generate_output_filename_from_args(args):
     return output_file
 
 
-def check_inputs_exist(input_dir: Union[str, List[str]]):
+def check_inputs_exist(input_dir: str | list[str]):
     if input_dir is not None:
         if isinstance(input_dir, str):
             input_dir = [input_dir]
@@ -79,7 +78,7 @@ def read_formula_from_file(filename):
         raise ValueError("Unknown file extension: {}".format(filename))
 
 
-def get_input_files(input_dirs: List[str]) -> List[str]:
+def get_input_files(input_dirs: list[str]) -> list[str]:
     input_files = []
     for input_dir in input_dirs:
         if not os.path.exists(input_dir):

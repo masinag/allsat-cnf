@@ -1,12 +1,10 @@
-from typing import List, Dict
-
 from pysmt import operators as op, typing as types
 from pysmt.fnode import FNode
 from pysmt.walkers import DagWalker, handles
 
 from allsat_cnf.polarity_walker import PolarityDagWalker, Polarity
 
-PolarityDict = Dict[FNode, Polarity]
+PolarityDict = dict[FNode, Polarity]
 
 
 class PolarityFinder(PolarityDagWalker):
@@ -30,19 +28,19 @@ class PolarityFinder(PolarityDagWalker):
 
     @handles(op.AND, op.OR, op.ITE, op.IMPLIES, op.IFF, op.NOT)
     @handles(op.RELATIONS)
-    def walk_sub_formula(self, formula: FNode, args: List[None], pol: Polarity, **kwargs):
+    def walk_sub_formula(self, formula: FNode, args: list[None], pol: Polarity, **kwargs):
         self.polarity[formula] = self.polarity.get(formula, pol) | pol
 
-    def walk_symbol(self, formula: FNode, args: List[None], pol: Polarity, **kwargs):
+    def walk_symbol(self, formula: FNode, args: list[None], pol: Polarity, **kwargs):
         if formula.is_symbol(types.BOOL):
             self.polarity[formula] = self.polarity.get(formula, pol) | pol
 
-    def walk_function(self, formula: FNode, args: List[None], pol: Polarity, **kwargs):
+    def walk_function(self, formula: FNode, args: list[None], pol: Polarity, **kwargs):
         ty = formula.function_name().symbol_type()
         if ty.return_type.is_bool_type():
             self.polarity[formula] = self.polarity.get(formula, pol) | pol
 
     @handles(*op.THEORY_OPERATORS)
     @handles(*op.CONSTANTS)
-    def walk_identity(self, formula: FNode, args: List[None], pol: Polarity, **kwargs):
+    def walk_identity(self, formula: FNode, args: list[None], pol: Polarity, **kwargs):
         pass

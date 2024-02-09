@@ -7,8 +7,8 @@ NAME = 'allsat_cnf'
 DESCRIPTION = ''
 URL = 'https://github.com/masinag/allsat-cnf'
 EMAIL = ''
-AUTHOR = ''
-REQUIRES_PYTHON = '>=3.8'
+AUTHOR = 'Gabriele Masina'
+REQUIRES_PYTHON = '>=3.10'
 VERSION = '0.1'
 
 # What packages are required for this module to be executed?

@@ -1,5 +1,3 @@
-from typing import Tuple, List
-
 import circuitgraph as cg
 from pysmt.fnode import FNode
 from pysmt.shortcuts import Symbol, FALSE, TRUE, Not, And, Or, Xor
@@ -7,6 +5,7 @@ from pysmt.shortcuts import Symbol, FALSE, TRUE, Not, And, Or, Xor
 
 class BenchAdapter:
     """Reads a circuit from a .bench file and converts it to a PySMT formula."""
+
     def __init__(self, circuit: cg.Circuit):
         self._circuit = circuit
 
@@ -14,7 +13,7 @@ class BenchAdapter:
     def from_file(path: str) -> 'BenchAdapter':
         return BenchAdapter(cg.io.from_file(path))
 
-    def to_pysmt(self) -> Tuple[List[FNode], List[FNode]]:
+    def to_pysmt(self) -> tuple[list[FNode], list[FNode]]:
         nodes = {}
         for node in self._circuit.topo_sort():
             args = [nodes[i] for i in self._circuit.fanin(node)]

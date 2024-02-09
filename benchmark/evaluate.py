@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 import time
-from typing import Iterable, List, Set, Tuple
+from typing import Iterable
 
 from pysmt.environment import reset_env, get_env
 from pysmt.fnode import FNode
@@ -102,7 +102,7 @@ def setup():
     get_env().enable_infix_notation = True
 
 
-def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions) -> List[Set[FNode]]:
+def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions) -> list[set[FNode]]:
     models, _ = run_with_timeout(
         get_allsat,
         solver_options.timeout,
@@ -113,7 +113,7 @@ def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: So
     return models
 
 
-def check_sat_or_timeout(phi: FNode, solver_options: SolverOptions) -> List[Set[FNode]]:
+def check_sat_or_timeout(phi: FNode, solver_options: SolverOptions) -> list[set[FNode]]:
     is_sat = run_with_timeout(
         check_sat,
         solver_options.timeout,

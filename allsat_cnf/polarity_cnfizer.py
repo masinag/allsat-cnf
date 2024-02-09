@@ -1,5 +1,3 @@
-from typing import Tuple, List
-
 import pysmt.operators as op
 from pysmt.fnode import FNode
 from pysmt.rewritings import NNFizer
@@ -9,7 +7,7 @@ from allsat_cnf.polarity_finder import PolarityFinder, PolarityDict
 from allsat_cnf.polarity_walker import Polarity
 from allsat_cnf.utils import unique_everseen
 
-T_CNF = List[Tuple[FNode]]
+T_CNF = list[tuple[FNode]]
 
 
 class PolarityCNFizer(DagWalker):
@@ -88,7 +86,7 @@ class PolarityCNFizer(DagWalker):
     def walk_quantifier(self, formula: FNode, args, **kwargs):
         raise NotImplementedError("CNFizer does not support quantifiers")
 
-    def walk_and(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
+    def walk_and(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
         if len(args) == 1:
             return args[0]
 
@@ -99,7 +97,7 @@ class PolarityCNFizer(DagWalker):
             self._clauses += [tuple([k] + [self.negate(a) for a in args])]
         return k
 
-    def walk_or(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
+    def walk_or(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
         if len(args) == 1:
             return args[0]
 
@@ -123,7 +121,7 @@ class PolarityCNFizer(DagWalker):
         else:
             return self.mgr.Not(formula)
 
-    def walk_implies(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
+    def walk_implies(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
         a, b = args
         k = self.key_var(formula, polarities)
         not_k = self.negate(k)
@@ -136,7 +134,7 @@ class PolarityCNFizer(DagWalker):
             self._clauses += [tuple([k, a]), tuple([k, not_b])]
         return k
 
-    def walk_iff(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
+    def walk_iff(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
         a, b = args
         k = self.key_var(formula, polarities)
         not_k: FNode = self.negate(k)
@@ -151,7 +149,7 @@ class PolarityCNFizer(DagWalker):
                               tuple([k, a, b])]
         return k
 
-    def walk_ite(self, formula: FNode, args: List[FNode], polarities: PolarityDict, **kwargs):
+    def walk_ite(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
         if not self.env.stc.get_type(formula).is_bool_type():
             return formula
 

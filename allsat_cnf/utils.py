@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from itertools import filterfalse
 from pprint import pformat
-from typing import Optional, Iterable, Dict, Tuple, Set, List
+from typing import Iterable
 
 import mathsat
 from pysmt.fnode import FNode
@@ -48,8 +48,8 @@ class Normalizer:
         return {self.normalize(literal) for literal in mu}
 
 
-def get_allsat(formula: FNode, atoms: Optional[Iterable[FNode]] = None,
-               solver_options: Optional[SolverOptions] = None) -> Tuple[List[Set[FNode]], int]:
+def get_allsat(formula: FNode, atoms: Iterable[FNode] | None = None,
+               solver_options: SolverOptions | None = None) -> tuple[list[set[FNode]], int]:
     """
     Enumerates a list of (partial) assignments of the given formula.
     :param formula: the formula to enumerate assignments for
@@ -116,7 +116,7 @@ def check_valid(formula: FNode):
         return solver.is_valid(formula)
 
 
-def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
+def get_solver_options_dict(solver_options: SolverOptions) -> dict[str, str]:
     solver_options_dict = {}
 
     solver_options_dict["dpll.allsat_allow_duplicates"] = "true" if solver_options.with_repetitions else "false"
@@ -133,15 +133,15 @@ def get_solver_options_dict(solver_options: SolverOptions) -> Dict[str, str]:
     return solver_options_dict
 
 
-def get_boolean_variables(formula: FNode) -> Set[FNode]:
+def get_boolean_variables(formula: FNode) -> set[FNode]:
     return _get_variables(formula, BOOL)
 
 
-def get_real_variables(formula: FNode) -> Set[FNode]:
+def get_real_variables(formula: FNode) -> set[FNode]:
     return _get_variables(formula, REAL)
 
 
-def _get_variables(formula: FNode, type_: PySMTType) -> Set[FNode]:
+def _get_variables(formula: FNode, type_: PySMTType) -> set[FNode]:
     return {a for a in formula.get_free_variables() if a.get_type() == type_}
 
 
@@ -226,8 +226,6 @@ def ta_is_complete(phi, ta):
         if not any(eta.issuperset(mu) for mu in ta):
             return False, err
     return True, None
-    # equiv = Iff(phi, Or(map(And, ta)))
-    # return _is_valid(equiv)
 
 
 def rewalk(phi):
