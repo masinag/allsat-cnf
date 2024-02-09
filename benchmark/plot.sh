@@ -14,34 +14,33 @@ WMI_DIR=wmi/$DIR
 
 echo $AIG_DIR $ISCAS_DIR $SYN_DIR $WMI_DIR
 
-mkdir -p plots/no-rep plots/rep
+mkdir -p plots/bool/no-rep \
+  plots/bool/rep \
+  plots/lra/no-rep \
+  plots/lra/rep
 
 python3 plot.py \
   -problem_set syn-bool $SYN_DIR/results/*r0*  \
   -problem_set aig      $AIG_DIR/results/* \
   -problem_set iscas85  $ISCAS_DIR/results/* \
-  -o plots/no-rep \
-  -f bool \
+  -o plots/bool/no-rep \
   --timeout 3600 --timeout-models 100000000
 
 python3 plot.py \
-  -problem_set syn-lra  $SYN_DIR/results/* \
+  -problem_set syn-lra  $SYN_DIR/results/*b0*  \
   -problem_set wmi      $WMI_DIR/results/* \
-  -o plots/no-rep \
-  -f smt \
+  -o plots/lra/no-rep \
   --timeout 3600 --timeout-models 100000000
 
 python3 plot.py \
   -problem_set syn-bool $SYN_DIR/results/*r0*  \
   -problem_set aig      $AIG_DIR/results/* \
   -problem_set iscas85  $ISCAS_DIR/results/* \
-  -o plots/rep \
-  -f bool \
+  -o plots/bool/rep \
   --with-repetitions --timeout 3600 --timeout-models 100000000
 
 python3 plot.py \
-  -problem_set syn-lra  $SYN_DIR/results/* \
+  -problem_set syn-lra  $SYN_DIR/results/*b0*  \
   -problem_set wmi      $WMI_DIR/results/* \
-  -o plots/rep \
-  -f smt \
+  -o plots/lra/rep \
   --with-repetitions --timeout 3600 --timeout-models 100000000

@@ -40,17 +40,17 @@ class ScatterPlotter(Plotter):
             if mode1 != mode2:
                 self._plot_scatter(param, param_label, mode1, mode2, separate_problem_sets)
                 assert size == len(self.data)
-        self._plot_legend()
+        self._plot_legend("all")
 
     def _plot_scatter(self, param: Param, param_label: str, modex: Mode, modey: Mode, separate_problem_sets):
         if separate_problem_sets:
             for problem_set in self.get_problem_sets():
                 data_set = self.data[self.data.index.get_level_values(0) == problem_set]
-                self._plot_scatter_data(data_set, param, param_label, modex, modey, f"_{problem_set}")
+                self._plot_scatter_data(data_set, param, param_label, modex, modey, subdir=problem_set)
         else:
-            self._plot_scatter_data(self.data, param, param_label, modex, modey, "_all")
+            self._plot_scatter_data(self.data, param, param_label, modex, modey, subdir="all")
 
-    def _plot_scatter_data(self, data, param, param_label, modex, modey, suffix=""):
+    def _plot_scatter_data(self, data, param, param_label, modex, modey, suffix="", subdir=""):
         fig, ax = plt.subplots()
 
         for problem_set in self.get_problem_sets():
@@ -59,7 +59,7 @@ class ScatterPlotter(Plotter):
             data_set = data[data.index.get_level_values(0) == problem_set]
             ax.scatter(x=data_set[(param, modex.value)],
                        y=data_set[(param, modey.value)],
-                       color=color, alpha=0.5, marker=marker)
+                       color=color, alpha=0.8, marker=marker)
             ax.set_xscale("log")
             ax.set_yscale("log")
 
@@ -79,7 +79,15 @@ class ScatterPlotter(Plotter):
         ax.set_ylim(1, max(x1, y1))
         self.plot_diagonal_lines(ax, max(data[(param, modex.value)].max(), data[(param, modey.value)].max()))
         # save figure
-        outfile = os.path.join(self.output_dir,
+        if subdir:
+            # ensure subdir exists or create it
+            output_dir = os.path.join(self.output_dir, subdir)
+            print("Creating subdir: ", output_dir)
+            os.makedirs(output_dir, exist_ok=True)
+            assert os.path.exists(output_dir)
+        else:
+            output_dir = self.output_dir
+        outfile = os.path.join(output_dir,
                                "{}_compare_{}_vs_{}{}{}.pdf".format(param, modex.value, modey.value, self.filename,
                                                                     suffix))
         plt.gca().set_aspect("equal")
@@ -102,16 +110,17 @@ class ScatterPlotter(Plotter):
         ax.xaxis.set_major_formatter(CustomTicker(timeout))
         ax.yaxis.set_major_formatter(CustomTicker(timeout))
 
-    def _plot_legend(self):
+    def _plot_legend(self, subdir=""):
         # plot *only* the legend on a different file
         legendFig = plt.figure("Legend plot")
         problem_sets = self.get_problem_sets()
         handles = [
             plt.Line2D([0], [0], color=self.problem_set_styles[ps].color, marker=self.problem_set_styles[ps].marker,
-                       linestyle="None", label=ps, markersize=10, markeredgewidth=2, alpha=0.5) for ps in problem_sets]
+                       linestyle="None", label=ps, markersize=10, markeredgewidth=2, alpha=0.8) for ps in problem_sets]
         legendFig.legend(handles, [self.problem_set_styles[ps].label for ps in problem_sets], loc="center",
                          fontsize=self.FONTSIZE, ncol=len(problem_sets))
-        outfile = os.path.join(self.output_dir, "legend{}.pdf".format(self.filename))
+        output_dir = os.path.join(self.output_dir, subdir) if subdir else self.output_dir
+        outfile = os.path.join(output_dir, "legend{}.pdf".format(self.filename))
         legendFig.savefig(outfile, bbox_inches='tight')
         print("created {}".format(outfile))
         plt.close(legendFig)

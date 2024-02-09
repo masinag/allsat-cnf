@@ -39,8 +39,8 @@ PROBLEM_SET_STYLES = {
     "syn-bool": Style(_cm[2], "s", None, "Syn-Bool", 0),
     "iscas85": Style(_cm[1], "o", None, "ISCAS85", 1),
     "aig": Style(_cm[0], "^", None, "AIG", 2),
-    "syn-lra": Style(_cm[4], "D", None, "Syn-LRA", 3),
-    "wmi": Style(_cm[3], "v", None, "WMI", 4),
+    "syn-lra": Style(_cm[3], "D", None, "Syn-LRA", 3),
+    "wmi": Style(_cm[4], "v", None, "WMI", 4),
 }
 
 
