@@ -3,6 +3,7 @@ import math
 import os
 
 import matplotlib.pyplot as plt
+import pandas as pd
 from matplotlib.ticker import LogFormatterSciNotation
 
 from .plotter import Plotter, Param
@@ -38,19 +39,20 @@ class ScatterPlotter(Plotter):
         size = len(self.data)
         for mode1, mode2 in itertools.combinations(modes, 2):
             if mode1 != mode2:
-                self._plot_scatter(param, param_label, mode1, mode2, separate_problem_sets)
+                self._plot(param, param_label, mode1, mode2, separate_problem_sets)
                 assert size == len(self.data)
         self._plot_legend("all")
 
-    def _plot_scatter(self, param: Param, param_label: str, modex: Mode, modey: Mode, separate_problem_sets):
+    def _plot(self, param: Param, param_label: str, modex: Mode, modey: Mode, separate_problem_sets):
         if separate_problem_sets:
             for problem_set in self.get_problem_sets():
                 data_set = self.data[self.data.index.get_level_values(0) == problem_set]
-                self._plot_scatter_data(data_set, param, param_label, modex, modey, subdir=problem_set)
+                self._plot_data(data_set, param, param_label, modex, modey, subdir=problem_set)
         else:
-            self._plot_scatter_data(self.data, param, param_label, modex, modey, subdir="all")
+            self._plot_data(self.data, param, param_label, modex, modey, subdir="all")
 
-    def _plot_scatter_data(self, data, param, param_label, modex, modey, suffix="", subdir=""):
+    def _plot_data(self, data: pd.DataFrame, param: Param, param_label: str, modex: Mode, modey: Mode,
+                   suffix: str = "", subdir: str = ""):
         fig, ax = plt.subplots()
 
         for problem_set in self.get_problem_sets():
@@ -69,10 +71,10 @@ class ScatterPlotter(Plotter):
         elif param == "models" and self.timeout_models is not None:
             self.plot_timeout_lines(ax, self.timeout_models)
         # axes labels
-        plt.xlabel(f"{self.mode_styles[modex].label} ({param_label})", fontsize=self.FONTSIZE)
-        plt.ylabel(f"{self.mode_styles[modey].label} ({param_label})", fontsize=self.FONTSIZE)
-        plt.xticks(fontsize=self.TICKSIZE)
-        plt.yticks(fontsize=self.TICKSIZE)
+        ax.set_xlabel(f"{self.mode_styles[modex].label} ({param_label})", fontsize=self.FONTSIZE)
+        ax.set_ylabel(f"{self.mode_styles[modey].label} ({param_label})", fontsize=self.FONTSIZE)
+        ax.tick_params(axis='both', which='major', labelsize=self.TICKSIZE)
+        ax.tick_params(axis='both', which='minor', labelsize=self.TICKSIZE)
         x0, x1 = ax.get_xlim()
         y0, y1 = ax.get_ylim()
         ax.set_xlim(1, max(x1, y1))
@@ -90,8 +92,8 @@ class ScatterPlotter(Plotter):
         outfile = os.path.join(output_dir,
                                "{}_compare_{}_vs_{}{}{}.pdf".format(param, modex.value, modey.value, self.filename,
                                                                     suffix))
-        plt.gca().set_aspect("equal")
-        plt.savefig(outfile, bbox_inches='tight')
+        ax.set_aspect("equal")
+        fig.savefig(outfile, bbox_inches='tight')
         print("created {}".format(outfile))
         plt.close(fig)
 
@@ -112,15 +114,15 @@ class ScatterPlotter(Plotter):
 
     def _plot_legend(self, subdir=""):
         # plot *only* the legend on a different file
-        legendFig = plt.figure("Legend plot")
+        legend_fig = plt.figure("Legend plot")
         problem_sets = self.get_problem_sets()
         handles = [
             plt.Line2D([0], [0], color=self.problem_set_styles[ps].color, marker=self.problem_set_styles[ps].marker,
-                       linestyle="None", label=ps, markersize=10, markeredgewidth=2, alpha=0.8) for ps in problem_sets]
-        legendFig.legend(handles, [self.problem_set_styles[ps].label for ps in problem_sets], loc="center",
-                         fontsize=self.FONTSIZE, ncol=len(problem_sets))
+                       linestyle="None", markersize=10, markeredgewidth=2, alpha=0.8) for ps in problem_sets]
+        legend_fig.legend(handles, [self.problem_set_styles[ps].label for ps in problem_sets], loc="center",
+                          fontsize=self.FONTSIZE, ncol=len(problem_sets))
         output_dir = os.path.join(self.output_dir, subdir) if subdir else self.output_dir
         outfile = os.path.join(output_dir, "legend{}.pdf".format(self.filename))
-        legendFig.savefig(outfile, bbox_inches='tight')
+        legend_fig.savefig(outfile, bbox_inches='tight')
         print("created {}".format(outfile))
-        plt.close(legendFig)
+        plt.close(legend_fig)

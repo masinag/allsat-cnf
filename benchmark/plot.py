@@ -24,13 +24,13 @@ matplotlib.rcParams.update({
 Style = namedtuple("Style", ["color", "marker", "linestyle", "label", "order_index"])
 
 MODE_STYLES = {
-    Mode.TTA: Style("blue", None, None, r"$\mathsf{TTA}(\varphi)$", 0),
-    Mode.LAB: Style("#ff7f00", None, "--", r"$\mathsf{CNF_{Ts}}(\varphi)$", 1),
-    Mode.NNF_LAB: Style("black", None, None, r"$\mathsf{CNF_{Ts}}(\mathsf{NNF}(\varphi))$", 2),
-    Mode.POL: Style("orange", None, None, r"$\mathsf{CNF_{PG}}(\varphi)$", 3),
-    Mode.NNF_POL: Style("purple", None, None, r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 4),
-    Mode.LABELNEG_POL: Style("#377eb8", None, "-", r"$\mathsf{CNF_{PG}}(\varphi)$", 5),
-    Mode.NNF_MUTEX_POL: Style("#4daf4a", None, "-.", r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 6),
+    Mode.TTA: Style("blue", None, None, r"$\mathsf{TTA}(\varphi)$", 3),
+    Mode.LAB: Style("#ff7f00", None, "--", r"$\mathsf{CNF_{Ts}}(\varphi)$", 2),
+    # Mode.NNF_LAB: Style("black", None, None, r"$\mathsf{CNF_{Ts}}(\mathsf{NNF}(\varphi))$", 2),
+    # Mode.POL: Style("orange", None, None, r"$\mathsf{CNF_{PG}}(\varphi)$", 3),
+    # Mode.NNF_POL: Style("purple", None, None, r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 4),
+    Mode.LABELNEG_POL: Style("#377eb8", None, "-", r"$\mathsf{CNF_{PG}}(\varphi)$", 0),
+    Mode.NNF_MUTEX_POL: Style("#4daf4a", None, "-.", r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 1),
 }
 
 _cm = plt.colormaps["Set2"].colors
@@ -95,6 +95,8 @@ def parse_args():
                         help="Number of models to plot for timeouts (default: None)")
     parser.add_argument("--with-repetitions", action="store_true",
                         help="Whether to plot results allowing non-disjoint models (default: False)")
+    parser.add_argument("--scatter", action="store_true", help="Plot scatter plots")
+    parser.add_argument("--ecdf", action="store_true", help="Plot ECDF plots")
     args = parser.parse_args()
 
     problem_sets = {}
@@ -111,8 +113,6 @@ def count_timeouts(data: pd.DataFrame):
     # for each problem set, count the number of timeouts and the number of problems
     # remember: data has a multiindex with levels "problem_set" and "filename", and columns ("enum_timed_out", mode)
     # for each mode
-    print(data["enum_timed_out"])
-
     # compute sum and count of timeouts
     timeouts = data["enum_timed_out"].groupby("problem_set").sum()
     n_problems = data["enum_timed_out"].groupby("problem_set").count()
@@ -141,22 +141,19 @@ def main():
     input_files = {name: get_input_files(dirs) for name, dirs in problem_sets.items()}
     data = parse_inputs(input_files, with_repetitions, timeout=timeout, timeout_models=timeout_models)
     data = group_data(data)
-    # find entries where Mode.LABELNEG_POL < Mode.NNF_MUTEX_POL wrt 'models'
-    anomalous = data[data[('models', Mode.LABELNEG_POL.value)] < data[('models', Mode.NNF_MUTEX_POL.value)]]
 
-    # print("Anomalous entries filenames:")
-    # print(anomalous.index.get_level_values(1).unique())
+    if args.ecdf:
+        ecdf_plotter = ECDFPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES, PROBLEM_SET_STYLES)
+        ecdf_plotter.plot_time()
 
-    # ecdf_plotter = ECDFPlotter(data, output_dir, filename, COLOR, [Mode.NNF_MUTEX_POL, Mode.LABELNEG_POL, Mode.LAB],
-    #                            timeout, timeout_models, NAME_MAPPING, LINESTYLES)
-    # ecdf_plotter.plot_time()
+    if args.scatter:
+        scatter_plotter = ScatterPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES,
+                                         PROBLEM_SET_STYLES)
 
-    scatter_plotter = ScatterPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES, PROBLEM_SET_STYLES)
-
-    scatter_plotter.plot_models_all_vs_all(separate_problem_sets=True)
-    scatter_plotter.plot_models_all_vs_all(separate_problem_sets=False)
-    scatter_plotter.plot_time_all_vs_all(separate_problem_sets=True)
-    scatter_plotter.plot_time_all_vs_all(separate_problem_sets=False)
+        scatter_plotter.plot_models_all_vs_all(separate_problem_sets=True)
+        scatter_plotter.plot_models_all_vs_all(separate_problem_sets=False)
+        scatter_plotter.plot_time_all_vs_all(separate_problem_sets=True)
+        scatter_plotter.plot_time_all_vs_all(separate_problem_sets=False)
 
     count_timeouts(data)
 

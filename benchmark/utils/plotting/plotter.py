@@ -4,6 +4,7 @@ import pandas as pd
 
 from ..parsing import Mode
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from ...plot import Style
 
@@ -28,9 +29,9 @@ class Plotter:
         self.problem_set_styles = problem_set_styles
 
     def get_modes(self):
-        avail_modes = [Mode(m) for m in self.data.columns.get_level_values(1).unique()]
+        avail_modes = [mode for m in self.data.columns.get_level_values(1).unique() if (mode:=Mode(m)) in self.mode_styles]
         return sorted(avail_modes, key=lambda x: self.mode_styles[x].order_index)
 
     def get_problem_sets(self):
-        avail_ps = self.data.index.get_level_values(0).unique()
+        avail_ps = [p for p in self.data.index.get_level_values(0).unique() if p in self.problem_set_styles]
         return sorted(avail_ps, key=lambda x: self.problem_set_styles[x].order_index)
