@@ -2,7 +2,8 @@
 Code for the following papers:
 
 Short version: [On CNF encoding for Disjoint SAT enumeration](https://doi.org/10.4230/LIPIcs.SAT.2023.14)<br/>
-Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, SAT '23.
+Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, SAT '23.<br/>
+[Code for the short version](https://github.com/masinag/allsat-cnf/releases/tag/SAT23)
 
 Extended version: [On CNF encoding for SAT and SMT enumeration](https://arxiv.org/abs/2303.14971)<br/>
 Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, ArXiv.
