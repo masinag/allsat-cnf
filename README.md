@@ -1,5 +1,5 @@
-# On CNF encoding for SAT enumeration
-Code for the paper "On CNF encoding for SAT enumeration"
+# On CNF encoding for SAT and SMT enumeration
+Code for the following papers:
 
 Short version: [On CNF encoding for Disjoint SAT enumeration](https://doi.org/10.4230/LIPIcs.SAT.2023.14)<br/>
 Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, SAT '23.
