@@ -1,5 +1,10 @@
 # Run benchmarks
 
+To run the benchmarks, you need to install the `benchmark` extra:
+```bash
+pip install "..[benchmark]"
+```
+
 The benchmarks are organized in the following directories:
 * `synthetic/` contains the synthetic Boolean and SMT(LRA) benchmarks
 * `iscas85/` contains the ISCAS85 benchmarks

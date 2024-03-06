@@ -17,18 +17,23 @@ REQUIRED = [
     'py-aiger >= 6.2.0',
     'circuitgraph >= 0.2.0',
     'funcy >= 1.17',
-    'psutil>=5.9.4',
-    'pytest',
-    'pytest-cov',
-    'pytest-benchmark',
-    'matplotlib',
-    'pandas',
-    'tqdm',
-    'wmipa',
-    'wmibench @ git+ssh://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench',
 ]
 
-EXTRAS = {}
+EXTRAS = {
+    'dev': [
+        'pytest',
+        'pytest-cov',
+        'pytest-benchmark',
+    ],
+    'benchmark': [
+        'psutil>=5.9.4',
+        'tqdm',
+        'wmipa',
+        'wmibench @ git+ssh://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench',
+        'matplotlib',
+        'pandas',
+    ],
+}
 
 here = os.path.abspath(os.path.dirname(__file__))
 

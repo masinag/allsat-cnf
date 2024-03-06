@@ -11,8 +11,18 @@ Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, ArXiv.
 ##  Install
 Requires Python >= 3.10.
 ```bash
-pip install -e .
+pip install .
 pysmt-install --msat
+```
+
+For running the benchmarks, also install the `benchmark` extra:
+```bash
+pip install ".[benchmark]"
+```
+
+For development, install the `dev` extra:
+```bash
+pip install ".[dev]"
 ```
 
 ##  Run benchmarks
