@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Iterable
+from typing import Iterable
 
 import funcy as fn
 from aiger import AIG as _AIG, to_aig as _to_aig, BoolExpr as _BoolExpr
@@ -15,7 +15,7 @@ class AIGAdapter:
         assert len(aig.outputs) == 1
         # assert len(aig.latches) == 0
         self.aig = aig
-        self.inputs: Dict[_Input, Symbol] = {}
+        self.inputs: dict[_Input, Symbol] = {}
         if env is None:
             import pysmt.environment
             env = pysmt.environment.get_env()
@@ -33,7 +33,7 @@ class AIGAdapter:
     def from_boolexpr(cls, expr: _BoolExpr) -> "AIGAdapter":
         return cls(_to_aig(expr))
 
-    def gates(self) -> Tuple[Dict[int, str], int, Iterable[Tuple[int, int, int]]]:
+    def gates(self) -> tuple[dict[int, str], int, Iterable[tuple[int, int, int]]]:
         gates = []
         count = 0
 

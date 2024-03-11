@@ -4,6 +4,7 @@ from allsat_cnf.polarity_walker import Polarity
 
 class LabelCNFizer(PolarityCNFizer):
     """Converts a formula into CNF using the Tseitin algorithm."""
+
     def _get_polarities(self, formula):
         # trick: force all polarities to be DOUBLE
         polarities = super()._get_polarities(formula)

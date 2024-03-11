@@ -7,7 +7,7 @@ from allsat_cnf.polarity_finder import PolarityFinder, PolarityDict
 from allsat_cnf.polarity_walker import Polarity
 from allsat_cnf.utils import unique_everseen
 
-T_CNF = list[tuple[FNode]]
+T_CNF = list[tuple[FNode, ...]]
 
 
 class PolarityCNFizer(DagWalker):
@@ -111,7 +111,7 @@ class PolarityCNFizer(DagWalker):
     def walk_not(self, formula: FNode, args, **kwargs):
         return self.negate(args[0])
 
-    def negate(self, formula):
+    def negate(self, formula: FNode) -> FNode:
         if formula.is_true():
             return self.mgr.FALSE()
         elif formula.is_false():

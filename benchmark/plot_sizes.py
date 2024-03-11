@@ -5,7 +5,7 @@ from pysmt.typing import BOOL
 
 from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
-from benchmark.plot import NAME_MAPPING, COLOR, LINESTYLES
+from benchmark.plot import MODE_STYLES
 from benchmark.utils.parsing import Mode
 
 matplotlib.use("pgf")
@@ -15,6 +15,7 @@ matplotlib.rcParams.update({
     'text.usetex': True,
     'pgf.rcfonts': False,
 })
+
 
 def A(i):
     return Symbol("A{}".format(i), BOOL)
@@ -26,11 +27,13 @@ def nested_iffs(i, j=0):
     else:
         return Iff(nested_iffs(i - 1, j), nested_iffs(i - 1, j + 2 ** i))
 
+
 cnfizers = [
     (Mode.LABELNEG_POL, PolarityCNFizer(label_neg_polarity=True)),
     (Mode.LAB, LabelCNFizer()),
     (Mode.NNF_MUTEX_POL, PolarityCNFizer(nnf=True, mutex_nnf_labels=True)),
 ]
+
 
 def main():
     n_clauses = {cname: [] for cname, _ in cnfizers}
@@ -46,7 +49,8 @@ def main():
             n_clauses[cname].append(len(cnf.args()))
     # plot results
     for cname, n_clauses in n_clauses.items():
-        plt.plot(n_atoms, n_clauses, label=NAME_MAPPING[cname], color=COLOR[cname], linestyle=LINESTYLES[cname])
+        style = MODE_STYLES[cname]
+        plt.plot(n_atoms, n_clauses, label=style.label, color=style.color, linestyle=style.linestyle)
     plt.legend()
     plt.xlabel("Number of atoms")
     plt.ylabel("Number of clauses")

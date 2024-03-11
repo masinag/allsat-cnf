@@ -181,7 +181,7 @@ def check_models(ta, phi, relevant_atoms=None):
     assert is_complete, "ta is not complete: {}\n{}\n{}".format(phi.serialize(), pformat(ta), err)
 
 
-normalizer = Normalizer()
+_normalizer = Normalizer()
 
 
 def ta_is_correct(phi, ta, relevant_atoms):
@@ -191,9 +191,9 @@ def ta_is_correct(phi, ta, relevant_atoms):
     :param ta: the list of models
     :return: True if each model in the list satisfies the formula, False otherwise
     """
-    phi = normalizer.normalize(phi)
+    phi = _normalizer.normalize(phi)
     for mu in ta:
-        mu = normalizer.normalize_assigment(mu)
+        mu = _normalizer.normalize_assigment(mu)
         subs = {}
         for literal in mu:
             if literal.is_not():
@@ -216,12 +216,12 @@ def ta_is_complete(phi, ta):
     :param ta: the list of models
     :return: True if each total model of the formula is a super-model of one of the models in the list, False otherwise
     """
-    ta = [normalizer.normalize_assigment(mu) for mu in ta]
+    ta = [_normalizer.normalize_assigment(mu) for mu in ta]
     atoms = get_boolean_variables(phi).union({a for a in get_lra_atoms(phi)})
     tta, _ = get_allsat(phi, atoms=atoms, solver_options=SolverOptions(with_repetitions=False, use_ta=False))
     # check that for every model in tta there is a corresponding supermodel in ta
     for eta in tta:
-        eta = normalizer.normalize_assigment(eta)
+        eta = _normalizer.normalize_assigment(eta)
         err = "{} not covered"
         if not any(eta.issuperset(mu) for mu in ta):
             return False, err

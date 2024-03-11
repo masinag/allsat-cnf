@@ -29,7 +29,8 @@ class Plotter:
         self.problem_set_styles = problem_set_styles
 
     def get_modes(self):
-        avail_modes = [mode for m in self.data.columns.get_level_values(1).unique() if (mode:=Mode(m)) in self.mode_styles]
+        avail_modes = [mode for m in self.data.columns.get_level_values(1).unique() if
+                       (mode := Mode(m)) in self.mode_styles]
         return sorted(avail_modes, key=lambda x: self.mode_styles[x].order_index)
 
     def get_problem_sets(self):

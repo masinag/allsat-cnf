@@ -1,7 +1,6 @@
 import argparse
 import enum
 from dataclasses import dataclass
-from typing import Tuple
 
 from allsat_cnf.utils import SolverOptions
 
@@ -33,7 +32,7 @@ class Mode(enum.Enum):
     TTA = "TTA"
 
 
-def get_options(args) -> Tuple[PreprocessOptions, SolverOptions]:
+def get_options(args) -> tuple[PreprocessOptions, SolverOptions]:
     do_nnf = False
     mutex_nnf_labels = False
     label_neg_polarity = False

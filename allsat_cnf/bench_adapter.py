@@ -17,33 +17,36 @@ class BenchAdapter:
         nodes = {}
         for node in self._circuit.topo_sort():
             args = [nodes[i] for i in self._circuit.fanin(node)]
-            if self._circuit.type(node) == "input":
-                formula = Symbol(node)
-            elif self._circuit.type(node) == "0":
-                formula = FALSE()
-            elif self._circuit.type(node) == "1":
-                formula = TRUE()
-            elif self._circuit.type(node) == "buf":
-                formula = args.pop()
-            elif self._circuit.type(node) == "not":
-                formula = Not(args.pop())
-            elif self._circuit.type(node) == "and":
-                formula = And(args)
-            elif self._circuit.type(node) == "nand":
-                formula = Not(And(args))
-            elif self._circuit.type(node) == "or":
-                formula = Or(args)
-            elif self._circuit.type(node) == "nor":
-                formula = Not(Or(args))
-            elif self._circuit.type(node) == "xor":
-                assert len(args) == 2
-                formula = Xor(args[0], args[1])
-            elif self._circuit.type(node) == "xnor":
-                assert len(args) == 2
-                formula = Not(Xor(args[0], args[1]))
-            else:
-                raise ValueError(f"unknown gate type '{self._circuit.type(node)}'")
-            nodes[node] = formula
+            nodes[node] = self._node_to_pysmt(node, args)
         inputs = [nodes[node] for node in self._circuit.inputs()]
         outputs = [nodes[node] for node in self._circuit.outputs()]
         return inputs, outputs
+
+    def _node_to_pysmt(self, node: str, args: list[FNode]) -> FNode:
+        match self._circuit.type(node):
+            case "input":
+                return Symbol(node)
+            case "0":
+                return FALSE()
+            case "1":
+                return TRUE()
+            case "buf":
+                return args.pop()
+            case "not":
+                return Not(args.pop())
+            case "and":
+                return And(args)
+            case "nand":
+                return Not(And(args))
+            case "or":
+                return Or(args)
+            case "nor":
+                return Not(Or(args))
+            case "xor":
+                assert len(args) == 2
+                return Xor(args[0], args[1])
+            case "xnor":
+                assert len(args) == 2
+                return Not(Xor(args[0], args[1]))
+            case _:
+                raise ValueError(f"unknown gate type '{self._circuit.type(node)}'")

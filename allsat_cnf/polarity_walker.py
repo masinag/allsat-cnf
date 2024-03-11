@@ -1,5 +1,4 @@
 import enum
-from typing import Tuple
 
 from pysmt.fnode import FNode
 from pysmt.walkers import DagWalker
@@ -20,13 +19,14 @@ class PolarityDagWalker(DagWalker):
     """
     Walk the formula as a DAG, keeping the information about the polarity of the sub-formulas.
     """
+
     def iter_walk(self, formula: FNode, top_pol: Polarity = Polarity.POS, **kwargs) -> FNode:
         self.stack.append((False, formula, top_pol))
         self._process_stack(**kwargs)
         res_key = self._get_key(formula, pol=top_pol, **kwargs)
         return self.memoization[res_key]
 
-    def _get_key(self, formula: FNode, pol: Polarity = Polarity.POS, **kwargs) -> Tuple[FNode, Polarity]:
+    def _get_key(self, formula: FNode, pol: Polarity = Polarity.POS, **kwargs) -> tuple[FNode, Polarity]:
         return formula, pol
 
     def _process_stack(self, **kwargs) -> None:

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/masinag/allsat-cnf"
+Documentation = "https://github.com/masinag/allsat-cnf"
+Repository = "https://github.com/masinag/allsat-cnf"
+
+[project]
+authors = [
+    { name = "Gabriele Masina" }
+]
+name = "allsat_cnf"
+version = "1.0"
+description = "CNF encodings for AllSAT and AllSMT"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["allsat", "allsmt", "cnf", "sat", "smt"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+
+dependencies = [
+    "PySMT >= 0.9.6.dev53",  # mathsat version >= 5.6.7
+    "py-aiger >= 6.2.0",
+    "circuitgraph >= 0.2.0",
+    "funcy >= 1.17",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-benchmark",
+    "pytest-runner",
+]
+
+benchmark = [
+    "psutil>=5.9.4",
+    "tqdm",
+    "wmipa",
+    "wmibench @ git+ssh://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench",
+    "matplotlib",
+    "pandas",
+]
+
+
+
+
