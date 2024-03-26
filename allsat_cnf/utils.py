@@ -117,19 +117,29 @@ def check_valid(formula: FNode):
 
 
 def get_solver_options_dict(solver_options: SolverOptions) -> dict[str, str]:
-    solver_options_dict = {}
+    # necessary to disable non-validity preserving simplifications
+    solver_options_dict = {
+        "preprocessor.toplevel_propagation": "false",
+        "preprocessor.simplification": "0"
+    }
 
-    solver_options_dict["dpll.allsat_allow_duplicates"] = "true" if solver_options.with_repetitions else "false"
+    if solver_options.with_repetitions:
+        solver_options_dict["dpll.allsat_allow_duplicates"] = "true"
+    else:
+        solver_options_dict["dpll.allsat_allow_duplicates"] = "false"
+
     if not solver_options.phase_caching:
         solver_options_dict["dpll.branching_cache_phase"] = "0"
         solver_options_dict["dpll.branching_random_frequency"] = "0"
+
     if solver_options.use_ta:
         solver_options_dict["dpll.allsat_minimize_model"] = "true"
-        solver_options_dict["preprocessor.toplevel_propagation"] = "false"
-        solver_options_dict["preprocessor.simplification"] = "0"
+    else:
+        solver_options_dict["dpll.allsat_minimize_model"] = "false"
+
+    # enforce splitting on negative phase first
     solver_options_dict["dpll.branching_initial_phase"] = "0"
-    # solver_options_dict["debug.api_call_trace"] = "3"
-    # solver_options_dict["verbosity"] = "2"
+
     return solver_options_dict
 
 
