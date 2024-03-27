@@ -3,6 +3,7 @@ from itertools import product
 import pytest
 from pysmt.shortcuts import is_sat, get_atoms
 
+from allsat_cnf.demorgan_cnfizer import DistributiveCNF
 from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
 from allsat_cnf.utils import check_models, get_allsat, SolverOptions, is_cnf
@@ -11,7 +12,8 @@ from instances import bool_identity_examples, bool_single_polarity_examples, boo
 from utils import get_data_from_examples
 
 
-@pytest.mark.parametrize("cnfizer, phi", product([PolarityCNFizer(), LabelCNFizer()], bool_identity_examples))
+@pytest.mark.parametrize("cnfizer, phi",
+                         product([DistributiveCNF(), PolarityCNFizer(), LabelCNFizer()], bool_identity_examples))
 def test_bool_identity(cnfizer, phi):
     cnf = cnfizer.convert_as_formula(phi)
     assert cnf == phi

@@ -5,7 +5,7 @@ from pysmt.walkers import DagWalker, handles
 
 from allsat_cnf.polarity_finder import PolarityFinder, PolarityDict
 from allsat_cnf.polarity_walker import Polarity
-from allsat_cnf.utils import unique_everseen
+from allsat_cnf.utils import unique_everseen, negate
 
 T_CNF = list[tuple[FNode, ...]]
 
@@ -111,16 +111,6 @@ class PolarityCNFizer(DagWalker):
     def walk_not(self, formula: FNode, args, **kwargs):
         return self.negate(args[0])
 
-    def negate(self, formula: FNode) -> FNode:
-        if formula.is_true():
-            return self.mgr.FALSE()
-        elif formula.is_false():
-            return self.mgr.TRUE()
-        elif formula.is_not():
-            return formula.arg(0)
-        else:
-            return self.mgr.Not(formula)
-
     def walk_implies(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
         a, b = args
         k = self.key_var(formula, polarities)
@@ -133,6 +123,9 @@ class PolarityCNFizer(DagWalker):
         if Polarity.NEG in polarities[formula]:
             self._clauses += [tuple([k, a]), tuple([k, not_b])]
         return k
+
+    def negate(self, term):
+        return negate(term, self.mgr)
 
     def walk_iff(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
         a, b = args

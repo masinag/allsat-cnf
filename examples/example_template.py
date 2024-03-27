@@ -1,5 +1,7 @@
 import time
 
+from pysmt.shortcuts import Symbol
+
 from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
 from allsat_cnf.utils import *

@@ -6,10 +6,10 @@ from typing import Iterable
 
 import mathsat
 from pysmt.fnode import FNode
-from pysmt.shortcuts import *
-from pysmt.shortcuts import Not, And
+from pysmt.shortcuts import Not, And, FALSE, Solver, get_atoms, TRUE, substitute
+from pysmt.simplifier import Simplifier as Simplifier_
 from pysmt.solvers.msat import MathSAT5Solver
-from pysmt.typing import PySMTType, BOOL
+from pysmt.typing import PySMTType, BOOL, REAL
 from pysmt.walkers import IdentityDagWalker
 
 
@@ -46,6 +46,22 @@ class Normalizer:
 
     def normalize_assigment(self, mu):
         return {self.normalize(literal) for literal in mu}
+
+
+class Simplifier(Simplifier_):
+    """A class for simplifying terms.
+
+    This class is a wrapper around the pysmt.simplifier.Simplifier class,
+    complementing it with additional Boolean simplifications.
+    """
+
+    def walk_iff(self, formula, args, **kwargs):
+        sl = args[0]
+        sr = args[1]
+
+        if negate(sl, self.manager) == sr or negate(sr, self.manager) == sl:
+            return FALSE()
+        return super().walk_iff(formula, args, **kwargs)
 
 
 def get_allsat(formula: FNode, atoms: Iterable[FNode] | None = None,
@@ -210,7 +226,7 @@ def ta_is_correct(phi, ta, relevant_atoms):
                 subs[literal.arg(0)] = FALSE()
             else:
                 subs[literal] = TRUE()
-        res = substitute(phi, subs).simplify()
+        res = Simplifier().simplify(substitute(phi, subs))
         err = "mu: {}\nsubstituting {}\ngot: {}".format(mu, subs, res)
         res_atoms = get_atoms(res)
         if len(res_atoms & relevant_atoms) != 0:
@@ -260,8 +276,17 @@ def is_cnf(phi):
     return is_clause(phi) or (phi.is_and() and all(is_clause(a) for a in phi.args()))
 
 
-def negate_literal(literal):
-    return Not(literal).simplify()
+def negate(term, mgr=None):
+    if term.is_not():
+        return term.arg(0)
+
+    if term.is_bool_constant():
+        return TRUE() if term.is_false() else FALSE()
+
+    if mgr is None:
+        return Not(term)
+
+    return mgr.Not(term)
 
 
 def unique_everseen(iterable, key=None):

@@ -3,7 +3,9 @@ from collections import namedtuple
 from pysmt.shortcuts import *
 from pysmt.shortcuts import And, Or, Not
 
-Example = namedtuple('Example', ['formula', 'pol_expected_clauses', 'pol_expected_variables',
+Example = namedtuple('Example', ['formula',
+                                 'dm_expected_clauses', 'dm_expected_variables',
+                                 'pol_expected_clauses', 'pol_expected_variables',
                                  'lab_expected_clauses', 'lab_expected_variables',
                                  'nnf_pol_expected_clauses', 'nnf_pol_expected_variables',
                                  'nnf_lab_expected_clauses', 'nnf_lab_expected_variables',
@@ -29,6 +31,8 @@ def make_single_polarity_examples(atoms):
     A, B, C, D, E, F, G, H, *_ = atoms
     return [
         Example(formula=And(Or(A, B), Or(C, D)),
+                dm_expected_clauses=2,
+                dm_expected_variables=4,
                 pol_expected_clauses=4,
                 pol_expected_variables=6,
                 lab_expected_clauses=8,
@@ -40,6 +44,8 @@ def make_single_polarity_examples(atoms):
                 nnf_mutex_pol_expected_clauses=4,
                 nnf_mutex_pol_expected_variables=6),
         Example(formula=Or(And(A, B), And(C, D)),
+                dm_expected_clauses=4,
+                dm_expected_variables=4,
                 pol_expected_clauses=5,
                 pol_expected_variables=6,
                 lab_expected_clauses=7,
@@ -51,6 +57,8 @@ def make_single_polarity_examples(atoms):
                 nnf_mutex_pol_expected_clauses=5,
                 nnf_mutex_pol_expected_variables=6),
         Example(formula=Not(Or(A, Not(And(B, Not(Or(C, D)))))),
+                dm_expected_clauses=4,
+                dm_expected_variables=4,
                 pol_expected_clauses=6,
                 pol_expected_variables=6,
                 lab_expected_clauses=8,
@@ -62,6 +70,8 @@ def make_single_polarity_examples(atoms):
                 nnf_mutex_pol_expected_clauses=6,
                 nnf_mutex_pol_expected_variables=6),
         Example(formula=Or(Or(Or(And(A, B), And(C, D)), And(E, F)), Not(And(G, H))),
+                dm_expected_clauses=8,
+                dm_expected_variables=8,
                 pol_expected_clauses=10,
                 pol_expected_variables=14,
                 lab_expected_clauses=19,
@@ -79,6 +89,8 @@ def make_double_polarity_examples(atoms):
     A, B, C, D, E, F, G, H, *_ = atoms
     return [
         Example(formula=Or(And(A, B), And(C, Or(Not(And(A, B)), D))),
+                dm_expected_clauses=2,
+                dm_expected_variables=3,
                 pol_expected_clauses=7,
                 pol_expected_variables=7,
                 lab_expected_clauses=10,
@@ -90,6 +102,8 @@ def make_double_polarity_examples(atoms):
                 nnf_mutex_pol_expected_clauses=8,
                 nnf_mutex_pol_expected_variables=8),
         Example(formula=Iff(And(C, D), Or(D, And(B, A))),
+                dm_expected_clauses=3,
+                dm_expected_variables=4,
                 pol_expected_clauses=11,
                 pol_expected_variables=7,
                 lab_expected_clauses=11,
@@ -101,6 +115,8 @@ def make_double_polarity_examples(atoms):
                 nnf_mutex_pol_expected_clauses=16,
                 nnf_mutex_pol_expected_variables=12),
         Example(formula=Or(And(C, D), Not(Iff(And(C, D), Or(D, And(B, A))))),
+                dm_expected_clauses=6,
+                dm_expected_variables=4,
                 pol_expected_clauses=12,
                 pol_expected_variables=8,
                 lab_expected_clauses=14,
@@ -114,6 +130,8 @@ def make_double_polarity_examples(atoms):
         Example(
             formula=Not(
                 Iff(And(Not(And(Not(A), C)), Or(Not(B), Not(D))), And(Not(And(D, Not(E))), Not(And(Not(B), E))))),
+            dm_expected_clauses=11,
+            dm_expected_variables=5,
             pol_expected_clauses=20,
             pol_expected_variables=11,
             lab_expected_clauses=20,
