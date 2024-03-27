@@ -9,7 +9,8 @@ from pysmt.walkers import DagWalker, handles
 
 from allsat_cnf.utils import unique_everseen, negate, is_atom
 
-T_CNF = Iterable[tuple[FNode, ...]]
+T_Clause = tuple[FNode, ...]
+T_CNF = Iterable[T_Clause]
 
 
 class DistributiveCNF(DagWalker):
@@ -24,17 +25,17 @@ class DistributiveCNF(DagWalker):
         self.mgr = self.env.formula_manager
         self.nnfizer = NNFizer(environment)
 
-    def convert(self, formula) -> T_CNF:
+    def convert(self, formula: FNode) -> T_CNF:
         nnf_formula = self.nnfizer.convert(formula)
         clauses = self.walk(nnf_formula)
 
         return unique_everseen(clauses)
 
-    def convert_as_formula(self, formula):
+    def convert_as_formula(self, formula: FNode) -> FNode:
         clauses = self.convert(formula)
         return self.mgr.And(map(self.mgr.Or, clauses))
 
-    def make_clause(self, literals):
+    def make_clause(self, literals: Iterable[FNode]) -> T_Clause:
         clause = list()
         for lit in unique_everseen(literals):
             if lit.is_true():
@@ -50,7 +51,7 @@ class DistributiveCNF(DagWalker):
     def walk_quantifier(self, formula: FNode, args, **kwargs):
         raise NotImplementedError("CNFizer does not support quantifiers")
 
-    def walk_and(self, formula: FNode, args: list[T_CNF], **kwargs):
+    def walk_and(self, formula: FNode, args: list[T_CNF], **kwargs) -> T_CNF:
         clauses = []
         for cnf in args:
             if args == self.FALSE_CNF:
@@ -58,7 +59,7 @@ class DistributiveCNF(DagWalker):
             clauses.extend(cnf)
         return tuple(unique_everseen(clauses))
 
-    def walk_or(self, formula: FNode, args: list[T_CNF], **kwargs):
+    def walk_or(self, formula: FNode, args: list[T_CNF], **kwargs) -> T_CNF:
         clauses = []
         args = [list(c) for c in args]
         for clause_product in itertools.product(*args):
@@ -71,7 +72,7 @@ class DistributiveCNF(DagWalker):
 
         return tuple(unique_everseen(clauses))
 
-    def walk_not(self, formula: FNode, args, **kwargs):
+    def walk_not(self, formula: FNode, args: list[T_CNF], **kwargs) -> T_CNF:
         assert is_atom(formula.arg(0))
         c = self.make_clause([negate(formula.arg(0), self.mgr)])
         if c == self.TRUE_CLAUSE:
@@ -92,16 +93,16 @@ class DistributiveCNF(DagWalker):
     @handles(op.FUNCTION)
     @handles(*op.CONSTANTS - {op.BOOL_CONSTANT})
     @handles(*op.THEORY_OPERATORS)
-    def walk_identity(self, formula: FNode, **kwargs):
+    def walk_identity(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
     @handles(*op.RELATIONS)
     @handles(op.SYMBOL)
-    def walk_unit_clause(self, formula: FNode, **kwargs):
+    def walk_unit_clause(self, formula: FNode, **kwargs) -> T_CNF | FNode:
         if formula.is_symbol() and not formula.is_symbol(BOOL):
             return self.walk_identity(formula, **kwargs)
         return [self.make_clause([formula])]
 
     @handles(op.BOOL_CONSTANT)
-    def walk_bool_constant(self, formula: FNode, **kwargs):
+    def walk_bool_constant(self, formula: FNode, **kwargs) -> T_CNF:
         return self.TRUE_CNF if formula.is_true() else self.FALSE_CNF

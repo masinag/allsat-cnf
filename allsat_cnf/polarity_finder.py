@@ -42,5 +42,5 @@ class PolarityFinder(PolarityDagWalker):
 
     @handles(*op.THEORY_OPERATORS)
     @handles(*op.CONSTANTS)
-    def walk_identity(self, formula: FNode, args: list[None], pol: Polarity, **kwargs):
+    def walk_ignore(self, formula: FNode, args: list[None], pol: Polarity, **kwargs):
         pass

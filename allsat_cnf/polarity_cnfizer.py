@@ -27,7 +27,7 @@ class PolarityCNFizer(DagWalker):
         self._polarity_finder = PolarityFinder(environment)
         self._nnfizer = NNFizer(environment)
 
-    def convert(self, formula) -> T_CNF:
+    def convert(self, formula: FNode) -> T_CNF:
         self._clauses = []
         pre_polarities = self._get_polarities(formula)
         formula = self._pre_process(formula)
@@ -38,10 +38,10 @@ class PolarityCNFizer(DagWalker):
         clauses = self._simplify_clauses(tl)
         return list(unique_everseen(clauses))
 
-    def _get_polarities(self, formula):
+    def _get_polarities(self, formula: FNode) -> PolarityDict:
         return self._polarity_finder.find(formula)
 
-    def _simplify_clauses(self, tl):
+    def _simplify_clauses(self, tl) -> T_CNF:
         if len(self._clauses) == 0:
             return [tuple([tl])]
         res = []
@@ -67,7 +67,7 @@ class PolarityCNFizer(DagWalker):
                 res.append(tuple(unique_everseen(simp)))
         return res
 
-    def convert_as_formula(self, formula):
+    def convert_as_formula(self, formula: FNode) -> FNode:
         clauses = self.convert(formula)
         return self.mgr.And(map(self.mgr.Or, clauses))
 
@@ -86,7 +86,7 @@ class PolarityCNFizer(DagWalker):
     def walk_quantifier(self, formula: FNode, args, **kwargs):
         raise NotImplementedError("CNFizer does not support quantifiers")
 
-    def walk_and(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
+    def walk_and(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs) -> FNode:
         if len(args) == 1:
             return args[0]
 
@@ -97,7 +97,7 @@ class PolarityCNFizer(DagWalker):
             self._clauses += [tuple([k] + [self.negate(a) for a in args])]
         return k
 
-    def walk_or(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
+    def walk_or(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs) -> FNode:
         if len(args) == 1:
             return args[0]
 
@@ -111,7 +111,7 @@ class PolarityCNFizer(DagWalker):
     def walk_not(self, formula: FNode, args, **kwargs):
         return self.negate(args[0])
 
-    def walk_implies(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
+    def walk_implies(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs) -> FNode:
         a, b = args
         k = self.key_var(formula, polarities)
         not_k = self.negate(k)
@@ -127,7 +127,7 @@ class PolarityCNFizer(DagWalker):
     def negate(self, term):
         return negate(term, self.mgr)
 
-    def walk_iff(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
+    def walk_iff(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs) -> FNode:
         a, b = args
         k = self.key_var(formula, polarities)
         not_k: FNode = self.negate(k)
@@ -142,7 +142,7 @@ class PolarityCNFizer(DagWalker):
                               tuple([k, a, b])]
         return k
 
-    def walk_ite(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs):
+    def walk_ite(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs) -> FNode:
         if not self.env.stc.get_type(formula).is_bool_type():
             return formula
 
@@ -164,10 +164,10 @@ class PolarityCNFizer(DagWalker):
     @handles(*op.CONSTANTS)
     @handles(*op.THEORY_OPERATORS)
     @handles(*op.RELATIONS)
-    def walk_identity(self, formula: FNode, **kwargs):
+    def walk_identity(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def _pre_process(self, formula):
+    def _pre_process(self, formula: FNode) -> FNode:
         if self._nnf:
             formula = self._nnfizer.convert(formula)
         return formula
@@ -176,7 +176,7 @@ class PolarityCNFizer(DagWalker):
         if self._mutex_nnf_labels:
             self._add_mutex_on_nnf_labels(polarities)
 
-    def _add_mutex_on_nnf_labels(self, polarities):
+    def _add_mutex_on_nnf_labels(self, polarities: PolarityDict):
         double_polarity_sub_formulas = [f for f, p in polarities.items() if p == Polarity.DOUBLE]
         for f in double_polarity_sub_formulas:
             f_pos = self._nnfizer.convert(f)
