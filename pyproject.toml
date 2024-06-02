@@ -40,7 +40,7 @@ benchmark = [
     "psutil>=5.9.4",
     "tqdm",
     "wmipa",
-    "wmibench @ git+ssh://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench",
+    "wmibench @ git+https://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench",
     "matplotlib",
     "pandas",
 ]
