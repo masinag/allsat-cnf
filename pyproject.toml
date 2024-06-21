@@ -22,10 +22,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "PySMT >= 0.9.6.dev53",  # mathsat version >= 5.6.7
-    "py-aiger >= 6.2.0",
-    "circuitgraph >= 0.2.0",
-    "funcy >= 1.17",
+    "PySMT >= 0.9.6.dev53", # mathsat version >= 5.6.7
 ]
 
 [project.optional-dependencies]
@@ -37,12 +34,15 @@ dev = [
 ]
 
 benchmark = [
-    "psutil>=5.9.4",
-    "tqdm",
-    "wmipa",
-    "wmibench @ git+https://git@github.com/paolomorettin/hybrid-benchmarks.git@Gauss#egg=wmibench",
+    "circuitgraph >= 0.2.0",
+    "funcy >= 1.17",
     "matplotlib",
     "pandas",
+    "psutil>=5.9.4",
+    "py-aiger >= 6.2.0",
+    "tqdm",
+    "wmipa @ git+https://github.com/unitn-sml/wmi-pa#egg=wmipa",
+    "wmibench @ git+https://github.com/unitn-sml/wmi-benchmarks#egg=wmibench",
 ]
 
 

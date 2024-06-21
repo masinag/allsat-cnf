@@ -8,7 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from benchmark.utils.fileio import get_input_files, check_inputs_exist
+from benchmark.utils.io.file import get_input_files, check_inputs_exist
 from benchmark.utils.parsing import Mode
 from benchmark.utils.plotting.ecdf_plotter import ECDFPlotter
 from benchmark.utils.plotting.scatter_plotter import ScatterPlotter

@@ -9,7 +9,7 @@ from wmibench.synthetic import synthetic_pa as synthetic_exp
 from wmipa.weightconverter import WeightConverterEUF as WeightConverter
 from wmipa.wmivariables import WMIVariables
 
-from benchmark.utils.fileio import check_output_can_be_created
+from benchmark.utils.io.file import check_output_can_be_created
 from benchmark.utils.parsing import arg_positive_0, arg_positive
 
 

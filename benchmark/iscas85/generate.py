@@ -6,8 +6,8 @@ from math import log10
 
 from pysmt.shortcuts import write_smtlib, Not, And
 
-from allsat_cnf.bench_adapter import BenchAdapter
-from benchmark.utils.fileio import check_inputs_exist, check_output_can_be_created
+from benchmark.utils.io.bench_adapter import BenchAdapter
+from benchmark.utils.io.file import check_inputs_exist, check_output_can_be_created
 from benchmark.utils.parsing import arg_positive
 
 

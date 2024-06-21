@@ -11,7 +11,7 @@ from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
 from allsat_cnf.utils import get_allsat, is_cnf, SolverOptions, check_sat
 from allsat_cnf.utils import get_lra_atoms, get_boolean_variables, check_models
-from utils.fileio import get_output_filename, check_inputs_exist, write_result, get_input_files, \
+from utils.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
     read_formula_from_file, check_output_can_be_created
 from utils.logging import log
 from utils.parsing import get_options, Mode, arg_positive, PreprocessOptions
