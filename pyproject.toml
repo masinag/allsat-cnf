@@ -36,6 +36,7 @@ dev = [
 benchmark = [
     "circuitgraph >= 0.2.0",
     "funcy >= 1.17",
+    "GitPython",
     "matplotlib",
     "pandas",
     "psutil>=5.9.4",

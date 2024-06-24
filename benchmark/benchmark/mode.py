@@ -1,0 +1,20 @@
+import enum
+
+
+class Mode(enum.Enum):
+    LAB = "LAB"
+    NNF_LAB = "NNF_LAB"
+    POL = "POL"
+    NNF_POL = "NNF_POL"
+    NNF_MUTEX_POL = "NNF_MUTEX_POL"
+    LABELNEG_POL = "LABELNEG_POL"
+
+    RF_LAB = "RF_LAB"
+    RF_LABELNEG_POL = "RF_LABELNEG_POL"
+    RF_NNF_MUTEX_POL = "RF_NNF_MUTEX_POL"
+
+    IF_LAB = "IF_LAB"
+    IF_LABELNEG_POL = "IF_LABELNEG_POL"
+    IF_NNF_MUTEX_POL = "IF_NNF_MUTEX_POL"
+
+    TTA = "TTA"

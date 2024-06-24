@@ -11,15 +11,27 @@ from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
 from allsat_cnf.utils import get_allsat, is_cnf, SolverOptions, check_sat
 from allsat_cnf.utils import get_lra_atoms, get_boolean_variables, check_models
-from utils.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
+from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
     read_formula_from_file, check_output_can_be_created
-from utils.logging import log
-from utils.parsing import get_options, Mode, arg_positive, PreprocessOptions
-from utils.run import run_with_timeout
+from benchmark.mode import Mode
+from benchmark.parsing import arg_positive
+from benchmark.run import get_options, PreprocessOptions
+from benchmark.run import run_with_timeout
 
 MODELS_CHECK_MSG = "Checking models..."
 
 PARTIAL_MODELS_MSG = "Generating partial models..."
+
+
+def log_header(filename, i, input_files):
+    return "Problem {:3d}/{:3d}: {}".format(i + 1, len(input_files), filename)
+
+
+def log(msg, filename, i, input_files, *args):
+    msg = "{} {}".format(
+        log_header(filename, i, input_files),
+        msg.format(*args))
+    print("{}{: <100}".format("\r" * 100, msg), end="")
 
 
 def parse_args():
@@ -130,7 +142,7 @@ def check_models_or_timeout(models, phi, relevant_atoms, args) -> None:
     return run_with_timeout(check_models, args.timeout, models, phi, relevant_atoms=relevant_atoms)
 
 
-def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> Tuple[FNode, Iterable[FNode]]:
+def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> tuple[FNode, Iterable[FNode]]:
     atoms = get_boolean_variables(phi).union(
         {a for a in get_lra_atoms(phi) if not a.is_equals()}
     )
