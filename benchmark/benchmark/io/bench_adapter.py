@@ -1,6 +1,6 @@
 import circuitgraph as cg
 from pysmt.fnode import FNode
-from pysmt.shortcuts import Symbol, FALSE, TRUE, Not, And, Or, Xor
+from pysmt.shortcuts import Symbol, FALSE, TRUE, Not, And, Or, Xor, serialize
 
 
 class BenchAdapter:
@@ -16,10 +16,10 @@ class BenchAdapter:
     def to_pysmt(self) -> tuple[list[FNode], list[FNode]]:
         nodes = {}
         for node in self._circuit.topo_sort():
-            args = [nodes[i] for i in self._circuit.fanin(node)]
+            args = self._sorted([nodes[i] for i in self._circuit.fanin(node)])
             nodes[node] = self._node_to_pysmt(node, args)
-        inputs = [nodes[node] for node in self._circuit.inputs()]
-        outputs = [nodes[node] for node in self._circuit.outputs()]
+        inputs = self._sorted([nodes[node] for node in self._circuit.inputs()])
+        outputs = self._sorted([nodes[node] for node in self._circuit.outputs()])
         return inputs, outputs
 
     def _node_to_pysmt(self, node: str, args: list[FNode]) -> FNode:
@@ -50,3 +50,7 @@ class BenchAdapter:
                 return Not(Xor(args[0], args[1]))
             case _:
                 raise ValueError(f"unknown gate type '{self._circuit.type(node)}'")
+
+    @staticmethod
+    def _sorted(nodes):
+        return sorted(nodes, key=serialize)
