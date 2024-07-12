@@ -4,7 +4,7 @@ from pysmt.fnode import FNode
 from pysmt.shortcuts import get_free_variables
 from pysmt.typing import BOOL
 
-from allsat_cnf.utils import is_cnf, get_clauses, get_literals
+from allsat_cnf.utils import is_cnf, get_clauses, get_literals, negate
 
 
 def dimacs_var_map(formula: FNode) -> dict[FNode, int]:
@@ -14,7 +14,7 @@ def dimacs_var_map(formula: FNode) -> dict[FNode, int]:
     return {var: i + 1 for i, var in enumerate(sorted(variables, key=str))}
 
 
-def _dimacs_lit(lit: FNode, var_map: dict[FNode, int]) -> str:
+def lit_to_dimacs(lit: FNode, var_map: dict[FNode, int]) -> str:
     assert lit.is_literal()
     if lit.is_not():
         return f"-{var_map[lit.arg(0)]}"
@@ -22,8 +22,15 @@ def _dimacs_lit(lit: FNode, var_map: dict[FNode, int]) -> str:
         return f"{var_map[lit]}"
 
 
-def _dimacs_clause(clause: FNode, var_map: dict[FNode, int]) -> str:
-    return f"{' '.join(_dimacs_lit(lit, var_map) for lit in get_literals(clause))} 0\n"
+def dimacs_to_lit(lit: str, var_map: dict[int, FNode]) -> FNode:
+    if lit.startswith("-"):
+        return negate(var_map[int(lit[1:])])
+    else:
+        return var_map[int(lit)]
+
+
+def clause_to_dimacs(clause: FNode, var_map: dict[FNode, int]) -> str:
+    return f"{' '.join(lit_to_dimacs(lit, var_map) for lit in get_literals(clause))} 0\n"
 
 
 def pysmt_to_dimacs(formula: FNode, var_map: dict[FNode, int]) -> Generator[str, None, None]:
@@ -39,4 +46,4 @@ def pysmt_to_dimacs(formula: FNode, var_map: dict[FNode, int]) -> Generator[str,
     n_clauses = len(clauses)
     yield f"p cnf {n_vars} {n_clauses}\n"
     for clause in clauses:
-        yield _dimacs_clause(clause, var_map)
+        yield clause_to_dimacs(clause, var_map)
