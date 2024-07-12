@@ -6,7 +6,7 @@ import os.path
 
 from pysmt.shortcuts import read_smtlib
 
-from ..io.aig_adapter import AIGAdapter
+from ..io.aig import AIGAdapter
 from ..parsing import get_full_name_mode
 
 
