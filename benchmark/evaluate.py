@@ -69,6 +69,7 @@ def main():
         log(PARTIAL_MODELS_MSG, filename, i, input_files)
         enum_timed_out = False
         models = None
+        count = None
         preprocess_options, solver_options = get_options(args)
         phi_cnf, atoms = preprocess_formula(phi, preprocess_options)
         n_clauses = len(phi_cnf.args())
@@ -81,7 +82,7 @@ def main():
                 else:
                     models = []
             else:
-                models = get_allsat_or_timeout(phi_cnf, atoms, solver_options)
+                models, count = get_allsat_or_timeout(phi_cnf, atoms, solver_options)
             total_time = time.time() - time_init
         except TimeoutError:
             total_time = args.timeout
@@ -99,6 +100,7 @@ def main():
             "filename": filename,
             "n_clauses": n_clauses,
             "models": None if models is None else len(models),
+            "model_count": count,
             "time": total_time,
             "enum_timed_out": enum_timed_out,
             "check_timed_out": check_timed_out,
@@ -114,15 +116,19 @@ def setup():
     get_env().enable_infix_notation = True
 
 
-def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions) -> list[set[FNode]]:
-    models, _ = run_with_timeout(
+def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions) \
+        -> tuple[list[set[FNode]] | None, int | None]:
+    ans = run_with_timeout(
         get_allsat,
         solver_options.timeout,
         phi,
         atoms=atoms,
         solver_options=solver_options,
     )
-    return models
+    if ans is None:
+        return None, None
+    models, count = ans
+    return models, count
 
 
 def check_sat_or_timeout(phi: FNode, solver_options: SolverOptions) -> list[set[FNode]]:
