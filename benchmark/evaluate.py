@@ -7,15 +7,14 @@ from typing import Iterable
 from pysmt.environment import reset_env, get_env
 from pysmt.fnode import FNode
 
-from allsat_cnf.label_cnfizer import LabelCNFizer
-from allsat_cnf.polarity_cnfizer import PolarityCNFizer
-from allsat_cnf.utils import get_allsat, is_cnf, SolverOptions, check_sat
-from allsat_cnf.utils import get_lra_atoms, get_boolean_variables, check_models
+from allsat_cnf.utils import check_models
+from allsat_cnf.utils import get_allsat, SolverOptions, check_sat
 from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
     read_formula_from_file, check_output_can_be_created
 from benchmark.mode import Mode
 from benchmark.parsing import arg_positive
-from benchmark.run import get_options, PreprocessOptions
+from benchmark.preprocess import preprocess_formula
+from benchmark.run import get_options
 from benchmark.run import run_with_timeout
 
 MODELS_CHECK_MSG = "Checking models..."
@@ -146,24 +145,6 @@ def should_check_models(args) -> bool:
 
 def check_models_or_timeout(models, phi, relevant_atoms, args) -> None:
     return run_with_timeout(check_models, args.timeout, models, phi, relevant_atoms=relevant_atoms)
-
-
-def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> tuple[FNode, Iterable[FNode]]:
-    atoms = get_boolean_variables(phi).union(
-        {a for a in get_lra_atoms(phi) if not a.is_equals()}
-    )
-
-    if preprocess_options.cnf_type == "POL":
-        phi = PolarityCNFizer(nnf=preprocess_options.do_nnf, mutex_nnf_labels=preprocess_options.mutex_nnf_labels,
-                              label_neg_polarity=preprocess_options.label_neg_polarity).convert_as_formula(phi)
-    elif preprocess_options.cnf_type == "LAB":
-        phi = LabelCNFizer(nnf=preprocess_options.do_nnf,
-                           mutex_nnf_labels=preprocess_options.mutex_nnf_labels).convert_as_formula(phi)
-    else:
-        raise ValueError("Unknown CNF type: {}".format(preprocess_options.cnf_type))
-    assert is_cnf(phi)
-
-    return phi, atoms
 
 
 if __name__ == '__main__':
