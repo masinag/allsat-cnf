@@ -179,7 +179,8 @@ def get_functions(formula: FNode):
     return {a for a in formula.get_atoms() if a.is_function_application()}
 
 
-def get_dict_model(mu):
+def get_dict_model(mu: list[FNode]) -> dict[FNode, FNode]:
+    """Convert a list of literals to a dictionary model."""
     mu_dict = {}
     for a in mu:
         if a.is_not():
@@ -189,7 +190,7 @@ def get_dict_model(mu):
     return mu_dict
 
 
-def check_models(ta, phi, relevant_atoms=None):
+def check_models(ta: list[FNode], phi: FNode, relevant_atoms: set[FNode] | None = None):
     """
     Check that the given list of models is correct and complete for the given formula.
     :param ta: the list of models
@@ -210,11 +211,12 @@ def check_models(ta, phi, relevant_atoms=None):
 _normalizer = Normalizer()
 
 
-def ta_is_correct(phi, ta, relevant_atoms):
+def ta_is_correct(phi: FNode, ta: list[FNode], relevant_atoms: set[FNode]) -> tuple[bool, str | None]:
     """
     Check that each model in the list satisfies the formula.
     :param phi: the formula
     :param ta: the list of models
+    :param relevant_atoms: the atoms relevant for the formula
     :return: True if each model in the list satisfies the formula, False otherwise
     """
     phi = _normalizer.normalize(phi)
@@ -235,7 +237,7 @@ def ta_is_correct(phi, ta, relevant_atoms):
     return True, None
 
 
-def ta_is_complete(phi, ta):
+def ta_is_complete(phi: FNode, ta: list[FNode]) -> tuple[bool, str | None]:
     """
     Check that each total model of the formula is a super-model of one of the models in the list.
     :param phi: the formula
@@ -254,26 +256,38 @@ def ta_is_complete(phi, ta):
     return True, None
 
 
-def rewalk(phi):
+def rewalk(phi: FNode) -> FNode:
     if isinstance(phi, FNode):
         return IdentityDagWalker().walk(phi)
     return phi.__class__(rewalk(a) for a in phi)
 
 
-def is_atom(atom):
+def is_atom(atom: FNode) -> bool:
     return atom.is_symbol(BOOL) or atom.is_theory_relation() or atom.is_bool_constant()
 
 
-def is_literal(literal):
+def is_literal(literal: FNode) -> bool:
     return is_atom(literal) or (literal.is_not() and is_atom(literal.arg(0)))
 
 
-def is_clause(phi):
+def is_clause(phi: FNode) -> bool:
     return is_literal(phi) or (phi.is_or() and all(is_literal(a) for a in phi.args()))
 
 
-def is_cnf(phi):
+def is_cnf(phi: FNode) -> bool:
     return is_clause(phi) or (phi.is_and() and all(is_clause(a) for a in phi.args()))
+
+
+def get_clauses(phi: FNode) -> list[FNode]:
+    if is_clause(phi):
+        return [phi]
+    return phi.args()
+
+
+def get_literals(clause: FNode) -> list[FNode]:
+    if is_literal(clause):
+        return [clause]
+    return clause.args()
 
 
 def negate(term, mgr=None):
