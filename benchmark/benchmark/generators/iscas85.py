@@ -8,7 +8,7 @@ from math import log10
 
 from pysmt.shortcuts import write_smtlib, Not, And
 
-from ..io.bench_adapter import BenchAdapter
+from ..io.bench import BenchAdapter
 from ..io.file import check_inputs_exist, check_output_can_be_created
 from ..parsing import arg_positive
 

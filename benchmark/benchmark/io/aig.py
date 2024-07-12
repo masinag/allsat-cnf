@@ -26,7 +26,7 @@ class AIGAdapter:
         return repr(self.aig)
 
     @classmethod
-    def from_file(cls, file) -> "AIGAdapter":
+    def from_file(cls, file: str) -> "AIGAdapter":
         return cls(_to_aig(file))
 
     @classmethod
