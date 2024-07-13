@@ -50,9 +50,10 @@ def check_output_can_be_created(output_path):
 
 def write_result(args, res, output_file):
     if not os.path.exists(output_file):
+        with_repetitions = args.with_repetitions if "with_repetitions" in args else False
         info = {
             "mode": args.mode,
-            "with_repetitions": args.with_repetitions,
+            "with_repetitions": with_repetitions,
             "results": [res]
         }
     else:

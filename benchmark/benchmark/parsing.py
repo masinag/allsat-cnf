@@ -9,7 +9,7 @@ def remove_prefix(txt: str, prefix: str) -> str:
 
 def get_full_name_mode(args) -> str:
     full_mode = args.mode
-    if args.with_repetitions:
+    if "with_repetitions" in args and args.with_repetitions:
         full_mode += "_REP"
     return full_mode
 

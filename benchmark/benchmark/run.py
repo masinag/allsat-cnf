@@ -76,9 +76,11 @@ def get_options(args) -> tuple[PreprocessOptions, SolverOptions]:
         mode = remove_prefix(mode, "LABELNEG_")
         label_neg_polarity = True
 
+    with_repetitions = args.with_repetitions if "with_repetitions" in args else False
+
     preprocess_options = PreprocessOptions(cnf_type=mode, do_nnf=do_nnf, mutex_nnf_labels=mutex_nnf_labels,
                                            label_neg_polarity=label_neg_polarity)
-    solver_options = SolverOptions(timeout=args.timeout, with_repetitions=args.with_repetitions,
+    solver_options = SolverOptions(timeout=args.timeout, with_repetitions=with_repetitions,
                                    use_ta=mode != Mode.TTA, phase_caching=phase_caching, first_assign=first_assign)
 
     return preprocess_options, solver_options

@@ -40,7 +40,7 @@ def _write_dimacs(formula: FNode, var_map: dict[FNode, int], dimacs_file: TextIO
 
 
 def _write_projected_vars(projected_vars: Iterable[FNode], var_map: dict[FNode, int], projected_vars_file: TextIO):
-    assert all(var in var_map for var in projected_vars)
+    assert all(var in var_map for var in projected_vars), f"{projected_vars} not in {var_map}"
     projected_vars_file.write(",".join(str(var_map[var]) for var in projected_vars))
     projected_vars_file.write("\n")
 
@@ -67,7 +67,7 @@ def _read_stdout(output_file: TextIO) -> _D4Output:
     return output
 
 
-def _nnf_to_ddnnf(nnf_file: TextIO, var_map: dict[FNode, int], output: _D4Output) -> FNode:
+def _nnf_to_ddnnf(nnf_file: TextIO, var_map: dict[FNode, int]) -> FNode:
     # assume it is given as a DAG (bottom up)
     var_map_inv = {v: k for k, v in var_map.items()}
     node_types: dict[int, int] = {}
@@ -120,39 +120,6 @@ class D4Interface:
     def __init__(self, d4_bin: str):
         self.d4_bin = d4_bin
 
-    def _invoke_d4(self, formula: FNode, projected_vars: set[FNode], mode: MODE,
-                   timeout: int | None = None) -> tuple[_D4Output, FNode | None]:
-        with TemporaryDirectory() as tmpdir:
-            dimacs_file = os.path.join(tmpdir, "formula.cnf")
-            projected_vars_file = os.path.join(tmpdir, "projected_vars.txt")
-            output_file = os.path.join(tmpdir, "output.txt")
-            nnf_file = os.path.join(tmpdir, "formula.nnf")
-            ddnnf = None
-
-            var_map = dimacs_var_map(formula)
-            with open(dimacs_file, "w") as f:
-                _write_dimacs(formula, var_map, f)
-
-            with open(projected_vars_file, "w") as f:
-                _write_projected_vars(projected_vars, var_map, f)
-
-            cmd_opts = [mode.value]
-            cmd = [self.d4_bin, str(dimacs_file), f"-fpv={projected_vars_file}", f"-out={nnf_file}"] + cmd_opts
-            with open(output_file, "w") as f:
-                subprocess.check_call(cmd, stdout=f, stderr=f, timeout=timeout)
-            with open(output_file) as f:
-                output = _read_stdout(f)
-
-            if mode == self.MODE.DDNNF:
-                with open(nnf_file, "r") as f:
-                    ddnnf = _nnf_to_ddnnf(f, var_map, output)
-
-        assert output.num_vars == (nv := len(var_map)), f"{output.num_vars} != {nv}"
-        assert output.num_clauses == (cc := len(get_clauses(formula))), f"{output.num_clauses} != {cc}"
-        assert output.projected_vars == (pv := len(projected_vars)), f"{output.projected_vars} != {pv}"
-
-        return output, ddnnf
-
     def projected_model_count(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> int:
         output, ddnnf = self._invoke_d4(formula, projected_vars, self.MODE.MC, timeout)
         assert ddnnf is None
@@ -175,6 +142,44 @@ class D4Interface:
         """Count true paths of a d-DNNF formula."""
         counter = DdnnfPathsCounter(projected_vars)
         return counter.walk(formula)
+
+    def _invoke_d4(self, formula: FNode, projected_vars: set[FNode], mode: MODE,
+                   timeout: int | None = None) -> tuple[_D4Output, FNode | None]:
+        with TemporaryDirectory() as tmpdir:
+            dimacs_file = os.path.join(tmpdir, "formula.cnf")
+            projected_vars_file = os.path.join(tmpdir, "projected_vars.txt")
+            output_file = os.path.join(tmpdir, "output.txt")
+            nnf_file = os.path.join(tmpdir, "formula.nnf")
+            ddnnf = None
+
+            var_map = dimacs_var_map(formula, projected_vars)
+            with open(dimacs_file, "w") as f:
+                _write_dimacs(formula, var_map, f)
+
+            with open(projected_vars_file, "w") as f:
+                _write_projected_vars(projected_vars, var_map, f)
+
+            cmd_opts = [mode.value]
+            cmd = [self.d4_bin, str(dimacs_file), f"-fpv={projected_vars_file}", f"-out={nnf_file}"] + cmd_opts
+            with open(output_file, "w") as f:
+                try:
+                    subprocess.check_call(cmd, stdout=f, stderr=f, timeout=timeout)
+                except subprocess.CalledProcessError as e:
+                    raise RuntimeError(f"d4 failed with exit code {e.returncode}") from e
+                except subprocess.TimeoutExpired:
+                    raise TimeoutError("d4 timed out")
+            with open(output_file) as f:
+                output = _read_stdout(f)
+
+            if mode == self.MODE.DDNNF:
+                with open(nnf_file, "r") as f:
+                    ddnnf = _nnf_to_ddnnf(f, var_map)
+
+        assert output.num_vars == (nv := len(var_map)), f"{output.num_vars} != {nv}"
+        assert output.num_clauses == (cc := len(get_clauses(formula))), f"{output.num_clauses} != {cc}"
+        assert output.projected_vars == (pv := len(projected_vars)), f"{output.projected_vars} != {pv}"
+
+        return output, ddnnf
 
 
 class DdnnfEnumerator(DagWalker):
@@ -210,6 +215,7 @@ class DdnnfEnumerator(DagWalker):
         var = formula.arg(0) if formula.is_not() else formula
         if var not in self.projected_vars:
             return (self.TRUE_MODEL,)
+        assert var in self.projected_vars
         return ((formula,),)
 
     def walk_bool_constant(self, formula, **kwargs):
