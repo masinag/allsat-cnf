@@ -4,4 +4,4 @@ source config.sh
 
 source run_utils.sh
 
-check-sat $ISCAS85_DIR
+check-sat "${ISCAS85_DIR}"

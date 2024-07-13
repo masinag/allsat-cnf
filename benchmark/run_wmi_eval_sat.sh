@@ -4,4 +4,4 @@ source config.sh
 
 source run_utils.sh
 
-check-sat $WMI_DIR
+check-sat "${WMI_DIR}"

@@ -7,22 +7,25 @@ run() {
   SAT=$3
   RES_DIR=$4
   OTHER_OPT=("${@:5}")
-  for dir in $(ls -d $DIR/data/*); do
-    res_dir=$(sed "s+data+${RES_DIR}+g" <<<$dir)
+  for dir in "$DIR"/data/*; do
+    if [ -d "$dir" ]; then
+        echo "$dir"
+    fi
+    res_dir="${dir//data/$RES_DIR}"
     mkdir -p "$res_dir"
-    echo $dir
+    echo "$dir"
     for mode in LAB NNF_MUTEX_POL LABELNEG_POL; do
-      python3 "$SCRIPT" "$dir" -m $mode -o "$res_dir" $SAT "${OTHER_OPT[@]}"
+      python3 "$SCRIPT" "$dir" -m $mode -o "$res_dir" "$SAT" "${OTHER_OPT[@]}"
     done
   done
 }
 
 get-allsat() {
-  run evaluate.py $1 "" "results" "${@: 2}"
+  run evaluate.py "$1" "" "results" "${@: 2}"
 }
 
 check-sat() {
-  run evaluate.py $1 "--sat" "results-sat" "${@: 2}"
+  run evaluate.py "$1" "--sat" "results-sat" "${@: 2}"
 }
 
 run-d4() {

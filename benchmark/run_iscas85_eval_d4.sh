@@ -4,4 +4,4 @@ source config.sh
 
 source run_utils.sh
 
-run-d4 $ISCAS85_DIR
+run-d4 "${ISCAS85_DIR}"

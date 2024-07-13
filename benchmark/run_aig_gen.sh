@@ -2,4 +2,4 @@
 
 source config.sh
 
-python3 -m benchmark.generators.aig -o $AIG_DIR/data
+python3 -m benchmark.generators.aig -o "${AIG_DIR}/data"

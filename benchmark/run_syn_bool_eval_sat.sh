@@ -4,4 +4,4 @@ source config.sh
 
 source run_utils.sh
 
-check-sat $SYN_BOOL_DIR
+check-sat "${SYN_BOOL_DIR}"
