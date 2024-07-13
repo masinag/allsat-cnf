@@ -1,6 +1,6 @@
 import argparse
 import os
-import random
+import numpy as np
 import tempfile
 import time
 import urllib.request
@@ -37,16 +37,18 @@ def parse_args():
     return parser.parse_args()
 
 
-def generate_instances(circuit_outputs, percentage, n_instances):
+def generate_instances(circuit_outputs, percentage, n_instances, rng: np.random.Generator):
     n_outputs_to_sample = int(len(circuit_outputs) * percentage / 100)
     instances = []
     for i in range(n_instances):
         model = []
-        for circuit_output in random.sample(circuit_outputs, n_outputs_to_sample):
-            if random.random() < 0.5:
-                model.append(circuit_output)
-            else:
+        # sample n_outputs probabilities
+        neg_probs = rng.random(len(circuit_outputs))
+        for neg_prob, circuit_output in zip(neg_probs, rng.choice(circuit_outputs, n_outputs_to_sample, replace=False)):
+            if neg_prob < 0.5:
                 model.append(Not(circuit_output))
+            else:
+                model.append(circuit_output)
         instances.append(And(model))
     return instances
 
@@ -61,7 +63,7 @@ def get_iscas_files():
 
 def main():
     args = parse_args()
-    random.seed(args.seed)
+    rng = np.random.default_rng(args.seed)
 
     os.makedirs(args.output, exist_ok=True)
 
@@ -84,7 +86,7 @@ def main():
         for percentage in range(60, 101, 10):
             print("Generating {} instances for {} with {}% of the variables".format(
                 args.models, input_file, percentage))
-            instances = generate_instances(circuit_outputs, percentage, args.models)
+            instances = generate_instances(circuit_outputs, percentage, args.models, rng)
             for i, instance in enumerate(instances):
                 file_name = os.path.join(output_dir, template.format(p=round(percentage), n=i + 1, d=digits))
                 write_smtlib(instance, file_name)

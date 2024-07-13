@@ -38,6 +38,7 @@ benchmark = [
     "funcy >= 1.17",
     "GitPython",
     "matplotlib",
+    "numpy",
     "pandas",
     "psutil>=5.9.4",
     "py-aiger >= 6.2.0",
