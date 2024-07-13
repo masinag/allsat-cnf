@@ -11,7 +11,7 @@ from typing import TextIO, Iterable
 from pysmt.fnode import FNode
 from pysmt.operators import OR, AND, NOT, SYMBOL
 from pysmt.shortcuts import TRUE, FALSE, get_env, And
-from pysmt.walkers import DagWalker, handles
+from pysmt.walkers import handles, DagWalker
 
 from allsat_cnf.utils import get_clauses
 from .io.dimacs import pysmt_to_dimacs, dimacs_var_map, dimacs_to_lit
@@ -166,18 +166,34 @@ class D4Interface:
 
         return output.model_count, ddnnf
 
-    def enumerate(self, formula: FNode, **kwargs) -> list[set[FNode]]:
-        """Enumerate models of a d-DNNF formula."""
-        enumerator = DdnnfEnumerator()
-        return enumerator.walk(formula, **kwargs)
+    def enumerate(self, formula: FNode, projected_vars: set[FNode]) -> tuple[tuple[FNode]]:
+        """Enumerate true paths of a d-DNNF formula."""
+        enumerator = DdnnfEnumerator(projected_vars)
+        return enumerator.walk(formula)
+
+    def count_true_paths(self, formula: FNode, projected_vars: set[FNode]) -> int:
+        """Count true paths of a d-DNNF formula."""
+        counter = DdnnfPathsCounter(projected_vars)
+        return counter.walk(formula)
 
 
 class DdnnfEnumerator(DagWalker):
-    def __init__(self):
+    """
+    Enumerate all true paths of a d-DNNF formula.
+    """
+
+    FALSE_MODEL = None
+    NO_MODELS = (None,)
+    TRUE_MODEL = ()
+
+    def __init__(self, projected_vars: set[FNode]):
         super().__init__()
+        self.projected_vars = projected_vars
 
     def walk_and(self, formula, args, **kwargs):
         ans = []
+        if self.NO_MODELS in args:
+            return self.NO_MODELS
         for model_set in itertools.product(*args):
             ans.append(tuple(itertools.chain(*model_set)))
         return tuple(ans)
@@ -185,16 +201,47 @@ class DdnnfEnumerator(DagWalker):
     def walk_or(self, formula, args, **kwargs):
         ans = []
         for model_set in args:
-            if model_set is not None:
-                assert len(model_set) > 0
+            if model_set is not self.NO_MODELS:
                 ans.extend(model_set)
         return tuple(ans)
 
     @handles(SYMBOL, NOT)
     def walk_literal(self, formula, **kwargs):
+        var = formula.arg(0) if formula.is_not() else formula
+        if var not in self.projected_vars:
+            return (self.TRUE_MODEL,)
         return ((formula,),)
 
     def walk_bool_constant(self, formula, **kwargs):
         if formula.is_true():
-            return ((),)
+            return (self.TRUE_MODEL,)
         return (None,)
+
+
+class DdnnfPathsCounter(DagWalker):
+    """
+    Count the number of true paths of a d-DNNF formula.
+    """
+
+    def __init__(self, projected_vars: set[FNode]):
+        super().__init__()
+        self.projected_vars = projected_vars
+
+    def walk_and(self, formula, args, **kwargs):
+        count = 1
+        for n_paths in args:
+            count *= n_paths
+
+        return count
+
+    def walk_or(self, formula, args, **kwargs):
+        return sum(args)
+
+    @handles(SYMBOL, NOT)
+    def walk_literal(self, formula, **kwargs):
+        return 1
+
+    def walk_bool_constant(self, formula, **kwargs):
+        if formula.is_true():
+            return 1
+        return 0
