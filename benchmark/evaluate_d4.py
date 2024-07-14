@@ -68,7 +68,6 @@ def main():
         enum_timed_out = False
         count = None
         n_paths = None
-        computed_count = None
 
         preprocess_options, solver_options = get_options(args)
         phi_cnf, atoms = preprocess_formula(phi, preprocess_options)
@@ -81,6 +80,9 @@ def main():
             counting_time = args.timeout
             counting_timed_out = True
         try:
+            if counting_timed_out:
+                # If counting timed out, we assume that the enumeration will also time out
+                raise TimeoutError()
             time_init = time.time()
             n_paths = count_true_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
             paths_time = time.time() - time_init
