@@ -6,14 +6,14 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from tempfile import TemporaryDirectory
-from typing import TextIO
+from typing import TextIO, Generator
 
 from pysmt.fnode import FNode
 from pysmt.operators import OR, AND, NOT, SYMBOL
 from pysmt.shortcuts import TRUE, FALSE, get_env, And
 from pysmt.walkers import handles, DagWalker
 
-from allsat_cnf.utils import get_clauses
+from allsat_cnf.utils import get_clauses, is_literal
 from .io.dimacs import pysmt_to_dimacs, dimacs_var_map, dimacs_to_lit
 
 # Regular expressions for parsing d4 output
@@ -117,17 +117,44 @@ class D4Interface:
 
         return output.model_count
 
-    def compile(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> tuple[int, FNode]:
-        # TO CHECK: The given d-DNNF is not projected!
+    def compile(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> FNode:
         output, ddnnf = self._invoke_d4(formula, projected_vars, self.MODE.DDNNF, timeout)
         assert ddnnf is not None
 
-        return output.model_count, ddnnf
+        return ddnnf
 
-    def enumerate(self, formula: FNode, projected_vars: set[FNode]) -> tuple[tuple[FNode]]:
-        """Enumerate true paths of a d-DNNF formula."""
-        enumerator = DdnnfEnumerator(projected_vars)
-        return enumerator.walk(formula)
+    def enumerate(self, formula: FNode, projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
+        """Return an iterator over true paths of a d-DNNF formula."""
+        return self._enumerate(formula, projected_vars)
+
+    def _enumerate(self, formula: FNode, projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
+        if formula.is_true():
+            yield []
+        elif formula.is_false():
+            yield None
+        elif is_literal(formula):
+            var = formula.arg(0) if formula.is_not() else formula
+            if var in projected_vars:
+                yield [formula]
+            else:
+                yield []
+        elif formula.is_or():
+            for arg in formula.args():
+                for model in self._enumerate(arg, projected_vars):
+                    if model is not None:
+                        yield model
+        elif formula.is_and():
+            # Cartesian product of all paths
+            args_models = [self._enumerate(arg, projected_vars) for arg in formula.args()]
+
+            # pick one model from each argument
+            for models in itertools.product(*args_models):
+                if any(model is None for model in models):
+                    yield None
+                else:
+                    yield list(itertools.chain(*models))
+        else:
+            raise ValueError(f"Invalid formula: {formula}")
 
     def count_true_paths(self, formula: FNode, projected_vars: set[FNode]) -> int:
         """Count true paths of a d-DNNF formula."""
@@ -171,48 +198,6 @@ class D4Interface:
         assert output.projected_vars == (pv := len(projected_vars)), f"{output.projected_vars} != {pv}"
 
         return output, ddnnf
-
-
-class DdnnfEnumerator(DagWalker):
-    """
-    Enumerate all true paths of a d-DNNF formula.
-    """
-
-    FALSE_MODEL = None
-    NO_MODELS = (None,)
-    TRUE_MODEL = ()
-
-    def __init__(self, projected_vars: set[FNode]):
-        super().__init__()
-        self.projected_vars = projected_vars
-
-    def walk_and(self, formula, args, **kwargs):
-        ans = []
-        if self.NO_MODELS in args:
-            return self.NO_MODELS
-        for model_set in itertools.product(*args):
-            ans.append(tuple(itertools.chain(*model_set)))
-        return tuple(ans)
-
-    def walk_or(self, formula, args, **kwargs):
-        ans = []
-        for model_set in args:
-            if model_set is not self.NO_MODELS:
-                ans.extend(model_set)
-        return tuple(ans)
-
-    @handles(SYMBOL, NOT)
-    def walk_literal(self, formula, **kwargs):
-        var = formula.arg(0) if formula.is_not() else formula
-        if var not in self.projected_vars:
-            return (self.TRUE_MODEL,)
-        assert var in self.projected_vars
-        return ((formula,),)
-
-    def walk_bool_constant(self, formula, **kwargs):
-        if formula.is_true():
-            return (self.TRUE_MODEL,)
-        return (None,)
 
 
 class DdnnfPathsCounter(DagWalker):
