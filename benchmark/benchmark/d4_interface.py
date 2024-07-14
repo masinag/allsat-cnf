@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from tempfile import TemporaryDirectory
-from typing import TextIO, Iterable
+from typing import TextIO
 
 from pysmt.fnode import FNode
 from pysmt.operators import OR, AND, NOT, SYMBOL
@@ -17,9 +17,9 @@ from allsat_cnf.utils import get_clauses
 from .io.dimacs import pysmt_to_dimacs, dimacs_var_map, dimacs_to_lit
 
 # Regular expressions for parsing d4 output
-RE_NUM_VARS = re.compile(r"c Number of variables: (\d+)")
-RE_NUM_CLAUSES = re.compile(r"c Number of clauses: (\d+)")
-RE_PROJECTED_VARS = re.compile(r"c We are collected the projected variables ... (.+) ... done")
+RE_NUM_VARS = re.compile(r"c \[INITIAL INPUT\] Number of variables: (\d+)")
+RE_NUM_CLAUSES = re.compile(r"c \[INITIAL INPUT\] Number of clauses: (\d+)")
+RE_PROJECTED_VARS = re.compile(r"c \[PROJECTED VARIABLES\] list: (.+)")
 RE_MODEL_COUNT = re.compile(r"s (\d+)")
 
 # Regular expressions for parsing d4 NNF file
@@ -33,16 +33,6 @@ RE_NNF_TRUE = re.compile(r"t (\d+) 0")
 RE_NNF_FALSE = re.compile(r"f (\d+) 0")
 # NNF edges: <number> <number> <possibly empty list of numbers separated by spaces> 0
 RE_NNF_EDGE = re.compile(r"(\d+) (\d+)( .+)? 0")
-
-
-def _write_dimacs(formula: FNode, var_map: dict[FNode, int], dimacs_file: TextIO):
-    dimacs_file.writelines(pysmt_to_dimacs(formula, var_map))
-
-
-def _write_projected_vars(projected_vars: Iterable[FNode], var_map: dict[FNode, int], projected_vars_file: TextIO):
-    assert all(var in var_map for var in projected_vars), f"{projected_vars} not in {var_map}"
-    projected_vars_file.write(",".join(str(var_map[var]) for var in projected_vars))
-    projected_vars_file.write("\n")
 
 
 @dataclass
@@ -64,6 +54,7 @@ def _read_stdout(output_file: TextIO) -> _D4Output:
             output.projected_vars = len(m.group(1).split())
         elif m := RE_MODEL_COUNT.match(line):
             output.model_count = int(m.group(1))
+
     return output
 
 
@@ -114,8 +105,8 @@ class D4Interface:
     """Adapter for D4 model counter and d-DNNF compiler."""
 
     class MODE(Enum):
-        MC = "-mc"
-        DDNNF = "-dDNNF"
+        MC = "mc"
+        DDNNF = "dDNNF"
 
     def __init__(self, d4_bin: str):
         self.d4_bin = d4_bin
@@ -147,20 +138,20 @@ class D4Interface:
                    timeout: int | None = None) -> tuple[_D4Output, FNode | None]:
         with TemporaryDirectory() as tmpdir:
             dimacs_file = os.path.join(tmpdir, "formula.cnf")
-            projected_vars_file = os.path.join(tmpdir, "projected_vars.txt")
             output_file = os.path.join(tmpdir, "output.txt")
             nnf_file = os.path.join(tmpdir, "formula.nnf")
             ddnnf = None
 
             var_map = dimacs_var_map(formula, projected_vars)
             with open(dimacs_file, "w") as f:
-                _write_dimacs(formula, var_map, f)
+                f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map))
 
-            with open(projected_vars_file, "w") as f:
-                _write_projected_vars(projected_vars, var_map, f)
+            cmd = [self.d4_bin, "-i", str(dimacs_file)]
+            if mode == self.MODE.DDNNF:
+                cmd += ["--method", "ddnnf-compiler", "--dump-ddnnf", nnf_file]
+            if mode == self.MODE.MC:
+                cmd += ["--method", "counting"]
 
-            cmd_opts = [mode.value]
-            cmd = [self.d4_bin, str(dimacs_file), f"-fpv={projected_vars_file}", f"-out={nnf_file}"] + cmd_opts
             with open(output_file, "w") as f:
                 try:
                     subprocess.check_call(cmd, stdout=f, stderr=f, timeout=timeout)

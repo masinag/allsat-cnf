@@ -1,6 +1,6 @@
 import math
 import re
-from typing import Generator, TextIO
+from typing import Generator, TextIO, Iterable
 
 from pysmt.fnode import FNode
 from pysmt.shortcuts import get_free_variables, And, Or, Symbol
@@ -9,9 +9,9 @@ from pysmt.typing import BOOL
 from allsat_cnf.utils import is_cnf, get_clauses, get_literals, negate
 
 
-def dimacs_var_map(formula: FNode, project_vars: set[FNode]) -> dict[FNode, int]:
+def dimacs_var_map(formula: FNode, projected_vars: set[FNode]) -> dict[FNode, int]:
     """Maps variables to DIMACS variable numbers."""
-    variables = get_free_variables(formula) | project_vars
+    variables = get_free_variables(formula) | projected_vars
     assert all(var.symbol_type() == BOOL for var in variables)
     return {var: i + 1 for i, var in enumerate(sorted(variables, key=str))}
 
@@ -39,7 +39,8 @@ def dimacs_to_clause(clause: str, var_map: dict[int, FNode]) -> FNode:
     return Or(dimacs_to_lit(lit, var_map) for lit in clause.split()[:-1])
 
 
-def pysmt_to_dimacs(formula: FNode, var_map: dict[FNode, int]) -> Generator[str, None, None]:
+def pysmt_to_dimacs(formula: FNode, projected_vars: Iterable[FNode], var_map: dict[FNode, int]) -> Generator[
+    str, None, None]:
     """Converts a CNF formula to the DIMACS format.
 
     Yields lines of the DIMACS format.
@@ -51,6 +52,8 @@ def pysmt_to_dimacs(formula: FNode, var_map: dict[FNode, int]) -> Generator[str,
     clauses = get_clauses(formula)
     n_clauses = len(clauses)
     yield f"p cnf {n_vars} {n_clauses}\n"
+    pv = sorted(var_map[var] for var in projected_vars)
+    yield f"c p show {' '.join(map(str, pv))} 0\n"
     for clause in clauses:
         yield clause_to_dimacs(clause, var_map)
 
@@ -79,7 +82,7 @@ def dimacs_to_pysmt(dimacs_file: TextIO) -> tuple[FNode, set[FNode], dict[int, F
     n_digits_dec = int(math.log10(n_vars) + 1)
     var_name_template = f"v{{:0{n_digits_dec}d}}"
 
-    var_map = {i + 1: Symbol(var_name_template.format(i+1), BOOL) for i in range(n_vars)}
+    var_map = {i + 1: Symbol(var_name_template.format(i + 1), BOOL) for i in range(n_vars)}
 
     # read projection
     for line in ii:
