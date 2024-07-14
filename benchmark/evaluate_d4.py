@@ -8,7 +8,6 @@ from pysmt.environment import reset_env, get_env
 from pysmt.fnode import FNode
 
 from allsat_cnf.utils import SolverOptions
-from allsat_cnf.utils import check_models
 from benchmark.d4_interface import D4Interface
 from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
     read_formula_from_file, check_output_can_be_created
@@ -16,7 +15,6 @@ from benchmark.mode import Mode
 from benchmark.parsing import arg_positive
 from benchmark.preprocess import preprocess_formula
 from benchmark.run import get_options
-from benchmark.run import run_with_timeout
 
 MC_CHECK_MSG = "Checking model count..."
 
@@ -118,17 +116,9 @@ def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: S
 
 def count_true_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str) -> int:
     d4 = D4Interface(d4_path)
-    _, ddnnf = d4.compile(phi, set(atoms), solver_options.timeout)
+    ddnnf = d4.compile(phi, set(atoms), solver_options.timeout)
 
     return d4.count_true_paths(ddnnf, set(atoms))
-
-
-def should_check_models(args) -> bool:
-    return not args.sat and not args.no_check and args.mode != "TTA"
-
-
-def check_models_or_timeout(models, phi, relevant_atoms, args) -> None:
-    return run_with_timeout(check_models, args.timeout, models, phi, relevant_atoms=relevant_atoms)
 
 
 if __name__ == '__main__':
