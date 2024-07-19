@@ -48,7 +48,7 @@ class PolarityCNFizer(DagWalker):
         for clause in self._clauses:
             simp = []
             for lit in clause:
-                if lit.is_true():
+                if lit.is_true() or self.negate(lit) in simp:
                     # Prune clauses that are trivially TRUE
                     simp = None
                     break
