@@ -18,7 +18,8 @@ from benchmark.run import get_options
 
 MC_CHECK_MSG = "Checking model count..."
 
-RUN_LOG = "Running d4..."
+COUNTING_LOG = "Running d4 for model counting"
+BUILDING_LOG = "Running d4 for ddnnf building"
 
 
 def log_header(filename, i, input_files):
@@ -61,7 +62,6 @@ def main():
     for i, filename in enumerate(input_files):
         setup()
         phi = read_formula_from_file(filename)
-        log(RUN_LOG, filename, i, input_files)
         counting_timed_out = False
         enum_timed_out = False
         count = None
@@ -71,6 +71,7 @@ def main():
         phi_cnf, atoms = preprocess_formula(phi, preprocess_options)
         n_clauses = len(get_clauses(phi_cnf))
         try:
+            log(COUNTING_LOG, filename, i, input_files)
             time_init = time.time()
             count = model_count_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
             counting_time = time.time() - time_init
@@ -81,6 +82,7 @@ def main():
             if counting_timed_out:
                 # If counting timed out, we assume that the enumeration will also time out
                 raise TimeoutError()
+            log(BUILDING_LOG, filename, i, input_files)
             time_init = time.time()
             n_paths = count_true_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
             paths_time = time.time() - time_init
