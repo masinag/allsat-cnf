@@ -7,7 +7,7 @@ from typing import Iterable
 from pysmt.environment import reset_env, get_env
 from pysmt.fnode import FNode
 
-from allsat_cnf.utils import SolverOptions
+from allsat_cnf.utils import SolverOptions, get_clauses
 from benchmark.d4_interface import D4Interface
 from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
     read_formula_from_file, check_output_can_be_created
@@ -69,7 +69,7 @@ def main():
 
         preprocess_options, solver_options = get_options(args)
         phi_cnf, atoms = preprocess_formula(phi, preprocess_options)
-        n_clauses = len(phi_cnf.args())
+        n_clauses = len(get_clauses(phi_cnf))
         try:
             time_init = time.time()
             count = model_count_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
@@ -118,7 +118,7 @@ def count_true_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_optio
     d4 = D4Interface(d4_path)
     ddnnf = d4.compile(phi, set(atoms), solver_options.timeout)
 
-    return d4.count_true_paths(ddnnf, set(atoms))
+    return d4.count_true_paths(ddnnf)
 
 
 if __name__ == '__main__':

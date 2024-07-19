@@ -67,15 +67,19 @@ def _nnf_to_ddnnf(nnf_file: TextIO, var_map: dict[FNode, int]) -> FNode:
     root = None
     for line in nnf_file:
         if m := RE_NNF_OR.match(line):
-            node_types[int(m.group(1))] = OR
+            node_id = int(m.group(1))
+            node_types[node_id] = OR
         elif m := RE_NNF_AND.match(line):
-            node_types[int(m.group(1))] = AND
+            node_id = int(m.group(1))
+            node_types[node_id] = AND
         elif m := RE_NNF_TRUE.match(line):
-            nodes[int(m.group(1))] = TRUE()
-            assert isinstance(nodes[int(m.group(1))], FNode)
+            node_id = int(m.group(1))
+            nodes[node_id] = TRUE()
+            root = node_id
         elif m := RE_NNF_FALSE.match(line):
-            nodes[int(m.group(1))] = FALSE()
-            assert isinstance(nodes[int(m.group(1))], FNode)
+            node_id = int(m.group(1))
+            nodes[node_id] = FALSE()
+            root = node_id
         elif m := RE_NNF_EDGE.match(line):
             from_id = int(m.group(1))
             to_id = int(m.group(2))
@@ -97,7 +101,8 @@ def _nnf_to_ddnnf(nnf_file: TextIO, var_map: dict[FNode, int]) -> FNode:
             raise ValueError(f"Invalid line: {line}")
 
     assert root is not None
-    nodes[root] = get_env().formula_manager.create_node(node_type=node_types[root], args=tuple(graph[root]))
+    if root not in nodes:
+        nodes[root] = get_env().formula_manager.create_node(node_type=node_types[root], args=tuple(graph[root]))
     return nodes[root]
 
 
@@ -123,11 +128,13 @@ class D4Interface:
 
         return ddnnf
 
+    def count_true_paths(self, formula: FNode) -> int:
+        """Count true paths of a d-DNNF formula."""
+        counter = DdnnfPathsCounter()
+        return counter.walk(formula)
+
     def enumerate(self, formula: FNode, projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
         """Return an iterator over true paths of a d-DNNF formula."""
-        return self._enumerate(formula, projected_vars)
-
-    def _enumerate(self, formula: FNode, projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
         if formula.is_true():
             yield []
         elif formula.is_false():
@@ -140,12 +147,12 @@ class D4Interface:
                 yield []
         elif formula.is_or():
             for arg in formula.args():
-                for model in self._enumerate(arg, projected_vars):
+                for model in self.enumerate(arg, projected_vars):
                     if model is not None:
                         yield model
         elif formula.is_and():
             # Cartesian product of all paths
-            args_models = [self._enumerate(arg, projected_vars) for arg in formula.args()]
+            args_models = [self.enumerate(arg, projected_vars) for arg in formula.args()]
 
             # pick one model from each argument
             for models in itertools.product(*args_models):
@@ -155,11 +162,6 @@ class D4Interface:
                     yield list(itertools.chain(*models))
         else:
             raise ValueError(f"Invalid formula: {formula}")
-
-    def count_true_paths(self, formula: FNode, projected_vars: set[FNode]) -> int:
-        """Count true paths of a d-DNNF formula."""
-        counter = DdnnfPathsCounter(projected_vars)
-        return counter.walk(formula)
 
     def _invoke_d4(self, formula: FNode, projected_vars: set[FNode], mode: MODE,
                    timeout: int | None = None) -> tuple[_D4Output, FNode | None]:
@@ -204,10 +206,6 @@ class DdnnfPathsCounter(DagWalker):
     """
     Count the number of true paths of a d-DNNF formula.
     """
-
-    def __init__(self, projected_vars: set[FNode]):
-        super().__init__()
-        self.projected_vars = projected_vars
 
     def walk_and(self, formula, args, **kwargs):
         count = 1
