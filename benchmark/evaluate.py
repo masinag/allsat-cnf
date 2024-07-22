@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import time
+from datetime import datetime
 from typing import Iterable
 
 from pysmt.environment import reset_env, get_env
@@ -10,7 +11,7 @@ from pysmt.fnode import FNode
 from allsat_cnf.utils import check_models
 from allsat_cnf.utils import get_allsat, SolverOptions, check_sat
 from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
-    read_formula_from_file, check_output_can_be_created
+    read_formula_from_file, check_output_can_be_created, result_exists
 from benchmark.mode import Mode
 from benchmark.parsing import arg_positive
 from benchmark.preprocess import preprocess_formula
@@ -63,6 +64,10 @@ def main():
     time_start = time.time()
 
     for i, filename in enumerate(input_files):
+        if result_exists(output_file, filename):
+            log("Already computed, skipping...", filename, i, input_files)
+            continue
+
         setup()
         phi = read_formula_from_file(filename)
         log(PARTIAL_MODELS_MSG, filename, i, input_files)
@@ -103,6 +108,7 @@ def main():
             "time": total_time,
             "enum_timed_out": enum_timed_out,
             "check_timed_out": check_timed_out,
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
         write_result(args, res, output_file)
 

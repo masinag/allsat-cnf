@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import time
+from datetime import datetime
 from typing import Iterable
 
 from pysmt.environment import reset_env, get_env
@@ -10,7 +11,7 @@ from pysmt.fnode import FNode
 from allsat_cnf.utils import SolverOptions, get_clauses
 from benchmark.d4_interface import D4Interface
 from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
-    read_formula_from_file, check_output_can_be_created
+    read_formula_from_file, check_output_can_be_created, result_exists
 from benchmark.mode import Mode
 from benchmark.parsing import arg_positive
 from benchmark.preprocess import preprocess_formula
@@ -60,6 +61,12 @@ def main():
     time_start = time.time()
 
     for i, filename in enumerate(input_files):
+        if result_exists(output_file, filename):
+            log("Already computed, skipping...", filename, i, input_files)
+            continue
+        else:
+            log("Processing...", filename, i, input_files)
+
         setup()
         phi = read_formula_from_file(filename)
         counting_timed_out = False
@@ -99,6 +106,7 @@ def main():
             "paths_time": paths_time,
             "counting_timed_out": counting_timed_out,
             "enum_timed_out": enum_timed_out,
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
         write_result(args, res, output_file)
 

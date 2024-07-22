@@ -1,8 +1,7 @@
 import json
 import os
-import sys
-import time
 import os.path
+import sys
 
 from pysmt.shortcuts import read_smtlib
 
@@ -18,10 +17,9 @@ def get_output_filename(args):
 
 def generate_output_filename_from_args(args):
     input_filename = os.path.split(args.input.rstrip('/'))[1]
-    output_file = "{}_{}_{}.json".format(
+    output_file = "{}_{}.json".format(
         input_filename,
-        get_full_name_mode(args),
-        int(time.time()))
+        get_full_name_mode(args))
     return output_file
 
 
@@ -63,6 +61,14 @@ def write_result(args, res, output_file):
 
     with open(output_file, 'w') as f:
         json.dump(info, f, indent=4)
+
+
+def result_exists(output_file, filename):
+    if not os.path.exists(output_file):
+        return False
+    with open(output_file, 'r') as f:
+        info = json.load(f)
+    return any(r["filename"] == filename for r in info["results"])
 
 
 def read_formula_from_file(filename):
