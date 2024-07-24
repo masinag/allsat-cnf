@@ -41,6 +41,8 @@ def parse_args():
                         help='Output folder where to save the result (default: cwd)')
     parser.add_argument('-m', '--mode', choices=[m.value for m in Mode],
                         required=True, help='Mode to use')
+    parser.add_argument('--d4-mode', choices=[m.value for m in D4Interface.MODE], default=D4Interface.MODE.COUNTING,
+                        help='Mode to use for d4')
     parser.add_argument('--timeout', type=arg_positive, default=1200,
                         help='Timeout for the solver')
     parser.add_argument('--d4-path', type=str, required=True, help='Path to the d4 (v2) binary')
@@ -80,22 +82,23 @@ def main():
         try:
             log(COUNTING_LOG, filename, i, input_files)
             time_init = time.time()
-            count = model_count_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
+            mode = D4Interface.MODE(args.d4_mode)
+            count = model_count_or_timeout(phi_cnf, atoms, mode, solver_options, args.d4_path)
             counting_time = time.time() - time_init
         except TimeoutError:
             counting_time = args.timeout
             counting_timed_out = True
-        try:
-            if counting_timed_out:
-                # If counting timed out, we assume that the enumeration will also time out
-                raise TimeoutError()
-            log(BUILDING_LOG, filename, i, input_files)
-            time_init = time.time()
-            n_paths = count_true_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
-            paths_time = time.time() - time_init
-        except TimeoutError:
-            paths_time = args.timeout
-            enum_timed_out = True
+        # try:
+        #     if counting_timed_out:
+        #         # If counting timed out, we assume that the enumeration will also time out
+        #         raise TimeoutError()
+        #     log(BUILDING_LOG, filename, i, input_files)
+        #     time_init = time.time()
+        #     n_paths = count_true_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
+        #     paths_time = time.time() - time_init
+        # except TimeoutError:
+        paths_time = args.timeout
+        #     enum_timed_out = True
 
         res = {
             "filename": filename,
@@ -119,9 +122,10 @@ def setup():
     get_env().enable_infix_notation = True
 
 
-def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str) -> int:
+def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], mode: D4Interface.MODE, solver_options: SolverOptions,
+                           d4_path: str) -> int:
     d4 = D4Interface(d4_path)
-    return d4.projected_model_count(phi, set(atoms), solver_options.timeout)
+    return d4.projected_model_count(phi, set(atoms), solver_options.timeout, mode)
 
 
 def count_true_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str) -> int:

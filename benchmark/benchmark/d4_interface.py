@@ -137,7 +137,8 @@ class D4Interface:
     """Adapter for D4 model counter and d-DNNF compiler."""
 
     class MODE(Enum):
-        MC = "mc"
+        COUNTING = "counting"
+        PROJMC = "projMC"
         DDNNF = "dDNNF"
 
     def __init__(self, d4_bin: str):

@@ -33,5 +33,5 @@ run-d4() {
     echo "D4_PATH environment variable is not set"
     exit 1
   fi
-  run evaluate_d4.py "$1" "results-d4" "${@: 2}" --d4-path "$D4_PATH"
+  run evaluate_d4.py "${1}" "results-d4-${2}" --d4-mode="${2}" "${@: 3}" --d4-path "$D4_PATH"
 }
