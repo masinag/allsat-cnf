@@ -1,4 +1,3 @@
-import itertools
 import os.path
 import re
 import subprocess
@@ -8,9 +7,9 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import TextIO, Generator
 
+import pysmt.operators as op
 from pysmt.fnode import FNode
-from pysmt.operators import OR, AND, NOT, SYMBOL
-from pysmt.shortcuts import TRUE, FALSE, get_env, And
+from pysmt.shortcuts import TRUE, FALSE, And, Or
 from pysmt.walkers import handles, DagWalker
 
 from allsat_cnf.utils import get_clauses, is_literal
@@ -58,6 +57,30 @@ def _read_stdout(output_file: TextIO) -> _D4Output:
     return output
 
 
+def _make_node(node_type: int, children: list[FNode]) -> FNode:
+    match node_type:
+        case op.OR:
+            if any(child.is_true() for child in children):
+                return TRUE()
+            new_children = [child for child in children if not child.is_false()]
+            if len(new_children) == 0:
+                return FALSE()
+            if len(new_children) == 1:
+                return new_children[0]
+            return Or(new_children)
+        case op.AND:
+            if any(child.is_false() for child in children):
+                return FALSE()
+            new_children = [child for child in children if not child.is_true()]
+            if len(new_children) == 0:
+                return TRUE()
+            if len(new_children) == 1:
+                return new_children[0]
+            return And(new_children)
+        case _:
+            raise ValueError(f"Invalid node type: {node_type}")
+
+
 def _nnf_to_ddnnf(nnf_file: TextIO, var_map: dict[FNode, int]) -> FNode:
     # assume it is given as a DAG (bottom up)
     var_map_inv = {v: k for k, v in var_map.items()}
@@ -68,10 +91,10 @@ def _nnf_to_ddnnf(nnf_file: TextIO, var_map: dict[FNode, int]) -> FNode:
     for line in nnf_file:
         if m := RE_NNF_OR.match(line):
             node_id = int(m.group(1))
-            node_types[node_id] = OR
+            node_types[node_id] = op.OR
         elif m := RE_NNF_AND.match(line):
             node_id = int(m.group(1))
-            node_types[node_id] = AND
+            node_types[node_id] = op.AND
         elif m := RE_NNF_TRUE.match(line):
             node_id = int(m.group(1))
             nodes[node_id] = TRUE()
@@ -81,28 +104,32 @@ def _nnf_to_ddnnf(nnf_file: TextIO, var_map: dict[FNode, int]) -> FNode:
             nodes[node_id] = FALSE()
             root = node_id
         elif m := RE_NNF_EDGE.match(line):
-            from_id = int(m.group(1))
-            to_id = int(m.group(2))
-            if to_id not in nodes:
-                assert to_id in node_types
-                nodes[to_id] = get_env().formula_manager.create_node(
-                    node_type=node_types[to_id], args=tuple(graph[to_id])
-                )
-                assert isinstance(nodes[to_id], FNode)
+            parent_id = int(m.group(1))
+            child_id = int(m.group(2))
+
+            if child_id not in nodes:
+                assert child_id in node_types
+                nodes[child_id] = _make_node(node_types[child_id], graph[child_id])
+
             literals = []
             if m.group(3) is not None:
                 literals = [dimacs_to_lit(lit, var_map_inv) for lit in m.group(3).split()]
-            assert all(isinstance(lit, FNode) for lit in literals)
-            assert isinstance(nodes[to_id], FNode)
-            child = And(literals + [nodes[to_id]])
-            graph[from_id].append(child)
-            root = from_id
+                assert all(isinstance(lit, FNode) for lit in literals)
+
+            assert not any(lit.is_false() or lit.is_true() for lit in literals)
+            if nodes[child_id].is_false():
+                graph[parent_id].append(FALSE())
+            elif nodes[child_id].is_true():
+                graph[parent_id].append(And(literals))
+            else:
+                graph[parent_id].append(And(nodes[child_id], *literals))
+            root = parent_id
         else:
             raise ValueError(f"Invalid line: {line}")
 
     assert root is not None
     if root not in nodes:
-        nodes[root] = get_env().formula_manager.create_node(node_type=node_types[root], args=tuple(graph[root]))
+        nodes[root] = _make_node(node_types[root], graph[root])
     return nodes[root]
 
 
@@ -116,8 +143,9 @@ class D4Interface:
     def __init__(self, d4_bin: str):
         self.d4_bin = d4_bin
 
-    def projected_model_count(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> int:
-        output, ddnnf = self._invoke_d4(formula, projected_vars, self.MODE.MC, timeout)
+    def projected_model_count(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None,
+                              mode: MODE = MODE.COUNTING) -> int:
+        output, ddnnf = self._invoke_d4(formula, projected_vars, mode, timeout)
         assert ddnnf is None
 
         return output.model_count
@@ -133,13 +161,38 @@ class D4Interface:
         counter = DdnnfPathsCounter()
         return counter.walk(formula)
 
+    def _enum_cross_product(self, args: list[FNode], projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
+        # print("Cross product", args)
+        stack = [(0, self.enumerate(args[0], projected_vars))]
+        model = []
+
+        while stack:
+            # assert len(stack) == len(model) + 1, f"{len(stack)} {len(model)}"
+            model_len, it = stack[-1]
+            try:
+                m = next(it)
+            except StopIteration:
+                # print("CP", args, "Popping", model)
+                stack.pop()
+                if model:
+                    model = model[:model_len]
+                continue
+            model_len = len(model)
+            model.extend(m)
+            #             print("CP", args, "Model", model)
+            if len(stack) == len(args):
+                #                 print("CP", args, "Yielding", model)
+                yield model
+                model = model[:model_len]
+            else:
+                assert len(stack) < len(args), f"{model} {args}"
+                stack.append((model_len, self.enumerate(args[len(stack)], projected_vars)))
+
     def enumerate(self, formula: FNode, projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
         """Return an iterator over true paths of a d-DNNF formula."""
-        if formula.is_true():
-            yield []
-        elif formula.is_false():
-            yield None
-        elif is_literal(formula):
+        #         print("Enumerating", formula)
+        assert not formula.is_true() and not formula.is_false()
+        if is_literal(formula):
             var = formula.arg(0) if formula.is_not() else formula
             if var in projected_vars:
                 yield [formula]
@@ -147,19 +200,13 @@ class D4Interface:
                 yield []
         elif formula.is_or():
             for arg in formula.args():
-                for model in self.enumerate(arg, projected_vars):
-                    if model is not None:
-                        yield model
+                #                 print("OR:, enumerate", arg)
+                yield from self.enumerate(arg, projected_vars)
         elif formula.is_and():
             # Cartesian product of all paths
-            args_models = [self.enumerate(arg, projected_vars) for arg in formula.args()]
 
             # pick one model from each argument
-            for models in itertools.product(*args_models):
-                if any(model is None for model in models):
-                    yield None
-                else:
-                    yield list(itertools.chain(*models))
+            yield from self._enum_cross_product(formula.args(), projected_vars)
         else:
             raise ValueError(f"Invalid formula: {formula}")
 
@@ -178,14 +225,18 @@ class D4Interface:
             cmd = [self.d4_bin, "-i", str(dimacs_file)]
             if mode == self.MODE.DDNNF:
                 cmd += ["--method", "ddnnf-compiler", "--dump-ddnnf", nnf_file]
-            if mode == self.MODE.MC:
+            if mode == self.MODE.COUNTING:
                 cmd += ["--method", "counting"]
+            if mode == self.MODE.PROJMC:
+                cmd += ["--method", "projMC"]
 
             with open(output_file, "w") as f:
                 try:
                     subprocess.check_call(cmd, stdout=f, stderr=f, timeout=timeout)
                 except subprocess.CalledProcessError as e:
-                    raise RuntimeError(f"d4 failed with exit code {e.returncode}") from e
+                    with open(output_file) as fout:
+                        out = fout.read()
+                    raise RuntimeError(f"d4 failed with exit code {e.returncode}\n{out}") from e
                 except subprocess.TimeoutExpired:
                     raise TimeoutError("d4 timed out")
             with open(output_file) as f:
@@ -217,7 +268,7 @@ class DdnnfPathsCounter(DagWalker):
     def walk_or(self, formula, args, **kwargs):
         return sum(args)
 
-    @handles(SYMBOL, NOT)
+    @handles(op.SYMBOL, op.NOT)
     def walk_literal(self, formula, **kwargs):
         return 1
 
