@@ -71,7 +71,6 @@ def main():
 
         setup()
         phi = read_formula_from_file(filename)
-        counting_timed_out = False
         enum_timed_out = False
         count = None
         n_paths = None
@@ -83,34 +82,26 @@ def main():
             log(COUNTING_LOG, filename, i, input_files)
             time_init = time.time()
             mode = D4Interface.MODE(args.d4_mode)
-            count = model_count_or_timeout(phi_cnf, atoms, mode, solver_options, args.d4_path)
-            counting_time = time.time() - time_init
+            if mode in [D4Interface.MODE.COUNTING, D4Interface.MODE.PROJMC]:
+                count = model_count_or_timeout(phi_cnf, atoms, mode, solver_options, args.d4_path)
+                n_paths = count
+            elif mode == D4Interface.MODE.DDNNF:
+                count, n_paths = count_true_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
+            total_time = time.time() - time_init
         except TimeoutError:
-            counting_time = args.timeout
-            counting_timed_out = True
-        # try:
-        #     if counting_timed_out:
-        #         # If counting timed out, we assume that the enumeration will also time out
-        #         raise TimeoutError()
-        #     log(BUILDING_LOG, filename, i, input_files)
-        #     time_init = time.time()
-        #     n_paths = count_true_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
-        #     paths_time = time.time() - time_init
-        # except TimeoutError:
-        paths_time = args.timeout
-        #     enum_timed_out = True
+            total_time = args.timeout
+            enum_timed_out = True
 
         res = {
             "filename": filename,
             "n_clauses": n_clauses,
             "models": n_paths,
             "model_count": count,
-            "counting_time": counting_time,
-            "paths_time": paths_time,
-            "counting_timed_out": counting_timed_out,
+            "time": total_time,
             "enum_timed_out": enum_timed_out,
             "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
+
         write_result(args, res, output_file)
 
     seconds = time.time() - time_start
@@ -128,11 +119,12 @@ def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], mode: D4Interface
     return d4.projected_model_count(phi, set(atoms), solver_options.timeout, mode)
 
 
-def count_true_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str) -> int:
+def count_true_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str) -> \
+tuple[int, int]:
     d4 = D4Interface(d4_path)
-    ddnnf = d4.compile(phi, set(atoms), solver_options.timeout)
+    count, ddnnf = d4.compile(phi, set(atoms), solver_options.timeout)
 
-    return d4.count_true_paths(ddnnf)
+    return count, d4.count_true_paths(ddnnf)
 
 
 if __name__ == '__main__':

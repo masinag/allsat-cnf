@@ -151,11 +151,11 @@ class D4Interface:
 
         return output.model_count
 
-    def compile(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> FNode:
+    def compile(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> tuple[int, FNode]:
         output, ddnnf = self._invoke_d4(formula, projected_vars, self.MODE.DDNNF, timeout)
         assert ddnnf is not None
 
-        return ddnnf
+        return output.model_count, ddnnf
 
     def count_true_paths(self, formula: FNode) -> int:
         """Count true paths of a d-DNNF formula."""
@@ -164,32 +164,49 @@ class D4Interface:
 
     def _enum_cross_product(self, args: list[FNode], projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
         # print("Cross product", args)
-        stack = [(0, self.enumerate(args[0], projected_vars))]
+        stack = [self._enumerate(args[0], projected_vars)]
         model = []
 
         while stack:
             # assert len(stack) == len(model) + 1, f"{len(stack)} {len(model)}"
-            model_len, it = stack[-1]
+            it = stack[-1]
             try:
                 m = next(it)
             except StopIteration:
                 # print("CP", args, "Popping", model)
                 stack.pop()
                 if model:
-                    model = model[:model_len]
+                    model.pop()
                 continue
-            model_len = len(model)
-            model.extend(m)
+            model.append(m)
             #             print("CP", args, "Model", model)
             if len(stack) == len(args):
                 #                 print("CP", args, "Yielding", model)
                 yield model
-                model = model[:model_len]
+                model.pop()
             else:
                 assert len(stack) < len(args), f"{model} {args}"
-                stack.append((model_len, self.enumerate(args[len(stack)], projected_vars)))
+                stack.append(self._enumerate(args[len(stack)], projected_vars))
+
+    ModelGraph = list[FNode] | list['ModelGraph']
+
+    def _flatten_rec(self, model_graph: ModelGraph, model: list[FNode]) -> None:
+        for node in model_graph:
+            if isinstance(node, list):
+                self._flatten_rec(node, model)
+            else:
+                model.append(node)
+
+    def _flatten(self, model_graph: ModelGraph) -> list[FNode]:
+        model = []
+        self._flatten_rec(model_graph, model)
+        return model
 
     def enumerate(self, formula: FNode, projected_vars: set[FNode]) -> Generator[list[FNode], None, None]:
+        for model in self._enumerate(formula, projected_vars):
+            yield self._flatten(model)
+
+    def _enumerate(self, formula: FNode, projected_vars: set[FNode]) -> Generator[ModelGraph, None, None]:
         """Return an iterator over true paths of a d-DNNF formula."""
         #         print("Enumerating", formula)
         assert not formula.is_true() and not formula.is_false()
@@ -201,8 +218,8 @@ class D4Interface:
                 yield []
         elif formula.is_or():
             for arg in formula.args():
-                #                 print("OR:, enumerate", arg)
-                yield from self.enumerate(arg, projected_vars)
+                #                 print("OR:, _enumerate", arg)
+                yield from self._enumerate(arg, projected_vars)
         elif formula.is_and():
             # Cartesian product of all paths
 
