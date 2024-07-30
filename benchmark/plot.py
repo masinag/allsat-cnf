@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from benchmark.io.file import get_input_files, check_inputs_exist
-from benchmark.benchmark.mode import Mode
+from benchmark.mode import Mode
 from benchmark.plotting.ecdf_plotter import ECDFPlotter
 from benchmark.plotting.scatter_plotter import ScatterPlotter
 
@@ -23,19 +23,16 @@ matplotlib.rcParams.update({
 
 Style = namedtuple("Style", ["color", "marker", "linestyle", "label", "order_index"])
 
-MODE_STYLES = {
+MODE_STYLES: dict[Mode, Style] = {
     Mode.TTA: Style("blue", None, None, r"$\mathsf{TTA}(\varphi)$", 3),
-    Mode.LAB: Style("#ff7f00", None, "--", r"$\mathsf{CNF_{Ts}}(\varphi)$", 2),
-    # Mode.NNF_LAB: Style("black", None, None, r"$\mathsf{CNF_{Ts}}(\mathsf{NNF}(\varphi))$", 2),
-    # Mode.POL: Style("orange", None, None, r"$\mathsf{CNF_{PG}}(\varphi)$", 3),
-    # Mode.NNF_POL: Style("purple", None, None, r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 4),
-    Mode.LABELNEG_POL: Style("#377eb8", None, "-", r"$\mathsf{CNF_{PG}}(\varphi)$", 0),
-    Mode.NNF_MUTEX_POL: Style("#4daf4a", None, "-.", r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 1),
+    Mode.LAB: Style("#ff7f00", None, "--", r"$\mathsf{CNF_{Ts}}(\varphi)$", 0),
+    Mode.LABELNEG_POL: Style("#377eb8", None, "-", r"$\mathsf{CNF_{PG}}(\varphi)$", 1),
+    Mode.NNF_MUTEX_POL: Style("#4daf4a", None, "-.", r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 2),
 }
 
 _cm = plt.colormaps["Set2"].colors
 
-PROBLEM_SET_STYLES = {
+PROBLEM_SET_STYLES: dict[str, Style] = {
     "syn-bool": Style(_cm[2], "s", None, "Syn-Bool", 0),
     "iscas85": Style(_cm[1], "o", None, "ISCAS85", 1),
     "aig": Style(_cm[0], "^", None, "AIG", 2),
@@ -64,8 +61,7 @@ def parse_inputs(input_files: dict[str, list[str]], with_repetitions: bool, time
             for result in result_out["results"]:
                 result["problem_set"] = ps_name
                 result["mode"] = mode
-                if type(result["enum_timed_out"]) != bool:
-                    print("--------------", result)
+
                 if result["enum_timed_out"]:
                     result["models"] = timeout_models
                     result["time"] = timeout
@@ -125,7 +121,6 @@ def count_timeouts(data: pd.DataFrame):
 
 def main():
     args = parse_args()
-    print(args.problem_set)
     problem_sets: dict[str, list[str]] = args.problem_set
     output_dir: str = args.output
     filename: str = args.filename
@@ -150,10 +145,10 @@ def main():
         scatter_plotter = ScatterPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES,
                                          PROBLEM_SET_STYLES)
 
-        scatter_plotter.plot_models_all_vs_all(separate_problem_sets=True)
         scatter_plotter.plot_models_all_vs_all(separate_problem_sets=False)
-        scatter_plotter.plot_time_all_vs_all(separate_problem_sets=True)
+        scatter_plotter.plot_models_all_vs_all(separate_problem_sets=True)
         scatter_plotter.plot_time_all_vs_all(separate_problem_sets=False)
+        scatter_plotter.plot_time_all_vs_all(separate_problem_sets=True)
 
     count_timeouts(data)
 

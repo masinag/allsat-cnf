@@ -120,7 +120,7 @@ def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], mode: D4Interface
 
 
 def count_true_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str) -> \
-tuple[int, int]:
+        tuple[int, int]:
     d4 = D4Interface(d4_path)
     count, ddnnf = d4.compile(phi, set(atoms), solver_options.timeout)
 
