@@ -13,7 +13,7 @@ run() {
     res_dir="${dir//data/$RES_DIR}"
     mkdir -p "$res_dir"
     echo "$dir"
-    for mode in LAB NNF_MUTEX_POL LABELNEG_POL; do
+    for mode in NNF_MUTEX_POL LABELNEG_POL LAB; do
       python3 "$SCRIPT" "$dir" -m $mode -o "$res_dir" "${OTHER_OPT[@]}"
     done
   done
@@ -34,4 +34,12 @@ run-d4() {
     exit 1
   fi
   run evaluate_d4.py "${1}" "results-d4-${2}" --d4-mode="${2}" "${@: 3}" --d4-path "$D4_PATH"
+}
+
+run-tabularallsat() {
+  if [ -z "$TABULARALLSAT_PATH" ]; then
+    echo "TABULARALLSAT_PATH environment variable is not set"
+    exit 1
+  fi
+  run evaluate_tabularallsat.py "${1}" "results-tabularallsat" "${@: 2}" --tabularallsat-path "$TABULARALLSAT_PATH"
 }

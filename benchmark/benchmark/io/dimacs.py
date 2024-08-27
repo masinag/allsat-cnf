@@ -1,5 +1,6 @@
 import math
 import re
+from enum import Enum
 from typing import Generator, TextIO, Iterable
 
 from pysmt.fnode import FNode
@@ -7,6 +8,11 @@ from pysmt.shortcuts import get_free_variables, And, Or, Symbol
 from pysmt.typing import BOOL
 
 from allsat_cnf.utils import is_cnf, get_clauses, get_literals, negate
+
+
+class HeaderMode(Enum):
+    WITH_NUM_PROJECTED_VARS = 0
+    ZERO_TERMINATED = 1
 
 
 def dimacs_var_map(formula: FNode, projected_vars: set[FNode]) -> dict[FNode, int]:
@@ -39,8 +45,8 @@ def dimacs_to_clause(clause: str, var_map: dict[int, FNode]) -> FNode:
     return Or(dimacs_to_lit(lit, var_map) for lit in clause.split()[:-1])
 
 
-def pysmt_to_dimacs(formula: FNode, projected_vars: Iterable[FNode], var_map: dict[FNode, int]) -> Generator[
-    str, None, None]:
+def pysmt_to_dimacs(formula: FNode, projected_vars: Iterable[FNode], var_map: dict[FNode, int],
+                    header_mode: HeaderMode = HeaderMode.ZERO_TERMINATED) -> Generator[str, None, None]:
     """Converts a CNF formula to the DIMACS format.
 
     Yields lines of the DIMACS format.
@@ -51,9 +57,14 @@ def pysmt_to_dimacs(formula: FNode, projected_vars: Iterable[FNode], var_map: di
 
     clauses = get_clauses(formula)
     n_clauses = len(clauses)
-    yield f"p cnf {n_vars} {n_clauses}\n"
     pv = sorted(var_map[var] for var in projected_vars)
-    yield f"c p show {' '.join(map(str, pv))} 0\n"
+    match header_mode:
+        case HeaderMode.WITH_NUM_PROJECTED_VARS:
+            yield f"p cnf {n_vars} {n_clauses} {len(projected_vars)}\n"
+            yield f"c p show {' '.join(map(str, pv))}\n"
+        case HeaderMode.ZERO_TERMINATED:
+            yield f"p cnf {n_vars} {n_clauses}\n"
+            yield f"c p show {' '.join(map(str, pv))} 0\n"
     for clause in clauses:
         yield clause_to_dimacs(clause, var_map)
 
