@@ -63,6 +63,7 @@ def parse_inputs(input_files: dict[str, list[str]], with_repetitions: bool, time
                 result["mode"] = mode
 
                 if result["enum_timed_out"]:
+                    result["model_count"] = timeout_models
                     result["models"] = timeout_models
                     result["time"] = timeout
 
@@ -93,6 +94,7 @@ def parse_args():
                         help="Whether to plot results allowing non-disjoint models (default: False)")
     parser.add_argument("--scatter", action="store_true", help="Plot scatter plots")
     parser.add_argument("--ecdf", action="store_true", help="Plot ECDF plots")
+    parser.add_argument("--time-only", action="store_true", help="Only plot time, without models")
     args = parser.parse_args()
 
     problem_sets = {}
@@ -145,8 +147,9 @@ def main():
         scatter_plotter = ScatterPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES,
                                          PROBLEM_SET_STYLES)
 
-        scatter_plotter.plot_models_all_vs_all(separate_problem_sets=False)
-        scatter_plotter.plot_models_all_vs_all(separate_problem_sets=True)
+        if not args.time_only:
+            scatter_plotter.plot_models_all_vs_all(separate_problem_sets=False)
+            scatter_plotter.plot_models_all_vs_all(separate_problem_sets=True)
         scatter_plotter.plot_time_all_vs_all(separate_problem_sets=False)
         scatter_plotter.plot_time_all_vs_all(separate_problem_sets=True)
 
