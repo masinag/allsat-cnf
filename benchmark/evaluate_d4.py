@@ -39,6 +39,8 @@ def parse_args():
     parser.add_argument('input', help='Folder with .json files')
     parser.add_argument('-o', '--output', default=os.getcwd(),
                         help='Output folder where to save the result (default: cwd)')
+    parser.add_argument('-f', '--filename', default='',
+                        help='Filename suffix (default: "")')
     parser.add_argument('-m', '--mode', choices=[m.value for m in Mode],
                         required=True, help='Mode to use')
     parser.add_argument('--d4-mode', choices=[m.value for m in D4Interface.MODE], default=D4Interface.MODE.COUNTING,

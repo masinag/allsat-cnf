@@ -17,9 +17,11 @@ def get_output_filename(args):
 
 def generate_output_filename_from_args(args):
     input_filename = os.path.split(args.input.rstrip('/'))[1]
-    output_file = "{}_{}.json".format(
+    output_file = "{}_{}{}.json".format(
         input_filename,
-        get_full_name_mode(args))
+        get_full_name_mode(args),
+        args.filename
+    )
     return output_file
 
 
@@ -34,16 +36,11 @@ def check_inputs_exist(input_dir: str | list[str]):
 
 
 def check_output_can_be_created(output_path):
-    """Given an output_path in the form <path>/<basename>, check that:
-    - path exists
-    - path/basename does not exist
+    """Given an output_path in the form <path>/<basename>, check that path exists
     """
-    path, basename = os.path.split(output_path)
+    path, _ = os.path.split(output_path)
     if not os.path.exists(path):
         print("'{}' does not exists, creating it...".format(path))
-    elif os.path.exists(basename):
-        print("'{}' already exists. Remove it and retry".format(basename))
-        sys.exit(1)
 
 
 def write_result(args, res, output_file):
@@ -85,6 +82,9 @@ def get_input_files(input_dirs: list[str]) -> list[str]:
     for input_dir in input_dirs:
         if not os.path.exists(input_dir):
             raise IOError("Input folder '{}' does not exists".format(input_dir))
+        if not os.path.isdir(input_dir):
+            input_files.append(input_dir)
+            continue
         for filename in os.listdir(input_dir):
             filepath = os.path.join(input_dir, filename)
             if not os.path.isdir(filepath):

@@ -11,7 +11,8 @@ mkdir -p plots/bool/no-rep \
   plots-sat/bool \
   plots-sat/lra \
   plots-d4-counting \
-  plots-d4-projMC
+  plots-d4-projMC \
+  plots-tabularallsat
 
 python3 plot.py \
   -problem_set syn-bool "${SYN_BOOL_DIR}"/results/* \
@@ -53,3 +54,11 @@ python3 plot.py \
   --timeout 1200 --timeout-models 10000000000000 \
   --scatter \
   --time-only # -problem_set syn-bool "${SYN_BOOL_DIR}"/results-d4-dDNNF/* \
+
+plot.py \
+  -problem_set syn-bool "${SYN_BOOL_DIR}"/results-tabularallsat/* \
+  -problem_set aig "${AIG_DIR}"/results-tabularallsat/* \
+  -problem_set iscas85 "${ISCAS85_DIR}"/results-tabularallsat/* \
+  -o plots-tabularallsat \
+  --timeout 1200 --timeout-models 10000000000000 \
+  --scatter
