@@ -4,4 +4,4 @@ source config.sh
 
 source run_utils.sh
 
-check-sat "${ISCAS85_DIR}"
+run-msat-sat "${AIG_DIR}"

@@ -4,4 +4,4 @@ source config.sh
 
 source run_utils.sh
 
-check-sat "${SYN_BOOL_DIR}"
+run-msat-sat "${WMI_DIR}"

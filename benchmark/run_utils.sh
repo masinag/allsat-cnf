@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# add option for with_repetition flag
+source config.sh
+
 run() {
   SCRIPT=$1
   DIR=$2
@@ -19,12 +20,12 @@ run() {
   done
 }
 
-get-allsat() {
-  run evaluate.py "$1" "results" "${@: 2}"
+run-msat() {
+  run evaluate_msat.py "$1" "${RES_MSAT}" "${@: 2}"
 }
 
-check-sat() {
-  run evaluate.py "$1" "results-sat" "--sat" "${@: 2}"
+run-msat-sat() {
+  run evaluate_msat.py "$1" "${RES_MSAT_SAT}" "--sat" "${@: 2}"
 }
 
 run-d4() {
@@ -33,7 +34,17 @@ run-d4() {
     echo "D4_PATH environment variable is not set"
     exit 1
   fi
-  run evaluate_d4.py "${1}" "results-d4-${2}" --d4-mode="${2}" "${@: 3}" --d4-path "$D4_PATH"
+  # if $2 is "counting", then RES_D4 is RES_D4_COUNTING else if it is "projmc", then RES_D4 is RES_D4_PROJMC
+  if [ "$2" == "counting" ]; then
+    RES_D4="${RES_D4_COUNTING}"
+  elif [ "$2" == "projMC" ]; then
+    RES_D4="${RES_D4_PROJMC}"
+  else
+    echo "Invalid D4 mode: $2"
+    exit 1
+  fi
+
+  run evaluate_d4.py "${1}" "$RES_D4" --d4-mode="${2}" "${@: 3}" --d4-path "$D4_PATH"
 }
 
 run-tabularallsat() {
@@ -41,5 +52,5 @@ run-tabularallsat() {
     echo "TABULARALLSAT_PATH environment variable is not set"
     exit 1
   fi
-  run evaluate_tabularallsat.py "${1}" "results-tabularallsat" "${@: 2}" --tabularallsat-path "$TABULARALLSAT_PATH"
+  run evaluate_tabularallsat.py "${1}" "${RES_TABULARALLSAT}" "${@: 2}" --tabularallsat-path "$TABULARALLSAT_PATH"
 }

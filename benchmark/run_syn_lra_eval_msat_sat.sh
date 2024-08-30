@@ -4,4 +4,4 @@ source config.sh
 
 source run_utils.sh
 
-check-sat "${SYN_LRA_DIR}"
+run-msat-sat "${SYN_LRA_DIR}"
