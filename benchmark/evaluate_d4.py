@@ -3,13 +3,14 @@ import os
 import sys
 import time
 from datetime import datetime
+from tempfile import NamedTemporaryFile
 from typing import Iterable
 
 from pysmt.environment import reset_env, get_env
 from pysmt.fnode import FNode
 
 from allsat_cnf.utils import SolverOptions, get_clauses
-from benchmark.d4_interface import D4Interface
+from benchmark.d4_interface import D4Interface, D4EnumeratorInterface
 from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
     read_formula_from_file, check_output_can_be_created, result_exists
 from benchmark.mode import Mode
@@ -48,6 +49,7 @@ def parse_args():
     parser.add_argument('--timeout', type=arg_positive, default=1200,
                         help='Timeout for the solver')
     parser.add_argument('--d4-path', type=str, required=True, help='Path to the d4 (v2) binary')
+    parser.add_argument('--decddnnf-path', type=str, required=True, help='Path to the decddnnf_rs binary')
 
     return parser.parse_args()
 
@@ -84,11 +86,12 @@ def main():
             log(COUNTING_LOG, filename, i, input_files)
             time_init = time.time()
             mode = D4Interface.MODE(args.d4_mode)
-            if mode in [D4Interface.MODE.COUNTING, D4Interface.MODE.PROJMC]:
+            if mode == D4Interface.MODE.COUNTING:
                 count = model_count_or_timeout(phi_cnf, atoms, mode, solver_options, args.d4_path)
                 n_paths = count
             elif mode == D4Interface.MODE.DDNNF:
-                count, n_paths = count_true_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
+                count, n_paths = enumerate_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path,
+                                                            args.decddnnf_path)
             total_time = time.time() - time_init
         except TimeoutError:
             total_time = args.timeout
@@ -118,15 +121,19 @@ def setup():
 def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], mode: D4Interface.MODE, solver_options: SolverOptions,
                            d4_path: str) -> int:
     d4 = D4Interface(d4_path)
-    return d4.projected_model_count(phi, set(atoms), solver_options.timeout, mode)
+    return d4.projected_model_count(phi, set(atoms), solver_options.timeout)
 
 
-def count_true_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str) -> \
-        tuple[int, int]:
+def enumerate_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str,
+                               decddnnf_path: str) -> tuple[int, int]:
     d4 = D4Interface(d4_path)
-    count, ddnnf = d4.compile(phi, set(atoms), solver_options.timeout)
+    d4enum = D4EnumeratorInterface(decddnnf_path)
 
-    return count, d4.count_true_paths(ddnnf)
+    with NamedTemporaryFile() as nnf_file:
+        d4.compile(phi, set(atoms), nnf_file.name, solver_options.timeout)
+        count, n_paths = d4enum.enumerate_paths(nnf_file.name, solver_options.timeout)
+
+    return count, n_paths
 
 
 if __name__ == '__main__':

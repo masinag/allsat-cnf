@@ -1,3 +1,4 @@
+import subprocess
 from dataclasses import dataclass
 from multiprocessing import get_context
 from queue import Empty
@@ -42,6 +43,22 @@ def kill_process_and_children(timed_proc):
         proc.kill()
     except psutil.NoSuchProcess:
         pass
+
+
+def run_cmd_with_timeout(
+        cmd: list[str],
+        output_file: str,
+        timeout: int | None = None
+):
+    with open(output_file, "w") as f:
+        try:
+            subprocess.check_call(cmd, stdout=f, stderr=f, timeout=timeout)
+        except subprocess.CalledProcessError as e:
+            with open(output_file) as fout:
+                out = fout.read()
+            raise RuntimeError(f"process failed with exit code {e.returncode}\n{out}") from e
+        except subprocess.TimeoutExpired:
+            raise TimeoutError("process timed out")
 
 
 @dataclass

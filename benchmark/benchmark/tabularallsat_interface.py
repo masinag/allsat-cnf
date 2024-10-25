@@ -1,6 +1,5 @@
 import os.path
 import re
-import subprocess
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import TextIO
@@ -9,6 +8,7 @@ from pysmt.fnode import FNode
 
 from allsat_cnf.utils import get_clauses
 from .io.dimacs import pysmt_to_dimacs, dimacs_var_map, HeaderMode
+from .run import run_cmd_with_timeout
 
 # Regular expressions for parsing d4 output
 RE_HEADER = re.compile(r"c parsed header 'p cnf (\d+) (\d+) (\d+)'")
@@ -70,15 +70,8 @@ class TabularAllSATInterface:
 
             cmd = [self.ta_bin, dimacs_file]
 
-            with open(output_file, "w") as f:
-                try:
-                    subprocess.call(cmd, stdout=f, stderr=f, timeout=timeout)
-                except subprocess.CalledProcessError as e:
-                    with open(output_file) as fout:
-                        out = fout.read()
-                    raise RuntimeError(f"TabularAllSAT failed with exit code {e.returncode}\n{out}") from e
-                except subprocess.TimeoutExpired:
-                    raise TimeoutError("TabularAllSAT timed out")
+            run_cmd_with_timeout(cmd, output_file, timeout)
+
             with open(output_file) as f:
                 output = _read_stdout(f)
 

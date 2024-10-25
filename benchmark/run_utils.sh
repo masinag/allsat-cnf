@@ -44,7 +44,7 @@ run-d4() {
     exit 1
   fi
 
-  run evaluate_d4.py "${1}" "$RES_D4" --d4-mode="${2}" "${@: 3}" --d4-path "$D4_PATH"
+  run evaluate_d4.py "${1}" "$RES_D4" --d4-mode="${2}" "${@: 3}" --d4-path "$D4_PATH" --decddnnf-path "$DECDDNNF_PATH"
 }
 
 run-tabularallsat() {
