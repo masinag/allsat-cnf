@@ -42,7 +42,7 @@ def parse_args():
                         help='Filename suffix (default: "")')
     parser.add_argument('-m', '--mode', choices=[m.value for m in Mode],
                         required=True, help='Mode to use')
-    parser.add_argument('--timeout', type=arg_positive, default=1200,
+    parser.add_argument('--timeout', type=arg_positive, default=3600,
                         help='Timeout for the solver')
     parser.add_argument('--tabularallsat-path', type=str, required=True, help='Path to the tabularallsat binary')
 

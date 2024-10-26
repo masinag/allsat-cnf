@@ -46,7 +46,7 @@ def parse_args():
                         required=True, help='Mode to use')
     parser.add_argument('--d4-mode', choices=["counting", "enum"], default="counting",
                         help='Mode to use for d4')
-    parser.add_argument('--timeout', type=arg_positive, default=1200,
+    parser.add_argument('--timeout', type=arg_positive, default=3600,
                         help='Timeout for the solver')
     parser.add_argument('--d4-path', type=str, required=True, help='Path to the d4 (v2) binary')
     parser.add_argument('--decddnnf-path', type=str, required=True, help='Path to the decddnnf_rs binary')

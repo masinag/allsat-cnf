@@ -47,7 +47,7 @@ def parse_args():
                         help='Allow generating models with repetitions')
     parser.add_argument('--no-check', action='store_true',
                         help='Do not check the models')
-    parser.add_argument('--timeout', type=arg_positive, default=1200,
+    parser.add_argument('--timeout', type=arg_positive, default=3600,
                         help='Timeout for the solver')
     parser.add_argument('--sat', action='store_true', help='Only check satisfiability')
     return parser.parse_args()
