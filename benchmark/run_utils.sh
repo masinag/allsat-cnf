@@ -34,11 +34,11 @@ run-d4() {
     echo "D4_PATH environment variable is not set"
     exit 1
   fi
-  # if $2 is "counting", then RES_D4 is RES_D4_COUNTING else if it is "projmc", then RES_D4 is RES_D4_PROJMC
+
   if [ "$2" == "counting" ]; then
     RES_D4="${RES_D4_COUNTING}"
-  elif [ "$2" == "projMC" ]; then
-    RES_D4="${RES_D4_PROJMC}"
+  elif [ "$2" == "enum" ]; then
+    RES_D4="${RES_D4_ENUM}"
   else
     echo "Invalid D4 mode: $2"
     exit 1

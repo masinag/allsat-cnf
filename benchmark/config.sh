@@ -6,7 +6,7 @@ export SEED=666
 export RES_MSAT=results-msat
 export RES_MSAT_SAT=results-msat-sat
 export RES_D4_COUNTING=results-d4-counting
-export RES_D4_PROJMC=results-d4-projmc
+export RES_D4_ENUM=results-d4-enum
 export RES_TABULARALLSAT=results-tabularallsat
 
 
@@ -22,7 +22,7 @@ export PLOT_MSAT_BOOL_NO_REP=${PLOT_MSAT_BOOL}/no-rep
 export PLOT_MSAT_LRA_REP=${PLOT_MSAT_LRA}/rep
 export PLOT_MSAT_LRA_NO_REP=${PLOT_MSAT_LRA}/no-rep
 export PLOT_D4_COUNTING=plot-d4-counting
-export PLOT_D4_PROJMC=plot-d4-projmc
+export PLOT_D4_ENUM=plot-d4-enum
 export PLOT_TABULARALLSAT=plot-tabularallsat
 
 # ----- BENCHMARK DIRECTORIES -----

@@ -44,7 +44,7 @@ def parse_args():
                         help='Filename suffix (default: "")')
     parser.add_argument('-m', '--mode', choices=[m.value for m in Mode],
                         required=True, help='Mode to use')
-    parser.add_argument('--d4-mode', choices=[m.value for m in D4Interface.MODE], default=D4Interface.MODE.COUNTING,
+    parser.add_argument('--d4-mode', choices=["counting", "enum"], default="counting",
                         help='Mode to use for d4')
     parser.add_argument('--timeout', type=arg_positive, default=1200,
                         help='Timeout for the solver')
@@ -86,10 +86,10 @@ def main():
             log(COUNTING_LOG, filename, i, input_files)
             time_init = time.time()
             mode = D4Interface.MODE(args.d4_mode)
-            if mode == D4Interface.MODE.COUNTING:
+            if mode == "counting":
                 count = model_count_or_timeout(phi_cnf, atoms, mode, solver_options, args.d4_path)
                 n_paths = count
-            elif mode == D4Interface.MODE.DDNNF:
+            elif mode == "enum":
                 count, n_paths = enumerate_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path,
                                                             args.decddnnf_path)
             total_time = time.time() - time_init
