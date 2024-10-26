@@ -116,13 +116,10 @@ class D4Interface:
                 else:
                     f.write(line)
 
-        with open(nnf_file) as f:
-            print(f.read())
 
     def _read_stdout(self, output_file: TextIO) -> _D4Output:
         output = _D4Output(0, 0, 0, 0)
         for line in output_file:
-            print(line, end="")
             if m := self.RE_NUM_VARS.match(line):
                 output.num_vars = int(m.group(1))
             elif m := self.RE_NUM_CLAUSES.match(line):
@@ -166,7 +163,6 @@ class D4EnumeratorInterface:
         n_paths = 0
         projected_ids = {var_map[v] for v in projected_vars}
         for line in output_file:
-            print(line, end="")
             if line.startswith("v "):
                 # count stars only in the projected variables
                 k = sum(1 for var in find_stars(line) if int(var[1:]) in projected_ids)
