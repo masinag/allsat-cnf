@@ -12,6 +12,10 @@ from .io.dimacs import pysmt_to_dimacs, dimacs_var_map
 from .run import run_cmd_with_timeout
 
 
+def find_stars(string):
+    return (x.group(0) for x in re.finditer(r"\*[A-Za-z']+", string))
+
+
 @dataclass
 class _D4Output:
     num_vars: int
@@ -49,16 +53,17 @@ class D4Interface:
         self.d4_bin = d4_bin
 
     def projected_model_count(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> int:
-        output = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, timeout)
+        _, output = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, timeout)
 
         return output.model_count
 
-    def compile(self, formula: FNode, projected_vars: set[FNode], nnf_file: str, timeout: int | None = None):
-        self._invoke_d4(formula, projected_vars, self.MODE.DDNNF, nnf_file, timeout)
+    def compile(self, formula: FNode, projected_vars: set[FNode], nnf_file: str, timeout: int | None = None) \
+            -> tuple[_D4Output, dict[FNode, int]]:
+        return self._invoke_d4(formula, projected_vars, self.MODE.DDNNF, nnf_file, timeout)
 
     def _invoke_d4(self, formula: FNode, projected_vars: set[FNode], mode: MODE,
                    nnf_file: str | None = None,
-                   timeout: int | None = None) -> _D4Output:
+                   timeout: int | None = None) -> tuple[_D4Output, dict[FNode, int]]:
         with TemporaryDirectory() as tmpdir:
             dimacs_file = os.path.join(tmpdir, "formula.cnf")
             output_file = os.path.join(tmpdir, "output.txt")
@@ -86,7 +91,7 @@ class D4Interface:
         assert output.num_clauses == (cc := len(get_clauses(formula))), f"{output.num_clauses} != {cc}"
         assert output.projected_vars == (pv := len(projected_vars)), f"{output.projected_vars} != {pv}"
 
-        return output
+        return output, var_map
 
     def _fix_ddnnf(self, nnf_file: str, var_map: dict[FNode, int], projected_vars: set[FNode]):
         """
@@ -111,9 +116,13 @@ class D4Interface:
                 else:
                     f.write(line)
 
+        with open(nnf_file) as f:
+            print(f.read())
+
     def _read_stdout(self, output_file: TextIO) -> _D4Output:
         output = _D4Output(0, 0, 0, 0)
         for line in output_file:
+            print(line, end="")
             if m := self.RE_NUM_VARS.match(line):
                 output.num_vars = int(m.group(1))
             elif m := self.RE_NUM_CLAUSES.match(line):
@@ -132,7 +141,8 @@ class D4EnumeratorInterface:
     def __init__(self, enumerator_bin: str):
         self.enumerator_bin = enumerator_bin
 
-    def enumerate_paths(self, nnf_file: str, timeout: int | None = None) -> tuple[int, int]:
+    def enumerate_paths(self, nnf_file: str, var_map: dict[FNode, int], projected_vars: set[FNode],
+                        timeout: int | None = None) -> tuple[int, int]:
         with TemporaryDirectory() as tmpdir:
             output_file = os.path.join(tmpdir, "output.txt")
 
@@ -140,11 +150,12 @@ class D4EnumeratorInterface:
             run_cmd_with_timeout(cmd, output_file, timeout)
 
             with open(output_file) as f:
-                output = self._read_stdout(f)
+                output = self._read_stdout(f, var_map, projected_vars)
 
         return output
 
-    def _read_stdout(self, output_file: TextIO) -> tuple[int, int]:
+    def _read_stdout(self, output_file: TextIO, var_map: dict[FNode, int], projected_vars: set[FNode]) \
+            -> tuple[int, int]:
         """
         Each line represents a model.
         Count the number K of "*" chars for each model, and increase the count by 2^K.
@@ -153,9 +164,13 @@ class D4EnumeratorInterface:
         """
         count = 0
         n_paths = 0
+        projected_ids = {var_map[v] for v in projected_vars}
         for line in output_file:
+            print(line, end="")
             if line.startswith("v "):
-                count += 2 ** line.count("*")
+                # count stars only in the projected variables
+                k = sum(1 for var in find_stars(line) if int(var[1:]) in projected_ids)
+                count += 2 ** k
                 n_paths += 1
 
         return count, n_paths

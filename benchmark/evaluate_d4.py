@@ -131,9 +131,9 @@ def enumerate_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_option
 
     with NamedTemporaryFile() as nnf_file:
         init_time = time.time()
-        d4.compile(phi, set(atoms), nnf_file.name, solver_options.timeout)
+        _, var_map = d4.compile(phi, set(atoms), nnf_file.name, solver_options.timeout)
         timeout = int(solver_options.timeout - (time.time() - init_time))
-        count, n_paths = d4enum.enumerate_paths(nnf_file.name, timeout)
+        count, n_paths = d4enum.enumerate_paths(nnf_file.name, var_map, set(atoms), timeout)
 
     return count, n_paths
 
