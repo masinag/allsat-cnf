@@ -40,5 +40,6 @@ export SYN_LRA="syn-lra"
 export WMI="wmi"
 
 # ----- BENCHMARK EXECUTABLES -----
+export DECDDNNF_PATH=bin/decddnnf_rs
 export D4_PATH=bin/d4
 export TABULARALLSAT_PATH=bin/tabularallsat
