@@ -85,7 +85,7 @@ def main():
         try:
             log(COUNTING_LOG, filename, i, input_files)
             time_init = time.time()
-            mode = D4Interface.MODE(args.d4_mode)
+            mode = args.d4_mode
             if mode == "counting":
                 count = model_count_or_timeout(phi_cnf, atoms, mode, solver_options, args.d4_path)
                 n_paths = count
