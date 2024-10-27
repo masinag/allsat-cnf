@@ -51,6 +51,9 @@ def run_cmd_with_timeout(
         cmd: list[str],
         timeout: int | None = None
 ) -> Iterator[str]:
+    """
+    Run a command with a timeout and yield its output line by line.
+    """
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,

@@ -1,8 +1,7 @@
-import os.path
 import re
 from dataclasses import dataclass
 from enum import Enum
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile
 
 from pysmt.fnode import FNode
 
@@ -63,10 +62,8 @@ class D4Interface:
     def _invoke_d4(self, formula: FNode, projected_vars: set[FNode], mode: MODE,
                    nnf_file: str | None = None,
                    timeout: int | None = None) -> tuple[_D4Output, dict[FNode, int]]:
-        with TemporaryDirectory() as tmpdir:
-            dimacs_file = os.path.join(tmpdir, "formula.cnf")
-            output_file = os.path.join(tmpdir, "output.txt")
-
+        with NamedTemporaryFile("w") as f:
+            dimacs_file = f.name
             var_map = dimacs_var_map(formula, projected_vars)
             with open(dimacs_file, "w") as f:
                 f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map))
@@ -113,9 +110,6 @@ class D4Interface:
                     f.write(" 0\n")
                 else:
                     f.write(line)
-
-        # with open(nnf_file) as f:
-        #     print(f.read())
 
     def _read_output_line(self, output: _D4Output, line: str) -> _D4Output:
         if m := self.RE_NUM_VARS.match(line):
