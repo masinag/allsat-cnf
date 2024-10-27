@@ -13,7 +13,7 @@ from .run import run_cmd_with_timeout
 
 
 def find_stars(string):
-    return (x.group(0) for x in re.finditer(r"\*[A-Za-z']+", string))
+    return (x.group(0) for x in re.finditer(r"\*[0-9A-Za-z']+", string))
 
 
 @dataclass
@@ -53,7 +53,7 @@ class D4Interface:
         self.d4_bin = d4_bin
 
     def projected_model_count(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> int:
-        _, output = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, timeout)
+        output, _ = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, timeout)
 
         return output.model_count
 
