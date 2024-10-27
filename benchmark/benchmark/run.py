@@ -1,7 +1,9 @@
+import signal
 import subprocess
 from dataclasses import dataclass
 from multiprocessing import get_context
 from queue import Empty
+from typing import Iterator
 
 import psutil as psutil
 
@@ -47,18 +49,27 @@ def kill_process_and_children(timed_proc):
 
 def run_cmd_with_timeout(
         cmd: list[str],
-        output_file: str,
         timeout: int | None = None
-):
-    with open(output_file, "w") as f:
-        try:
-            subprocess.check_call(cmd, stdout=f, stderr=f, timeout=timeout)
-        except subprocess.CalledProcessError as e:
-            with open(output_file) as fout:
-                out = fout.read()
-            raise RuntimeError(f"process failed with exit code {e.returncode}\n{out}") from e
-        except subprocess.TimeoutExpired:
-            raise TimeoutError("process timed out")
+) -> Iterator[str]:
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        preexec_fn=lambda: signal.alarm(timeout),
+    )
+
+    try:
+        for line in iter(process.stdout.readline, ''):
+            yield line.rstrip()
+        process.stdout.close()
+
+    except subprocess.TimeoutExpired as te:
+        process.kill()
+        raise TimeoutError(f"Process timed out after {timeout} seconds") from te
+
+    if process.returncode is not None and process.returncode != 0:
+        raise RuntimeError(f"Process failed with exit code {process.returncode}: {process.stderr}")
 
 
 @dataclass

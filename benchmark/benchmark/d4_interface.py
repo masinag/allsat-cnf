@@ -3,7 +3,6 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from tempfile import TemporaryDirectory
-from typing import TextIO
 
 from pysmt.fnode import FNode
 
@@ -79,10 +78,9 @@ class D4Interface:
             elif mode == self.MODE.COUNTING:
                 pass
 
-            run_cmd_with_timeout(cmd, output_file, timeout)
-
-            with open(output_file) as f:
-                output = self._read_stdout(f)
+            output = _D4Output(0, 0, 0, 0)
+            for line in run_cmd_with_timeout(cmd, timeout):
+                output = self._read_output_line(output, line)
 
             if mode == self.MODE.DDNNF:
                 self._fix_ddnnf(nnf_file, var_map, projected_vars)
@@ -116,18 +114,18 @@ class D4Interface:
                 else:
                     f.write(line)
 
+        # with open(nnf_file) as f:
+        #     print(f.read())
 
-    def _read_stdout(self, output_file: TextIO) -> _D4Output:
-        output = _D4Output(0, 0, 0, 0)
-        for line in output_file:
-            if m := self.RE_NUM_VARS.match(line):
-                output.num_vars = int(m.group(1))
-            elif m := self.RE_NUM_CLAUSES.match(line):
-                output.num_clauses = int(m.group(1))
-            elif m := self.RE_PROJECTED_VARS.match(line):
-                output.projected_vars = len(m.group(1).split())
-            elif m := self.RE_MODEL_COUNT.match(line):
-                output.model_count = int(m.group(1))
+    def _read_output_line(self, output: _D4Output, line: str) -> _D4Output:
+        if m := self.RE_NUM_VARS.match(line):
+            output.num_vars = int(m.group(1))
+        elif m := self.RE_NUM_CLAUSES.match(line):
+            output.num_clauses = int(m.group(1))
+        elif m := self.RE_PROJECTED_VARS.match(line):
+            output.projected_vars = len(m.group(1).split())
+        elif m := self.RE_MODEL_COUNT.match(line):
+            output.model_count = int(m.group(1))
 
         return output
 
@@ -140,33 +138,29 @@ class D4EnumeratorInterface:
 
     def enumerate_paths(self, nnf_file: str, var_map: dict[FNode, int], projected_vars: set[FNode],
                         timeout: int | None = None) -> tuple[int, int]:
-        with TemporaryDirectory() as tmpdir:
-            output_file = os.path.join(tmpdir, "output.txt")
+        cmd = [self.enumerator_bin, "model-enumeration", "--compact-free-vars", "--input", nnf_file]
 
-            cmd = [self.enumerator_bin, "model-enumeration", "--compact-free-vars", "--input", nnf_file]
-            run_cmd_with_timeout(cmd, output_file, timeout)
+        count, n_paths = 0, 0
+        projected_ids = {var_map[v] for v in projected_vars}
+        for line in run_cmd_with_timeout(cmd, timeout):
+            c, n = self._read_output_line(line, projected_ids)
+            count += c
+            n_paths += n
 
-            with open(output_file) as f:
-                output = self._read_stdout(f, var_map, projected_vars)
+        return count, n_paths
 
-        return output
-
-    def _read_stdout(self, output_file: TextIO, var_map: dict[FNode, int], projected_vars: set[FNode]) \
-            -> tuple[int, int]:
+    def _read_output_line(self, line: str, projected_ids: set[int]) -> tuple[int, int]:
         """
         Each line represents a model.
         Count the number K of "*" chars for each model, and increase the count by 2^K.
 
         Return the number of models and the total count.
         """
-        count = 0
-        n_paths = 0
-        projected_ids = {var_map[v] for v in projected_vars}
-        for line in output_file:
-            if line.startswith("v "):
-                # count stars only in the projected variables
-                k = sum(1 for var in find_stars(line) if int(var[1:]) in projected_ids)
-                count += 2 ** k
-                n_paths += 1
+        count, n_paths = 0, 0
+        if line.startswith("v "):
+            # count stars only in the projected variables
+            k = sum(1 for var in find_stars(line) if int(var[1:]) in projected_ids)
+            count += 2 ** k
+            n_paths += 1
 
         return count, n_paths
