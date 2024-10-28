@@ -46,10 +46,11 @@ def parse_args():
                         required=True, help='Mode to use')
     parser.add_argument('--d4-mode', choices=["counting", "enum"], default="counting",
                         help='Mode to use for d4')
+    parser.add_argument('--tmp-dir', type=str, default=None, help='Directory to store "big" temporary files')
     parser.add_argument('--timeout', type=arg_positive, default=3600,
                         help='Timeout for the solver')
     parser.add_argument('--d4-path', type=str, required=True, help='Path to the d4 (v2) binary')
-    parser.add_argument('--decddnnf-path', type=str, required=True, help='Path to the decddnnf_rs binary')
+    parser.add_argument('--decdnnf-path', type=str, required=True, help='Path to the decdnnf_rs binary')
 
     return parser.parse_args()
 
@@ -87,11 +88,11 @@ def main():
             time_init = time.time()
             mode = args.d4_mode
             if mode == "counting":
-                count = model_count_or_timeout(phi_cnf, atoms, mode, solver_options, args.d4_path)
+                count = model_count_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
                 n_paths = count
             elif mode == "enum":
                 count, n_paths = enumerate_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path,
-                                                            args.decddnnf_path)
+                                                            args.decdnnf_path, args.tmp_dir)
             total_time = time.time() - time_init
         except TimeoutError:
             total_time = args.timeout
@@ -118,18 +119,18 @@ def setup():
     get_env().enable_infix_notation = True
 
 
-def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], mode: D4Interface.MODE, solver_options: SolverOptions,
+def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions,
                            d4_path: str) -> int:
     d4 = D4Interface(d4_path)
     return d4.projected_model_count(phi, set(atoms), solver_options.timeout)
 
 
 def enumerate_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str,
-                               decddnnf_path: str) -> tuple[int, int]:
+                               decdnnf_path: str, tmp_dir: str | None) -> tuple[int, int]:
     d4 = D4Interface(d4_path)
-    d4enum = D4EnumeratorInterface(decddnnf_path)
+    d4enum = D4EnumeratorInterface(decdnnf_path)
 
-    with NamedTemporaryFile() as nnf_file:
+    with NamedTemporaryFile(dir=tmp_dir) as nnf_file:
         init_time = time.time()
         _, var_map = d4.compile(phi, set(atoms), nnf_file.name, solver_options.timeout)
         timeout = int(solver_options.timeout - (time.time() - init_time))

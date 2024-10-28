@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 export SEED=666
+export TMP_DIR=/data/datasets
 
 # ----- RESULTS DIRECTORIES -----
 export RES_MSAT=results-msat
@@ -40,6 +41,6 @@ export SYN_LRA="syn-lra"
 export WMI="wmi"
 
 # ----- BENCHMARK EXECUTABLES -----
-export DECDDNNF_PATH=bin/decdnnf_rs
+export DECDNNF_PATH=bin/decdnnf_rs
 export D4_PATH=bin/d4
 export TABULARALLSAT_PATH=bin/tabularallsat
