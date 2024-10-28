@@ -8,7 +8,7 @@ from allsat_cnf.utils import get_clauses
 from .io.dimacs import pysmt_to_dimacs, dimacs_var_map, HeaderMode
 from .run import run_cmd_with_timeout
 
-# Regular expressions for parsing d4 output
+# Regular expressions for parsing tabularallsat output
 RE_HEADER = re.compile(r"c parsed header 'p cnf (\d+) (\d+) (\d+)'")
 RE_NUM_CLAUSES = re.compile(r"c parsed all (\d+) clauses")
 RE_MODEL_COUNT = re.compile(r"s MODEL COUNT")
@@ -37,17 +37,16 @@ class TabularAllSATInterface:
         return output.num_partial_assignments, output.model_count
 
     def _invoke_solver(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> _Output:
-        with NamedTemporaryFile() as f:
+        with NamedTemporaryFile("w") as f:
             dimacs_file = f.name
 
             var_map = dimacs_var_map(formula, projected_vars)
-            with open(dimacs_file, "w") as f:
-                f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map, HeaderMode.WITH_NUM_PROJECTED_VARS))
+            f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map, HeaderMode.WITH_NUM_PROJECTED_VARS))
 
             cmd = [self.ta_bin, dimacs_file]
             output = _Output(0, 0, 0, 0, 0)
 
-            for line in run_cmd_with_timeout(cmd, timeout):
+            for line in run_cmd_with_timeout(cmd, timeout=timeout):
                 output = self._read_output_line(output, line)
 
         assert output.num_vars == (nv := len(var_map)), f"{output.num_vars} != {nv}"

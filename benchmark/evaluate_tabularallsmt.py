@@ -9,17 +9,17 @@ from pysmt.environment import reset_env, get_env
 from pysmt.fnode import FNode
 
 from allsat_cnf.utils import SolverOptions, get_clauses
-from benchmark.tabularallsat_interface import TabularAllSATInterface
 from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
     read_formula_from_file, check_output_can_be_created, result_exists
 from benchmark.mode import Mode
 from benchmark.parsing import arg_positive
 from benchmark.preprocess import preprocess_formula
 from benchmark.run import get_options
+from benchmark.tabularallsmt_interface import TabularAllSMTInterface
 
 MC_CHECK_MSG = "Checking model count..."
 
-RUNNING_LOG = "Running tabularallsat..."
+RUNNING_LOG = "Running tabularallsmt..."
 
 
 def log_header(filename, i, input_files):
@@ -34,7 +34,7 @@ def log(msg, filename, i, input_files, *args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Enumerate models of formulas using tabularallsat')
+    parser = argparse.ArgumentParser(description='Enumerate models of formulas using tabularallsmt')
     parser.add_argument('input', help='Folder with .json files')
     parser.add_argument('-o', '--output', default=os.getcwd(),
                         help='Output folder where to save the result (default: cwd)')
@@ -44,7 +44,7 @@ def parse_args():
                         required=True, help='Mode to use')
     parser.add_argument('--timeout', type=arg_positive, default=3600,
                         help='Timeout for the solver')
-    parser.add_argument('--tabularallsat-path', type=str, required=True, help='Path to the tabularallsat binary')
+    parser.add_argument('--tabularallsmt-path', type=str, required=True, help='Path to the tabularallsmt binary')
 
     return parser.parse_args()
 
@@ -81,7 +81,7 @@ def main():
             log(RUNNING_LOG, filename, i, input_files)
             time_init = time.time()
 
-            n_models, count = get_allsat_or_timeout(phi_cnf, atoms, solver_options, args.tabularallsat_path)
+            n_models = get_allsmt_or_timeout(phi_cnf, atoms, solver_options, args.tabularallsmt_path)
             total_time = time.time() - time_init
         except TimeoutError:
             total_time = args.timeout
@@ -108,10 +108,9 @@ def setup():
     get_env().enable_infix_notation = True
 
 
-def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, ta_path: str) -> tuple[
-    int, int]:
-    ta = TabularAllSATInterface(ta_path)
-    return ta.projected_allsat(phi, set(atoms), solver_options.timeout)
+def get_allsmt_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, ta_path: str) -> int:
+    ta = TabularAllSMTInterface(ta_path)
+    return ta.projected_allsmt(phi, set(atoms), solver_options.timeout)
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ import subprocess
 from dataclasses import dataclass
 from multiprocessing import get_context
 from queue import Empty
-from typing import Iterator
+from typing import Iterator, TextIO
 
 import psutil as psutil
 
@@ -49,6 +49,7 @@ def kill_process_and_children(timed_proc):
 
 def run_cmd_with_timeout(
         cmd: list[str],
+        stdin: TextIO | None = None,
         timeout: int | None = None
 ) -> Iterator[str]:
     """
@@ -56,6 +57,7 @@ def run_cmd_with_timeout(
     """
     process = subprocess.Popen(
         cmd,
+        stdin=stdin,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

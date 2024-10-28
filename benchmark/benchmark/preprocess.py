@@ -10,7 +10,7 @@ from .run import PreprocessOptions
 
 def preprocess_formula(phi, preprocess_options: PreprocessOptions) -> tuple[FNode, Iterable[FNode]]:
     atoms = get_boolean_variables(phi).union(
-        {a for a in get_lra_atoms(phi) if not a.is_equals()}
+        {a for a in get_lra_atoms(phi) if not a.is_equals()}  # NOTICE: exclude equalities for WMI problems
     )
 
     if preprocess_options.cnf_type == "POL":

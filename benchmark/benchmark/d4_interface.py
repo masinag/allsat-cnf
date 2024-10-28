@@ -65,8 +65,8 @@ class D4Interface:
         with NamedTemporaryFile("w") as f:
             dimacs_file = f.name
             var_map = dimacs_var_map(formula, projected_vars)
-            with open(dimacs_file, "w") as f:
-                f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map))
+
+            f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map))
 
             cmd = [self.d4_bin, "-i", str(dimacs_file)]
             if mode == self.MODE.DDNNF:
@@ -77,7 +77,7 @@ class D4Interface:
                 pass
 
             output = _D4Output(0, 0, 0, 0)
-            for line in run_cmd_with_timeout(cmd, timeout):
+            for line in run_cmd_with_timeout(cmd, timeout=timeout):
                 output = self._read_output_line(output, line)
 
             if mode == self.MODE.DDNNF:
@@ -137,7 +137,7 @@ class D4EnumeratorInterface:
 
         count, n_paths = 0, 0
         projected_ids = {var_map[v] for v in projected_vars}
-        for line in run_cmd_with_timeout(cmd, timeout):
+        for line in run_cmd_with_timeout(cmd, timeout=timeout):
             c, n = self._read_output_line(line, projected_ids)
             count += c
             n_paths += n
