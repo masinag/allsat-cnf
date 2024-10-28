@@ -51,7 +51,7 @@ class D4Interface:
         self.d4_bin = d4_bin
 
     def projected_model_count(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> int:
-        output, _ = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, timeout)
+        output, _ = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, timeout=timeout)
 
         return output.model_count
 
@@ -73,6 +73,7 @@ class D4Interface:
                 assert nnf_file is not None, "d-DNNF mode requires a file to dump the d-DNNF"
                 cmd += ["--dump-file", nnf_file]
             elif mode == self.MODE.COUNTING:
+                assert nnf_file is None, "Counting mode does not require a file to dump the d-DNNF"
                 pass
 
             output = _D4Output(0, 0, 0, 0)
