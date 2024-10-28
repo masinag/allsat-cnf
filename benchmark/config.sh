@@ -9,7 +9,7 @@ export RES_MSAT_SAT=results-msat-sat
 export RES_D4_COUNTING=results-d4-counting
 export RES_D4_ENUM=results-d4-enum
 export RES_TABULARALLSAT=results-tabularallsat
-
+export RES_TABULARALLSMT=results-tabularallsmt
 
 # ----- PLOT DIRECTORIES -----
 PLOT_MSAT=plot-msat
@@ -25,6 +25,7 @@ export PLOT_MSAT_LRA_NO_REP=${PLOT_MSAT_LRA}/no-rep
 export PLOT_D4_COUNTING=plot-d4-counting
 export PLOT_D4_ENUM=plot-d4-enum
 export PLOT_TABULARALLSAT=plot-tabularallsat
+export PLOT_TABULARALLSMT=plot-tabularallsmt
 
 # ----- BENCHMARK DIRECTORIES -----
 export AIG_DIR=aig-bench
@@ -44,3 +45,4 @@ export WMI="wmi"
 export DECDNNF_PATH=bin/decdnnf_rs
 export D4_PATH=bin/d4
 export TABULARALLSAT_PATH=bin/tabularallsat
+export TABULARALLSMT_PATH=bin/tabularallsmt

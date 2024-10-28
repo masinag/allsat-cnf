@@ -55,3 +55,11 @@ run-tabularallsat() {
   fi
   run evaluate_tabularallsat.py "${1}" "${RES_TABULARALLSAT}" "${@: 2}" --tabularallsat-path "$TABULARALLSAT_PATH"
 }
+
+run-tabularallsmt() {
+  if [ -z "$TABULARALLSMT_PATH" ]; then
+    echo "TABULARALLSMT_PATH environment variable is not set"
+    exit 1
+  fi
+  run evaluate_tabularallsmt.py "${1}" "${RES_TABULARALLSMT}" "${@: 2}" --tabularallsmt-path "$TABULARALLSMT_PATH"
+}
