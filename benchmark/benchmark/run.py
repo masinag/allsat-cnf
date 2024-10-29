@@ -1,5 +1,6 @@
 import signal
 import subprocess
+import time
 from dataclasses import dataclass
 from multiprocessing import get_context
 from queue import Empty
@@ -65,9 +66,13 @@ def run_cmd_with_timeout(
     )
 
     try:
+        start_time = time.time()
         for line in iter(process.stdout.readline, ''):
             yield line.rstrip()
         process.stdout.close()
+        elapsed_time = time.time() - start_time
+        if timeout is not None and elapsed_time >= timeout:
+            raise TimeoutError(f"Process timed out after {timeout} seconds")
 
     except subprocess.TimeoutExpired as te:
         process.kill()
