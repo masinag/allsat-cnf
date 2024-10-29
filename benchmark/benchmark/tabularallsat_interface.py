@@ -37,11 +37,12 @@ class TabularAllSATInterface:
         return output.num_partial_assignments, output.model_count
 
     def _invoke_solver(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> _Output:
-        with NamedTemporaryFile("w") as f:
+        with NamedTemporaryFile() as f:
             dimacs_file = f.name
 
             var_map = dimacs_var_map(formula, projected_vars)
-            f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map, HeaderMode.WITH_NUM_PROJECTED_VARS))
+            with open(dimacs_file, "w") as fw:
+                fw.writelines(pysmt_to_dimacs(formula, projected_vars, var_map, HeaderMode.WITH_NUM_PROJECTED_VARS))
 
             cmd = [self.ta_bin, dimacs_file]
             output = _Output(0, 0, 0, 0, 0)
