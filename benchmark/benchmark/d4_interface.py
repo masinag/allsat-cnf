@@ -66,11 +66,12 @@ class D4Interface:
                    nnf_file: str | None = None,
                    tmp_dir: str | None = None,
                    timeout: int | None = None) -> tuple[_D4Output, dict[FNode, int]]:
-        with NamedTemporaryFile("w", dir=tmp_dir) as f:
+        with NamedTemporaryFile(dir=tmp_dir) as f:
             dimacs_file = f.name
             var_map = dimacs_var_map(formula, projected_vars)
 
-            f.writelines(pysmt_to_dimacs(formula, projected_vars, var_map))
+            with open(dimacs_file, "w") as fw:
+                fw.writelines(pysmt_to_dimacs(formula, projected_vars, var_map))
 
             cmd = [self.d4_bin, "-i", str(dimacs_file)]
             if mode == self.MODE.DDNNF:
