@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export SEED=666
-export TMP_DIR=/data/datasets
+export TMP_DIR=/data/d4
 
 # ----- RESULTS DIRECTORIES -----
 export RES_MSAT=results-msat

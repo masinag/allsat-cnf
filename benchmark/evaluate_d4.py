@@ -88,7 +88,7 @@ def main():
             time_init = time.time()
             mode = args.d4_mode
             if mode == "counting":
-                count = model_count_or_timeout(phi_cnf, atoms, solver_options, args.d4_path)
+                count = model_count_or_timeout(phi_cnf, atoms, solver_options, args.d4_path, args.tmp_dir)
                 n_paths = count
             elif mode == "enum":
                 count, n_paths = enumerate_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path,
@@ -120,9 +120,9 @@ def setup():
 
 
 def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions,
-                           d4_path: str) -> int:
+                           d4_path: str, tmp_dir: str | None) -> int:
     d4 = D4Interface(d4_path)
-    return d4.projected_model_count(phi, set(atoms), solver_options.timeout)
+    return d4.projected_model_count(phi, set(atoms), tmp_dir=tmp_dir, timeout=solver_options.timeout)
 
 
 def enumerate_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str,
@@ -132,7 +132,8 @@ def enumerate_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_option
 
     with NamedTemporaryFile(dir=tmp_dir) as nnf_file:
         init_time = time.time()
-        _, var_map = d4.compile(phi, set(atoms), nnf_file.name, solver_options.timeout)
+        _, var_map = d4.compile(phi, set(atoms), nnf_file=nnf_file.name, tmp_dir=tmp_dir,
+                                timeout=solver_options.timeout)
         timeout = int(solver_options.timeout - (time.time() - init_time))
         count, n_paths = d4enum.enumerate_paths(nnf_file.name, var_map, set(atoms), timeout)
 

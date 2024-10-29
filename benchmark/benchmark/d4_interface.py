@@ -50,19 +50,23 @@ class D4Interface:
     def __init__(self, d4_bin: str):
         self.d4_bin = d4_bin
 
-    def projected_model_count(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) -> int:
-        output, _ = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, timeout=timeout)
+    def projected_model_count(self, formula: FNode, projected_vars: set[FNode], tmp_dir: str | None,
+                              timeout: int | None) -> int:
+        output, _ = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, tmp_dir=tmp_dir, timeout=timeout)
 
         return output.model_count
 
-    def compile(self, formula: FNode, projected_vars: set[FNode], nnf_file: str, timeout: int | None = None) \
+    def compile(self, formula: FNode, projected_vars: set[FNode], nnf_file: str, tmp_dir: str | None,
+                timeout: int | None) \
             -> tuple[_D4Output, dict[FNode, int]]:
-        return self._invoke_d4(formula, projected_vars, self.MODE.DDNNF, nnf_file, timeout)
+        return self._invoke_d4(formula, projected_vars, self.MODE.DDNNF, nnf_file=nnf_file, tmp_dir=tmp_dir,
+                               timeout=timeout)
 
     def _invoke_d4(self, formula: FNode, projected_vars: set[FNode], mode: MODE,
                    nnf_file: str | None = None,
+                   tmp_dir: str | None = None,
                    timeout: int | None = None) -> tuple[_D4Output, dict[FNode, int]]:
-        with NamedTemporaryFile("w") as f:
+        with NamedTemporaryFile("w", dir=tmp_dir) as f:
             dimacs_file = f.name
             var_map = dimacs_var_map(formula, projected_vars)
 
