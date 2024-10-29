@@ -71,7 +71,8 @@ def run_cmd_with_timeout(
             yield line.rstrip()
         process.stdout.close()
         elapsed_time = time.time() - start_time
-        if timeout is not None and elapsed_time >= timeout:
+
+        if timeout is not None and elapsed_time > timeout - 1:
             raise TimeoutError(f"Process timed out after {timeout} seconds")
 
     except subprocess.TimeoutExpired as te:
