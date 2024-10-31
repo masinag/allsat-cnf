@@ -9,6 +9,11 @@ from .run import run_cmd_with_timeout
 
 # Regular expressions for parsing tabularallsmt output
 RE_NUM_PARTIAL_ASSIGNMENTS = re.compile(r"s NUMBER OF PARTIAL ASSIGNMENTS")
+RE_MODEL_COUNT = re.compile(r"s MODEL COUNT")
+
+# Regular expressions for smt2 file
+RE_ASSERT = re.compile(r"\(assert .*\)")
+RE_CHECK_SAT = re.compile(r"\(check-sat\)")
 
 
 @dataclass
@@ -29,7 +34,7 @@ class TabularAllSMTInterface:
         return output.num_partial_assignments
 
     def _invoke_solver(self, formula: FNode, projected_atoms: set[FNode], timeout: int | None = None) -> _Output:
-        with NamedTemporaryFile("w") as f:
+        with NamedTemporaryFile() as f:
             smt2_file = f.name
 
             write_smtlib(formula, smt2_file)
@@ -40,7 +45,9 @@ class TabularAllSMTInterface:
 
             smt2_str = smt2_str.replace("(check-sat)",
                                         f"(check-allsat ({' '.join(to_smtlib(a, daggify=False) for a in projected_atoms)}))")
-            f.write(smt2_str)
+
+            with open(smt2_file, "w") as fw:
+                fw.write(smt2_str)
 
             cmd = [
                 self.ta_bin,
@@ -59,7 +66,7 @@ class TabularAllSMTInterface:
         if self.next_line_mc:
             self.next_line_mc = False
             output.num_partial_assignments = int(line)
-        elif RE_NUM_PARTIAL_ASSIGNMENTS.match(line):
+        elif RE_NUM_PARTIAL_ASSIGNMENTS.match(line) or RE_MODEL_COUNT.match(line):
             self.next_line_mc = True
 
         return output
