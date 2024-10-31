@@ -103,6 +103,7 @@ class D4Interface:
             lines = f.readlines()
 
         projected_ids = {var_map[v] for v in projected_vars}
+        ids_map = {v: i for i, v in enumerate(projected_ids, start=1)}
 
         with open(nnf_file, "w") as f:
             for line in lines:
@@ -111,8 +112,10 @@ class D4Interface:
                     f.write(f"{a} {b}")
                     for l in (ll or "").split():
                         i = int(l)
-                        if i in projected_ids or -i in projected_ids:
-                            f.write(f" {i}")
+                        a = abs(i)
+                        s = 1 if i > 0 else -1
+                        if a in projected_ids:
+                            f.write(f" {s * ids_map[a]}")
                     f.write(" 0\n")
                 else:
                     f.write(line)
@@ -159,7 +162,7 @@ class D4EnumeratorInterface:
         count, n_paths = 0, 0
         if line.startswith("v "):
             # count stars only in the projected variables
-            k = sum(1 for var in find_stars(line) if int(var[1:]) in projected_ids)
+            k = sum(1 for var in find_stars(line))
             count += 2 ** k
             n_paths += 1
 
