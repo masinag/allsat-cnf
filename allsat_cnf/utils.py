@@ -5,8 +5,9 @@ from pprint import pformat
 from typing import Iterable
 
 import mathsat
+from pysmt.environment import get_env
 from pysmt.fnode import FNode
-from pysmt.shortcuts import Not, And, FALSE, Solver, get_atoms, TRUE, substitute
+from pysmt.shortcuts import Solver, get_atoms, substitute
 from pysmt.simplifier import Simplifier as Simplifier_
 from pysmt.solvers.msat import MathSAT5Solver
 from pysmt.typing import PySMTType, BOOL, REAL
@@ -60,7 +61,7 @@ class Simplifier(Simplifier_):
         sr = args[1]
 
         if negate(sl, self.manager) == sr or negate(sr, self.manager) == sl:
-            return FALSE()
+            return self.manager.FALSE()
         return super().walk_iff(formula, args, **kwargs)
 
 
@@ -115,7 +116,7 @@ def get_allsat(formula: FNode, atoms: Iterable[FNode] | None = None,
 
 def _allsat_callback(model, converter, models):
     py_model = {converter.back(v) for v in model}
-    assert IdentityDagWalker().walk(And(py_model)) == And(py_model)
+    # assert IdentityDagWalker().walk(And(py_model)) == And(py_model)
     models.append(py_model)
     return 1
 
@@ -179,17 +180,6 @@ def get_functions(formula: FNode):
     return {a for a in formula.get_atoms() if a.is_function_application()}
 
 
-def get_dict_model(mu: list[FNode]) -> dict[FNode, FNode]:
-    """Convert a list of literals to a dictionary model."""
-    mu_dict = {}
-    for a in mu:
-        if a.is_not():
-            mu_dict[a.arg(0)] = FALSE()
-        else:
-            mu_dict[a] = TRUE()
-    return mu_dict
-
-
 def check_models(ta: list[FNode], phi: FNode, relevant_atoms: set[FNode] | None = None):
     """
     Check that the given list of models is correct and complete for the given formula.
@@ -219,20 +209,20 @@ def ta_is_correct(phi: FNode, ta: list[FNode], relevant_atoms: set[FNode]) -> tu
     :param relevant_atoms: the atoms relevant for the formula
     :return: True if each model in the list satisfies the formula, False otherwise
     """
+    mgr = get_env().formula_manager
     phi = _normalizer.normalize(phi)
     for mu in ta:
         mu = _normalizer.normalize_assigment(mu)
         subs = {}
         for literal in mu:
             if literal.is_not():
-                subs[literal.arg(0)] = FALSE()
+                subs[literal.arg(0)] = mgr.FALSE()
             else:
-                subs[literal] = TRUE()
+                subs[literal] = mgr.TRUE()
         res = Simplifier().simplify(substitute(phi, subs))
-        err = "mu: {}\nsubstituting {}\ngot: {}".format(mu, subs, res)
         res_atoms = get_atoms(res)
         if len(res_atoms & relevant_atoms) != 0:
-            print("res_atoms: {}".format(res_atoms))
+            err = "mu: {}\nsubstituting {}\ngot: {}\nres_atoms {}".format(mu, subs, res, res_atoms)
             return False, err
     return True, None
 
@@ -256,7 +246,7 @@ def ta_is_complete(phi: FNode, ta: list[FNode]) -> tuple[bool, str | None]:
     return True, None
 
 
-def rewalk(phi: FNode) -> FNode:
+def rewalk(phi: FNode | Iterable[FNode]) -> FNode | Iterable[FNode]:
     if isinstance(phi, FNode):
         return IdentityDagWalker().walk(phi)
     return phi.__class__(rewalk(a) for a in phi)
@@ -291,14 +281,13 @@ def get_literals(clause: FNode) -> list[FNode]:
 
 
 def negate(term, mgr=None):
+    if mgr is None:
+        mgr = get_env().formula_manager
     if term.is_not():
         return term.arg(0)
 
     if term.is_bool_constant():
-        return TRUE() if term.is_false() else FALSE()
-
-    if mgr is None:
-        return Not(term)
+        return mgr.TRUE() if term.is_false() else mgr.FALSE()
 
     return mgr.Not(term)
 

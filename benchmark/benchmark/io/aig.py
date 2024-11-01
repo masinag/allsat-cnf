@@ -3,6 +3,8 @@ from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
 from pysmt.typing import BOOL
 
+from allsat_cnf.utils import negate
+
 
 class AIGAdapter:
     """Reads an AIG from a .aig or .aag file and converts it to a PySMT formula."""
@@ -39,7 +41,7 @@ class AIGAdapter:
 
     @classmethod
     def _read_aag(cls, filename: str, inputs: dict[int, FNode], mgr: FormulaManager) -> FNode:
-        nodes = {}
+        nodes = {0: mgr.FALSE()}
         with open(filename, "r") as f:
             # read first line
             fmt, m, i, l, o, a = f.readline().strip().split()
@@ -66,21 +68,21 @@ class AIGAdapter:
 
                 left_node = nodes[left_idx]
                 if left_neg:
-                    left_node = mgr.Not(left_node)
+                    left_node = negate(left_node, mgr)
 
                 right_node = nodes[right_idx]
                 if right_neg:
-                    right_node = mgr.Not(right_node)
+                    right_node = negate(right_node, mgr)
 
                 and_node = mgr.And(left_node, right_node)
                 if and_neg:
-                    and_node = mgr.Not(and_node)
+                    and_node = negate(and_node, mgr)
 
                 nodes[and_idx] = and_node
 
         output_node = nodes[output_idx]
         if output_neg:
-            output_node = mgr.Not(output_node)
+            output_node = negate(output_node, mgr)
 
         return output_node
 
