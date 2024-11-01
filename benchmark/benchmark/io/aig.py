@@ -50,7 +50,7 @@ class AIGAdapter:
             assert o == 1, "Only one output is supported"
 
             # read inputs
-            for j in range(i):
+            for j in range(1, i + 1):
                 lit = int(f.readline().strip())
                 index, neg = cls._parse_lit(lit)
                 assert not neg, "Negated inputs are not supported"
