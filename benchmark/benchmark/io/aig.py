@@ -27,7 +27,7 @@ class AIGAdapter:
                 if line.startswith("i"):
                     index, name = line[1:].strip().split()
                     inputs[int(index)] = mgr.Symbol(name, BOOL)
-        for index in range(int(i)):
+        for index in range(1, int(i) + 1):
             if index not in inputs:
                 inputs[index] = mgr.Symbol(f"i{index}")
 
