@@ -1,110 +1,101 @@
-from typing import Iterable
-
-import funcy as fn
-from aiger import AIG as _AIG, to_aig as _to_aig, BoolExpr as _BoolExpr
-from aiger.aig import Input as _Input
+from pysmt.environment import Environment, get_env
 from pysmt.fnode import FNode
-from pysmt.shortcuts import Symbol, And, Not, Bool
+from pysmt.formula import FormulaManager
 from pysmt.typing import BOOL
 
 
 class AIGAdapter:
     """Reads an AIG from a .aig or .aag file and converts it to a PySMT formula."""
 
-    def __init__(self, aig: _AIG, env=None):
-        assert len(aig.outputs) == 1
-        # assert len(aig.latches) == 0
-        self.aig = aig
-        self.inputs: dict[_Input, Symbol] = {}
+    def __init__(self, expr: FNode | None = None, env: Environment | None = None):
+        self.aig = expr
         if env is None:
-            import pysmt.environment
-            env = pysmt.environment.get_env()
+            env = get_env()
         self.env = env
         self.mgr = self.env.formula_manager
 
     def __repr__(self):
-        return repr(self.aig)
+        return self.aig.serialize()
+
+    @staticmethod
+    def _read_inputs(filename: str, mgr: FormulaManager) -> dict[int, FNode]:
+        inputs = {}
+        with open(filename, "r") as f:
+            fmt, m, i, l, o, a = f.readline().strip().split()
+            assert fmt == "aag"
+            for line in f:
+                if line.startswith("i"):
+                    index, name = line[1:].strip().split()
+                    inputs[int(index)] = mgr.Symbol(name, BOOL)
+        for index in range(int(i)):
+            if index not in inputs:
+                inputs[index] = mgr.Symbol(f"i{index}")
+
+        return inputs
+
+    @staticmethod
+    def _parse_lit(lit: int) -> tuple[int, bool]:
+        return lit // 2, lit % 2 == 1
 
     @classmethod
-    def from_file(cls, file: str) -> "AIGAdapter":
-        return cls(_to_aig(file))
+    def _read_aag(cls, filename: str, inputs: dict[int, FNode], mgr: FormulaManager) -> FNode:
+        nodes = {}
+        with open(filename, "r") as f:
+            # read first line
+            fmt, m, i, l, o, a = f.readline().strip().split()
+            m, i, l, o, a = map(int, (m, i, l, o, a))
+            assert l == 0, "Latches are not supported"
+            assert o == 1, "Only one output is supported"
+
+            # read inputs
+            for j in range(i):
+                lit = int(f.readline().strip())
+                index, neg = cls._parse_lit(lit)
+                assert not neg, "Negated inputs are not supported"
+                nodes[index] = inputs[j]
+
+            # read outputs (only one supported)
+            lit = int(f.readline().strip())
+            output_idx, output_neg = cls._parse_lit(lit)
+            # read AND gates
+            for _ in range(a):
+                lit, left, right = map(int, f.readline().strip().split())
+                and_idx, and_neg = cls._parse_lit(lit)
+                left_idx, left_neg = cls._parse_lit(left)
+                right_idx, right_neg = cls._parse_lit(right)
+
+                left_node = nodes[left_idx]
+                if left_neg:
+                    left_node = mgr.Not(left_node)
+
+                right_node = nodes[right_idx]
+                if right_neg:
+                    right_node = mgr.Not(right_node)
+
+                and_node = mgr.And(left_node, right_node)
+                if and_neg:
+                    and_node = mgr.Not(and_node)
+
+                nodes[and_idx] = and_node
+
+        output_node = nodes[output_idx]
+        if output_neg:
+            output_node = mgr.Not(output_node)
+
+        return output_node
 
     @classmethod
-    def from_boolexpr(cls, expr: _BoolExpr) -> "AIGAdapter":
-        return cls(_to_aig(expr))
+    def from_file(cls, file: str, env: Environment | None = None):
+        if env is None:
+            env = get_env()
+        mgr = env.formula_manager
 
-    def gates(self) -> tuple[dict[int, str], int, Iterable[tuple[int, int, int]]]:
-        gates = []
-        count = 0
+        if not file.endswith(".aag"):
+            raise ValueError("Only .aag files are supported")
 
-        class NodeAlg:
-            def __init__(self, lit: int):
-                self.lit = lit
+        inputs = cls._read_inputs(file, mgr)
 
-            @fn.memoize
-            def __and__(self, other):
-                nonlocal count
-                nonlocal gates
-                count += 1
-                new = NodeAlg(count << 1)
-                right, left = sorted([self.lit, other.lit])
-                gates.append((new.lit, left, right))
-                return new
-
-            def __invert__(self):
-                return NodeAlg(self.lit ^ 1)
-
-        def lift(obj) -> NodeAlg:
-            if isinstance(obj, bool):
-                return NodeAlg(int(obj))
-            elif isinstance(obj, NodeAlg):
-                return obj
-            raise NotImplementedError
-
-        circ = self.aig
-        start = 1
-        inputs = {k: NodeAlg(i << 1) for i, k in enumerate(sorted(circ.inputs), start)}
-        count += len(inputs)
-
-        # Interpret circ over Algebra.
-        omap, _ = circ(inputs=inputs, lift=lift)
-        output = omap.get(next(iter(circ.outputs))).lit
-        inputs = {inputs[k].lit: k for k in sorted(circ.inputs)}
-
-        return inputs, output, gates
+        return AIGAdapter(cls._read_aag(file, inputs, mgr), env)
 
     def to_pysmt(self) -> FNode:
-        mgr = self.mgr
-
-        class NodeAlg:
-            def __init__(self, node: FNode):
-                self.node = node
-
-            @fn.memoize
-            def __and__(self, other):
-                return NodeAlg(mgr.And(self.node, other.node))
-
-            def __invert__(self):
-                return NodeAlg(mgr.Not(self.node))
-
-        def lift(obj) -> NodeAlg:
-            if isinstance(obj, bool):
-                return NodeAlg(Bool(obj))
-            if isinstance(obj, FNode):
-                return NodeAlg(obj)
-            elif isinstance(obj, NodeAlg):
-                return obj
-            raise NotImplementedError
-
-        circ = self.aig
-
-        inputs = {}
-        start = 1
-        for i, k in enumerate(sorted(circ.inputs), start):
-            inputs[k] = NodeAlg(Symbol(k, BOOL))
-
-        # Interpret circ over Algebra.
-        omap, _ = circ(inputs=inputs, lift=lift)
-        output = omap.get(next(iter(circ.outputs))).node
-
-        return output
+        return self.aig
