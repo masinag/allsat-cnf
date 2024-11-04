@@ -11,7 +11,10 @@ def parse_inputs(input_files: list[str]) -> pd.DataFrame:
 
     for filename in input_files:
         with open(filename) as f:
-            result_out = json.load(f)
+            try:
+                result_out = json.load(f)
+            except json.JSONDecodeError:
+                print(f"Skipping {filename} since it is not a valid json file")
         if result_out["with_repetitions"]:
             # print(f"Skipping {filename} since it contains repetitions")
             continue
@@ -22,6 +25,9 @@ def parse_inputs(input_files: list[str]) -> pd.DataFrame:
             if "model_count" not in result:
                 # print(f"Skipping {result['filename']} since it does not contain model count")
                 continue
+            if result["models"] is not None and result["model_count"] is not None and \
+                    result["model_count"] < result["models"]:
+                print(f"WARN: {result['filename']} has model count {result['model_count']} < models {result['models']}")
             data.append(
                 {
                     "filename": result["filename"],
@@ -37,6 +43,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Check results")
     parser.add_argument("inputs", nargs="+", help="Folder and/or files containing result files as .json")
     return parser.parse_args()
+
 
 def check_data(data: pd.DataFrame):
     errors = []
@@ -54,6 +61,7 @@ def check_data(data: pd.DataFrame):
         raise ValueError(f"Errors found:\n{s}")
     else:
         print(f"Checked {n_checked} results")
+
 
 def main():
     args = parse_args()

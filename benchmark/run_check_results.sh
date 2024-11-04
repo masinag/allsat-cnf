@@ -6,8 +6,6 @@ check_results() {
     # Use find with -exec to call the Python script directly with all files as arguments
     find "$dir" -type d -name 'results*' \
      ! -name 'results-sat' \
-     ! -name 'results-old' \
-     ! -name 'results-d4-dDNNF' \
      -exec python3 check_results.py {} +
 }
 

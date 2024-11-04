@@ -14,7 +14,7 @@ def main():
     args = parse_args()
 
     # find files recursively
-    for root, dirs, files in os.walk(args.msat_dir):
+    for root, dirs, files in os.walk(args.dir):
         for file in files:
             if file.endswith('.json'):
                 file_path = os.path.join(root, file)
