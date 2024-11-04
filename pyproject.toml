@@ -35,14 +35,11 @@ dev = [
 
 benchmark = [
     "circuitgraph >= 0.2.0",
-    "funcy >= 1.17",
     "GitPython",
     "matplotlib",
     "numpy",
     "pandas",
     "psutil>=5.9.4",
-    "py-aiger >= 6.2.0",
-    "tqdm",
     "wmipa @ git+https://github.com/unitn-sml/wmi-pa#egg=wmipa",
     "wmibench @ git+https://github.com/unitn-sml/wmi-benchmarks#egg=wmibench",
 ]
