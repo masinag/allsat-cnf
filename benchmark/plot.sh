@@ -23,7 +23,7 @@ python3 plot.py \
   -problem_set "${AIG}" "${AIG_DIR}/${RES_MSAT_SAT}/"* \
   -problem_set "${ISCAS85}" "${ISCAS85_DIR}/${RES_MSAT_SAT}/"* \
   -o "${PLOT_MSAT_SAT_BOOL}" \
-  --ecdf
+  --ecdf --cactus
 
 
 echo "Plotting ${PLOT_MSAT_SAT_LRA}..."
@@ -31,7 +31,7 @@ python3 plot.py \
   -problem_set syn-lra "${SYN_LRA_DIR}/${RES_MSAT_SAT}/"* \
   -problem_set wmi "${WMI_DIR}/${RES_MSAT_SAT}/"* \
   -o "${PLOT_MSAT_SAT_LRA}" \
-  --ecdf
+  --ecdf --cactus
 
 
 echo "Plotting ${PLOT_MSAT_BOOL_NO_REP}..."
@@ -87,7 +87,7 @@ python3 plot.py \
   -problem_set "${SYN_LRA}" "${SYN_LRA_DIR}/${RES_TABULARALLSMT}/"* \
   -problem_set "${WMI}" "${WMI_DIR}/${RES_TABULARALLSMT}/"* \
   -o "${PLOT_TABULARALLSMT}" \
-  --timeout 3600 --timeout-models 100000 \
+  --timeout 3600 --timeout-models 1000000 \
   --scatter
 
 

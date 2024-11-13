@@ -10,6 +10,7 @@ import pandas as pd
 
 from benchmark.io.file import get_input_files, check_inputs_exist
 from benchmark.mode import Mode
+from benchmark.plotting.cactus_plotter import CactusPlotter
 from benchmark.plotting.ecdf_plotter import ECDFPlotter
 from benchmark.plotting.scatter_plotter import ScatterPlotter
 
@@ -94,6 +95,7 @@ def parse_args():
                         help="Whether to plot results allowing non-disjoint models (default: False)")
     parser.add_argument("--scatter", action="store_true", help="Plot scatter plots")
     parser.add_argument("--ecdf", action="store_true", help="Plot ECDF plots")
+    parser.add_argument("--cactus", action="store_true", help="Plot cactus plots")
     parser.add_argument("--time-only", action="store_true", help="Only plot time, without models")
     args = parser.parse_args()
 
@@ -107,7 +109,7 @@ def parse_args():
     return args
 
 
-def count_timeouts(data: pd.DataFrame):
+def count_timeouts(data: pd.DataFrame, output_dir: str):
     # for each problem set, count the number of timeouts and the number of problems
     # remember: data has a multiindex with levels "problem_set" and "filename", and columns ("enum_timed_out", mode)
     # for each mode
@@ -115,10 +117,11 @@ def count_timeouts(data: pd.DataFrame):
     timeouts = data["enum_timed_out"].groupby("problem_set").sum()
     n_problems = data["enum_timed_out"].groupby("problem_set").count()
 
-    print("Timeouts:")
-    print(timeouts)
-    print("Total problems:")
-    print(n_problems)
+    with open(os.path.join(output_dir, "timeouts.txt"), "w") as f:
+        f.write("Timeouts:\n")
+        f.write(str(timeouts))
+        f.write("\n\nTotal problems:\n")
+        f.write(str(n_problems))
 
 
 def main():
@@ -143,6 +146,11 @@ def main():
         ecdf_plotter = ECDFPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES, PROBLEM_SET_STYLES)
         ecdf_plotter.plot_time()
 
+    if args.cactus:
+        cactus_plotter = CactusPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES,
+                                    PROBLEM_SET_STYLES)
+        cactus_plotter.plot_time()
+
     if args.scatter:
         scatter_plotter = ScatterPlotter(data, output_dir, filename, timeout, timeout_models, MODE_STYLES,
                                          PROBLEM_SET_STYLES)
@@ -153,7 +161,7 @@ def main():
         scatter_plotter.plot_time_all_vs_all(separate_problem_sets=False)
         scatter_plotter.plot_time_all_vs_all(separate_problem_sets=True)
 
-    count_timeouts(data)
+    count_timeouts(data, output_dir)
 
 
 if __name__ == "__main__":
