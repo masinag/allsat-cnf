@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from enum import Enum
 from tempfile import NamedTemporaryFile
 
+import networkx as nx
+from matplotlib import pyplot as plt
+from networkx.drawing.nx_pydot import pydot_layout
 from pysmt.fnode import FNode
 
 from allsat_cnf.utils import get_clauses
@@ -20,6 +23,10 @@ class _D4Output:
     num_clauses: int
     projected_vars: int
     model_count: int
+    num_decision: int
+    num_partitioner_calls: int
+    num_pos_hits: int
+    num_neg_hits: int
 
 
 class D4Interface:
@@ -29,6 +36,10 @@ class D4Interface:
     RE_NUM_VARS = re.compile(r"c \[INITIAL INPUT\] Number of variables: (\d+)")
     RE_NUM_CLAUSES = re.compile(r"c \[INITIAL INPUT\] Number of clauses: (\d+)")
     RE_PROJECTED_VARS = re.compile(r"c \[PROJECTED VARIABLES\] list: (.+)")
+    RE_NUM_DECISION = re.compile(r"c Number of decision: (\d+)")
+    RE_NUM_PARTITIONER_CALLS = re.compile(r"c Number of paritioner calls: (\d+)")
+    RE_NUM_POS_HITS = re.compile(r"c Number of positive hit: (\d+)")
+    RE_NUM_NEG_HITS = re.compile(r"c Number of negative hit: (\d+)")
     RE_MODEL_COUNT = re.compile(r"s (\d+)")
 
     # Regular expressions for parsing d4 NNF file
@@ -66,7 +77,7 @@ class D4Interface:
                    nnf_file: str | None = None,
                    tmp_dir: str | None = None,
                    timeout: int | None = None) -> tuple[_D4Output, dict[FNode, int]]:
-        with NamedTemporaryFile(dir=tmp_dir) as f:
+        with NamedTemporaryFile(dir=tmp_dir, delete=False, delete_on_close=False) as f:
             dimacs_file = f.name
             var_map = dimacs_var_map(formula, projected_vars)
 
@@ -81,7 +92,7 @@ class D4Interface:
                 assert nnf_file is None, "Counting mode does not require a file to dump the d-DNNF"
                 pass
 
-            output = _D4Output(0, 0, 0, 0)
+            output = _D4Output(0, 0, 0, 0, 0, 0, 0, 0)
             for line in run_cmd_with_timeout(cmd, timeout=timeout):
                 output = self._read_output_line(output, line)
 
@@ -127,6 +138,14 @@ class D4Interface:
             output.num_clauses = int(m.group(1))
         elif m := self.RE_PROJECTED_VARS.match(line):
             output.projected_vars = len(m.group(1).split())
+        elif m := self.RE_NUM_DECISION.match(line):
+            output.num_decision = int(m.group(1))
+        elif m := self.RE_NUM_PARTITIONER_CALLS.match(line):
+            output.num_partitioner_calls = int(m.group(1))
+        elif m := self.RE_NUM_POS_HITS.match(line):
+            output.num_pos_hits = int(m.group(1))
+        elif m := self.RE_NUM_NEG_HITS.match(line):
+            output.num_neg_hits = int(m.group(1))
         elif m := self.RE_MODEL_COUNT.match(line):
             output.model_count = int(m.group(1))
 
@@ -167,3 +186,55 @@ class D4EnumeratorInterface:
             n_paths += 1
 
         return count, n_paths
+
+
+def visualize(nnf_file: str, var_map: dict[FNode, int], output_file: str | None = None):
+    inverse_var_map = {v: k for k, v in var_map.items()}
+
+    g = nx.DiGraph()
+    labels = {}
+
+    with open(nnf_file) as f:
+        for line in f:
+            if m := D4Interface.RE_NNF_OR.match(line):
+                g.add_node(m.group(1))
+                labels[m.group(1)] = "OR"
+            elif m := D4Interface.RE_NNF_AND.match(line):
+                g.add_node(m.group(1))
+                labels[m.group(1)] = "AND"
+            elif m := D4Interface.RE_NNF_TRUE.match(line):
+                g.add_node(m.group(1))
+                labels[m.group(1)] = "TRUE"
+            elif m := D4Interface.RE_NNF_FALSE.match(line):
+                g.add_node(m.group(1))
+                labels[m.group(1)] = "FALSE"
+            elif m := D4Interface.RE_NNF_EDGE.match(line):
+                from_id, to_id, ll = m.groups()
+                ll = [int(i) for i in (ll or "").split()]
+                literals = []
+                for l in ll:
+                    v = inverse_var_map[abs(l)]
+                    s = (f"!{v}" if l < 0 else str(v))
+                    literals.append(s)
+                    labels[s] = s
+
+                # make a fresh AND node
+                and_node = f"AND{from_id}_{to_id}_{'_'.join(literals)}"
+                g.add_node(and_node)
+                labels[and_node] = "AND"
+                g.add_edge(from_id, and_node)
+                g.add_edge(and_node, to_id)
+                for l in literals:
+                    g.add_edge(and_node, l)
+
+        # visualize the graph. the graph is a rooted DAG
+
+        pos = pydot_layout(g, prog="dot", root=4)
+        nx.draw(g, pos, labels=labels, node_size=500, alpha=0.5, font_size=10)
+
+        if output_file is not None:
+            plt.savefig(output_file)
+        else:
+            plt.show()
+
+        plt.close()
