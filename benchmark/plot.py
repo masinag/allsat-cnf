@@ -25,10 +25,10 @@ matplotlib.rcParams.update({
 Style = namedtuple("Style", ["color", "marker", "linestyle", "label", "order_index"])
 
 MODE_STYLES: dict[Mode, Style] = {
-    Mode.TTA: Style("blue", None, None, r"$\mathsf{TTA}(\varphi)$", 3),
-    Mode.LAB: Style("#ff7f00", None, "--", r"$\mathsf{CNF_{Ts}}(\varphi)$", 0),
-    Mode.LABELNEG_POL: Style("#377eb8", None, "-", r"$\mathsf{CNF_{PG}}(\varphi)$", 1),
-    Mode.NNF_MUTEX_POL: Style("#4daf4a", None, "-.", r"$\mathsf{CNF_{PG}}(\mathsf{NNF}(\varphi))$", 2),
+    Mode.TTA: Style("blue", None, None, r"$\mathsf{TTA}$", 3),
+    Mode.LAB: Style("#ff7f00", None, "--", r"$\mathsf{CNF_{Ts}}$", 2),
+    Mode.LABELNEG_POL: Style("#377eb8", None, "-", r"$\mathsf{CNF_{PG}}$", 0),
+    Mode.NNF_MUTEX_POL: Style("#4daf4a", None, "-.", r"$\mathsf{NNF}+\mathsf{CNF_{PG}}$", 1),
 }
 
 _cm = plt.colormaps["Set2"].colors
