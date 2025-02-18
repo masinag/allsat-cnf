@@ -216,6 +216,21 @@ def make_lra_ite_examples(atoms, variables) -> list[Example]:
                 nnf_lab_expected_variables=6,
                 nnf_mutex_pol_expected_clauses=4,
                 nnf_mutex_pol_expected_variables=6),
+        Example(
+            formula=(x > Ite(And(A, B), Ite(Or(B, C), Real(1.0), Real(2.0)), y)),
+            dm_expected_clauses=1,
+            dm_expected_variables=1,
+            pol_expected_clauses=1,
+            pol_expected_variables=1,
+            lab_expected_clauses=1,
+            lab_expected_variables=1,
+            nnf_pol_expected_clauses=1,
+            nnf_pol_expected_variables=1,
+            nnf_lab_expected_clauses=1,
+            nnf_lab_expected_variables=1,
+            nnf_mutex_pol_expected_clauses=1,
+            nnf_mutex_pol_expected_variables=1
+        ),
     ]
 
 
