@@ -36,6 +36,11 @@ class PolarityCNFizer(CNFizer):
         clauses = self._simplify_clauses(tl)
         return list(unique_everseen(clauses))
 
+    def _get_children(self, formula):
+        if formula.is_ite() and not self.env.stc.get_type(formula).is_bool_type():
+            return []
+        return super()._get_children(formula)
+
     def _get_polarities(self, formula: FNode) -> PolarityDict:
         return self._polarity_finder.find(formula)
 
@@ -137,11 +142,11 @@ class PolarityCNFizer(CNFizer):
         return k
 
     def walk_ite(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs) -> FNode:
-        k = self.key_var(formula, polarities)
-        i, t, e = args
         if not self.env.stc.get_type(formula).is_bool_type():
-            return self.mgr.Ite(k, t, e)
+            return formula
+        k = self.key_var(formula, polarities)
 
+        i, t, e = args
         not_k = self.negate(k)
         not_i = self.negate(i)
         not_t = self.negate(t)
