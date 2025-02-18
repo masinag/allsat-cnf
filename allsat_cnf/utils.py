@@ -38,14 +38,14 @@ class Normalizer:
     def __del__(self):
         self._solver.exit()
 
-    def normalize(self, phi):
+    def normalize(self, phi: FNode) -> FNode:
         if phi not in self._cache:
             converter = self._solver.converter
             normalized_term = converter.back(converter.convert(phi))
             self._cache[phi] = normalized_term
         return self._cache[phi]
 
-    def normalize_assigment(self, mu):
+    def normalize_assigment(self, mu: set[FNode]) -> set[FNode]:
         return {self.normalize(literal) for literal in mu}
 
 
@@ -227,7 +227,7 @@ def ta_is_correct(phi: FNode, ta: list[FNode], relevant_atoms: set[FNode]) -> tu
     return True, None
 
 
-def ta_is_complete(phi: FNode, ta: list[FNode]) -> tuple[bool, str | None]:
+def ta_is_complete(phi: FNode, ta: list[set[FNode]]) -> tuple[bool, str | None]:
     """
     Check that each total model of the formula is a super-model of one of the models in the list.
     :param phi: the formula

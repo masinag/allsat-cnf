@@ -1,5 +1,6 @@
 from collections import namedtuple
 
+from pysmt.fnode import FNode
 from pysmt.shortcuts import *
 from pysmt.shortcuts import And, Or, Not
 
@@ -12,7 +13,7 @@ Example = namedtuple('Example', ['formula',
                                  'nnf_mutex_pol_expected_clauses', 'nnf_mutex_pol_expected_variables'])
 
 
-def make_identity_examples(atoms):
+def make_identity_examples(atoms: list[FNode]) -> list[Example]:
     A, B, C, D, *_ = atoms
     return [
         A,
@@ -27,7 +28,7 @@ def make_identity_examples(atoms):
     ]
 
 
-def make_single_polarity_examples(atoms):
+def make_single_polarity_examples(atoms: list[FNode]) -> list[Example]:
     A, B, C, D, E, F, G, H, *_ = atoms
     return [
         Example(formula=And(Or(A, B), Or(C, D)),
@@ -85,7 +86,7 @@ def make_single_polarity_examples(atoms):
     ]
 
 
-def make_double_polarity_examples(atoms):
+def make_double_polarity_examples(atoms: list[FNode]) -> list[Example]:
     A, B, C, D, E, F, G, H, *_ = atoms
     return [
         Example(formula=Or(And(A, B), And(C, Or(Not(And(A, B)), D))),

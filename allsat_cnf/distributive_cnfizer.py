@@ -5,15 +5,13 @@ import pysmt.operators as op
 from pysmt.fnode import FNode
 from pysmt.rewritings import NNFizer
 from pysmt.typing import BOOL
-from pysmt.walkers import DagWalker, handles
+from pysmt.walkers import handles
 
+from allsat_cnf.cnfizer import T_CNF, CNFizer, T_Clause
 from allsat_cnf.utils import unique_everseen, negate, is_atom
 
-T_Clause = tuple[FNode, ...]
-T_CNF = Iterable[T_Clause]
 
-
-class DistributiveCNF(DagWalker):
+class DistributiveCNF(CNFizer):
     """Converts a formula into CNF using the DeMorgan's laws and the distributive property."""
     TRUE_CLAUSE = None
     FALSE_CLAUSE = tuple()
@@ -21,8 +19,7 @@ class DistributiveCNF(DagWalker):
     FALSE_CNF = [FALSE_CLAUSE]
 
     def __init__(self, environment=None):
-        DagWalker.__init__(self, environment, invalidate_memoization=True)
-        self.mgr = self.env.formula_manager
+        CNFizer.__init__(self, environment, invalidate_memoization=True)
         self.nnfizer = NNFizer(environment)
 
     def convert(self, formula: FNode) -> T_CNF:
@@ -30,10 +27,6 @@ class DistributiveCNF(DagWalker):
         clauses = self.walk(nnf_formula)
 
         return unique_everseen(clauses)
-
-    def convert_as_formula(self, formula: FNode) -> FNode:
-        clauses = self.convert(formula)
-        return self.mgr.And(map(self.mgr.Or, clauses))
 
     def make_clause(self, literals: Iterable[FNode]) -> T_Clause:
         clause = list()

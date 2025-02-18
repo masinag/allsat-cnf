@@ -1,4 +1,4 @@
-from allsat_cnf.demorgan_cnfizer import DistributiveCNF
+from allsat_cnf.distributive_cnfizer import DistributiveCNF
 from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
 

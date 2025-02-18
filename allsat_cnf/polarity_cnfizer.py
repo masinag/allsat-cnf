@@ -9,13 +9,11 @@ from allsat_cnf.utils import unique_everseen, negate
 
 T_CNF = list[tuple[FNode, ...]]
 
-
-class PolarityCNFizer(DagWalker):
+class PolarityCNFizer(CNFizer):
     """Converts a formula into CNF using the Plaisted and Greenbaum algorithm."""
 
     def __init__(self, environment=None, nnf=False, mutex_nnf_labels=False, label_neg_polarity=False):
-        DagWalker.__init__(self, environment, invalidate_memoization=True)
-        self.mgr = self.env.formula_manager
+        CNFizer.__init__(self, environment, invalidate_memoization=True)
         if mutex_nnf_labels and not nnf:
             raise ValueError("Mutex NNF labels only makes sense if NNF is enabled")
         self._nnf = nnf
@@ -23,7 +21,7 @@ class PolarityCNFizer(DagWalker):
         self._label_neg_polarity = label_neg_polarity
 
         self._introduced_variables = {}
-        self._clauses: T_CNF = []
+        self._clauses: list[T_Clause] = []
         self._polarity_finder = PolarityFinder(environment)
         self._nnfizer = NNFizer(environment)
 
@@ -66,10 +64,6 @@ class PolarityCNFizer(DagWalker):
             if simp:
                 res.append(tuple(unique_everseen(simp)))
         return res
-
-    def convert_as_formula(self, formula: FNode) -> FNode:
-        clauses = self.convert(formula)
-        return self.mgr.And(map(self.mgr.Or, clauses))
 
     def key_var(self, formula: FNode, polarities: PolarityDict) -> FNode:
         if formula not in self._introduced_variables:
