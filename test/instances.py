@@ -146,6 +146,79 @@ def make_double_polarity_examples(atoms: list[FNode]) -> list[Example]:
     ]
 
 
+def make_bool_ite_examples(atoms: list[FNode]) -> list[Example]:
+    A, B, C, D, E, F, G, H, *_ = atoms
+    return [
+        Example(
+            formula=Ite(A, B, C),
+            dm_expected_clauses=2,
+            dm_expected_variables=3,
+            pol_expected_clauses=2,
+            pol_expected_variables=3,
+            lab_expected_clauses=2,
+            lab_expected_variables=3,
+            nnf_pol_expected_clauses=4,
+            nnf_pol_expected_variables=5,
+            nnf_lab_expected_clauses=8,
+            nnf_lab_expected_variables=5,
+            nnf_mutex_pol_expected_clauses=4,
+            nnf_mutex_pol_expected_variables=5
+        ),
+        Example(
+            formula=Ite(Ite(A, B, C), Ite(Ite(D, B, C), E, F), G),
+            dm_expected_clauses=13,
+            dm_expected_variables=7,
+            pol_expected_clauses=12,
+            pol_expected_variables=10,
+            lab_expected_clauses=14,
+            lab_expected_variables=10,
+            nnf_pol_expected_clauses=26,
+            nnf_pol_expected_variables=24,
+            nnf_lab_expected_clauses=53,
+            nnf_lab_expected_variables=24,
+            nnf_mutex_pol_expected_clauses=28,
+            nnf_mutex_pol_expected_variables=24
+        )
+    ]
+
+
+def make_lra_ite_examples(atoms, variables) -> list[Example]:
+    A, B, C, D, E, F, G, H, *_ = atoms
+    x, y, *_ = variables
+    return [
+        Example(
+            formula=(y > Ite(x <= Real(0.5), Real(0.5), Real(1.0))),
+            dm_expected_clauses=1,
+            dm_expected_variables=1,
+            pol_expected_clauses=1,
+            pol_expected_variables=1,
+            lab_expected_clauses=1,
+            lab_expected_variables=1,
+            nnf_pol_expected_clauses=1,
+            nnf_pol_expected_variables=1,
+            nnf_lab_expected_clauses=1,
+            nnf_lab_expected_variables=1,
+            nnf_mutex_pol_expected_clauses=1,
+            nnf_mutex_pol_expected_variables=1
+        ),
+        Example(formula=And(Or(x > (Ite(A, Real(2.0), Real(1.0))), B),
+                            Or(C, (x <= Ite(D, Ite(E, Real(0.5), Real(1.0)), y)))),
+                # note: atoms within theory ITEs are not detected
+                dm_expected_clauses=2,
+                dm_expected_variables=4,
+                pol_expected_clauses=4,
+                pol_expected_variables=6,
+                lab_expected_clauses=8,
+                lab_expected_variables=6,
+                nnf_pol_expected_clauses=4,
+                nnf_pol_expected_variables=6,
+                nnf_lab_expected_clauses=8,
+                nnf_lab_expected_variables=6,
+                nnf_mutex_pol_expected_clauses=4,
+                nnf_mutex_pol_expected_variables=6),
+    ]
+
+
 # initialize bool variables
 boolean_variables = [Symbol(chr(i), BOOL) for i in range(ord("A"), ord("Z") + 1)]
 real_variables = [Symbol(chr(i), REAL) for i in range(ord("a"), ord("z") + 1)]
@@ -172,3 +245,6 @@ lra_single_polarity_examples = make_single_polarity_examples(real_atoms)
 
 bool_double_polarity_examples = make_double_polarity_examples(boolean_atoms)
 lra_double_polarity_examples = make_double_polarity_examples(real_atoms)
+
+bool_ite_examples = make_bool_ite_examples(boolean_atoms)
+lra_ite_examples = make_lra_ite_examples(boolean_atoms, real_variables)

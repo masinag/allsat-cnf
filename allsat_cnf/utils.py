@@ -180,7 +180,7 @@ def get_functions(formula: FNode):
     return {a for a in formula.get_atoms() if a.is_function_application()}
 
 
-def check_models(ta: list[FNode], phi: FNode, relevant_atoms: set[FNode] | None = None):
+def check_models(ta: list[set[FNode]], phi: FNode, relevant_atoms: set[FNode] | None = None):
     """
     Check that the given list of models is correct and complete for the given formula.
     :param ta: the list of models
@@ -201,7 +201,7 @@ def check_models(ta: list[FNode], phi: FNode, relevant_atoms: set[FNode] | None 
 _normalizer = Normalizer()
 
 
-def ta_is_correct(phi: FNode, ta: list[FNode], relevant_atoms: set[FNode]) -> tuple[bool, str | None]:
+def ta_is_correct(phi: FNode, ta: list[set[FNode]], relevant_atoms: set[FNode]) -> tuple[bool, str | None]:
     """
     Check that each model in the list satisfies the formula.
     :param phi: the formula
@@ -253,6 +253,9 @@ def rewalk(phi: FNode | Iterable[FNode]) -> FNode | Iterable[FNode]:
 
 
 def is_atom(atom: FNode) -> bool:
+    # special case: theory if-then-else
+    if atom.is_ite():
+        return not atom.get_type().is_bool_type()
     return atom.is_symbol(BOOL) or atom.is_theory_relation() or atom.is_bool_constant()
 
 

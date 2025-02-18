@@ -77,7 +77,6 @@ class PolarityDagWalker(DagWalker):
             return [(a, eq_pol) for a in formula.args()]
 
         elif formula.is_ite():
-            assert self.env.stc.get_type(formula).is_bool_type()
             i, t, e = formula.args()
             return [(i, Polarity.DOUBLE), (t, eq_pol), (e, inv_pol)]
 

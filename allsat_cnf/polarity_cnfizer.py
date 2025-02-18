@@ -1,13 +1,13 @@
 import pysmt.operators as op
 from pysmt.fnode import FNode
-from pysmt.rewritings import NNFizer
-from pysmt.walkers import DagWalker, handles
+from pysmt.walkers import handles
 
+from allsat_cnf.cnfizer import CNFizer, T_CNF, T_Clause
+from allsat_cnf.nnfizer import NNFizer
 from allsat_cnf.polarity_finder import PolarityFinder, PolarityDict
 from allsat_cnf.polarity_walker import Polarity
 from allsat_cnf.utils import unique_everseen, negate
 
-T_CNF = list[tuple[FNode, ...]]
 
 class PolarityCNFizer(CNFizer):
     """Converts a formula into CNF using the Plaisted and Greenbaum algorithm."""
@@ -137,11 +137,11 @@ class PolarityCNFizer(CNFizer):
         return k
 
     def walk_ite(self, formula: FNode, args: list[FNode], polarities: PolarityDict, **kwargs) -> FNode:
-        if not self.env.stc.get_type(formula).is_bool_type():
-            return formula
-
-        i, t, e = args
         k = self.key_var(formula, polarities)
+        i, t, e = args
+        if not self.env.stc.get_type(formula).is_bool_type():
+            return self.mgr.Ite(k, t, e)
+
         not_k = self.negate(k)
         not_i = self.negate(i)
         not_t = self.negate(t)

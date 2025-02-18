@@ -3,11 +3,11 @@ from typing import Iterable
 
 import pysmt.operators as op
 from pysmt.fnode import FNode
-from pysmt.rewritings import NNFizer
 from pysmt.typing import BOOL
 from pysmt.walkers import handles
 
 from allsat_cnf.cnfizer import T_CNF, CNFizer, T_Clause
+from allsat_cnf.nnfizer import NNFizer
 from allsat_cnf.utils import unique_everseen, negate, is_atom
 
 
@@ -81,6 +81,8 @@ class DistributiveCNF(CNFizer):
         raise NotImplementedError("The formula is not in NNF")
 
     def walk_ite(self, formula: FNode, args: list[FNode], **kwargs):
+        if not self.env.stc.get_type(formula).is_bool_type():
+            return [formula]
         raise NotImplementedError("The formula is not in NNF")
 
     @handles(op.FUNCTION)
