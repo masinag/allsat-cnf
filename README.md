@@ -6,8 +6,13 @@ Short version: [On CNF encoding for Disjoint SAT enumeration](https://doi.org/10
 Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, SAT '23.<br/>
 [Code for the short version](https://github.com/masinag/allsat-cnf/releases/tag/SAT23)
 
-Extended version: [On CNF encoding for SAT and SMT enumeration](https://arxiv.org/abs/2303.14971)<br/>
-Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, ArXiv.
+Extended version: [On CNF encoding for SAT and SMT enumeration](https://doi.org/10.1613/jair.1.16870)<br/>
+Gabriele Masina, Giuseppe Spallitta and Roberto Sebastiani, JAIR.<br/>
+[Code for the long version](https://github.com/masinag/allsat-cnf/releases/tag/JAIR25)<br/>
+
+## Zenodo Repositories
+- [Source Code](https://doi.org/10.5281/zenodo.14033422)
+- [Experimental Results](https://doi.org/10.5281/zenodo.14035595)
 
 ## Install
 
