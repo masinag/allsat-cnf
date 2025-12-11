@@ -2,17 +2,16 @@ from dataclasses import dataclass
 from enum import Enum
 from itertools import filterfalse
 from pprint import pformat
-from typing import Any, Iterable
+from typing import Any, Iterable, TypeVar, overload
 
 import mathsat
-from pysmt.environment import get_env
+from pysmt.environment import Environment, get_env
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
 from pysmt.shortcuts import Solver, get_atoms, is_sat, substitute
 from pysmt.simplifier import Simplifier as Simplifier_
 from pysmt.solvers.msat import MathSAT5Solver
 from pysmt.typing import BOOL, REAL, PySMTType
-from pysmt.walkers import IdentityDagWalker
 
 from allsat_cnf.cnfizer import T_CNF
 
@@ -77,12 +76,12 @@ def get_allsat(formula: FNode, atoms: Iterable[FNode] | None = None,
     :param solver_options: options for the solver
     :return: a list of assignments and the total number of assignments
     """
-    formula = rewalk(formula)
+    formula = contextualize(formula)
 
     if atoms is None:
         atoms = get_atoms(formula)
     else:
-        atoms = rewalk(atoms)
+        atoms = contextualize(atoms)
     if len(atoms) == 0:
         return [], 0
     atoms = sorted(atoms, key=lambda x: x.node_id())
@@ -125,13 +124,13 @@ def _allsat_callback(model, converter, models):
 
 
 def check_sat(formula: FNode):
-    formula = rewalk(formula)
+    formula = contextualize(formula)
     with Solver(name="msat") as solver:
         return solver.is_sat(formula)
 
 
 def check_valid(formula: FNode):
-    formula = rewalk(formula)
+    formula = contextualize(formula)
     with Solver(name="msat") as solver:
         return solver.is_valid(formula)
 
@@ -183,7 +182,7 @@ def get_functions(formula: FNode):
     return {a for a in formula.get_atoms() if a.is_function_application()}
 
 
-def check_models(ta: list[FNode], phi: FNode, relevant_atoms: set[FNode] | None = None):
+def check_models(ta: Iterable[Iterable[FNode]], phi: FNode, relevant_atoms: set[FNode] | None = None):
     """
     Check that the given list of models is correct and complete for the given formula.
     :param ta: the list of models
@@ -191,8 +190,8 @@ def check_models(ta: list[FNode], phi: FNode, relevant_atoms: set[FNode] | None 
     :param relevant_atoms: the atoms relevant for the formula (if None, all atoms in the formula are used)
     :return: True if the list of models is correct and complete for the given formula, False otherwise
     """
-    ta = rewalk(ta)
-    phi = rewalk(phi)
+    ta = contextualize(ta)
+    phi = contextualize(phi)
     if relevant_atoms is None:
         relevant_atoms = get_atoms(phi)
     is_correct, err = ta_is_correct(phi, ta, relevant_atoms)
@@ -204,7 +203,7 @@ def check_models(ta: list[FNode], phi: FNode, relevant_atoms: set[FNode] | None 
 _normalizer = Normalizer()
 
 
-def ta_is_correct(phi: FNode, ta: list[FNode], relevant_atoms: set[FNode]) -> tuple[bool, str | None]:
+def ta_is_correct(phi: FNode, ta: Iterable[Iterable[FNode]], relevant_atoms: set[FNode]) -> tuple[bool, str | None]:
     """
     Check that each model in the list satisfies the formula.
     :param phi: the formula
@@ -233,7 +232,7 @@ def ta_is_correct(phi: FNode, ta: list[FNode], relevant_atoms: set[FNode]) -> tu
     return True, None
 
 
-def ta_is_complete(phi: FNode, ta: list[FNode]) -> tuple[bool, str | None]:
+def ta_is_complete(phi: FNode, ta: Iterable[Iterable[FNode]]) -> tuple[bool, str | None]:
     """
     Check that each total model of the formula is a super-model of one of the models in the list.
     :param phi: the formula
@@ -252,10 +251,22 @@ def ta_is_complete(phi: FNode, ta: list[FNode]) -> tuple[bool, str | None]:
     return True, None
 
 
-def rewalk(phi: FNode | Iterable[FNode]) -> FNode | Iterable[FNode]:
+T = TypeVar('T', bound=Iterable[FNode])
+
+
+@overload
+def contextualize(phi: FNode) -> FNode: ...
+
+
+@overload
+def contextualize(phi: T) -> T: ...
+
+
+def contextualize(phi: FNode | T) -> FNode | T:
     if isinstance(phi, FNode):
-        return IdentityDagWalker().walk(phi)
-    return phi.__class__(rewalk(a) for a in phi)
+        env: Environment = get_env()
+        return phi if phi in env.formula_manager else env.formula_manager.normalize(phi)
+    return phi.__class__(contextualize(a) for a in phi)
 
 
 def is_atom(atom: FNode) -> bool:
