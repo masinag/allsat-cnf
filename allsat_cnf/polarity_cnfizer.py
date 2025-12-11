@@ -1,13 +1,13 @@
 import pysmt.operators as op
 from pysmt.fnode import FNode
+from pysmt.formula import FormulaManager
 from pysmt.rewritings import NNFizer
 from pysmt.walkers import DagWalker, handles
 
-from allsat_cnf.polarity_finder import PolarityFinder, PolarityDict
+from allsat_cnf.cnfizer import T_CNF
+from allsat_cnf.polarity_finder import PolarityDict, PolarityFinder
 from allsat_cnf.polarity_walker import Polarity
-from allsat_cnf.utils import unique_everseen, negate
-
-T_CNF = list[tuple[FNode, ...]]
+from allsat_cnf.utils import negate, simplify_clauses, unique_everseen
 
 
 class PolarityCNFizer(DagWalker):
@@ -15,7 +15,7 @@ class PolarityCNFizer(DagWalker):
 
     def __init__(self, environment=None, nnf=False, mutex_nnf_labels=False, label_neg_polarity=False):
         DagWalker.__init__(self, environment, invalidate_memoization=True)
-        self.mgr = self.env.formula_manager
+
         if mutex_nnf_labels and not nnf:
             raise ValueError("Mutex NNF labels only makes sense if NNF is enabled")
         self._nnf = nnf
@@ -27,6 +27,10 @@ class PolarityCNFizer(DagWalker):
         self._polarity_finder = PolarityFinder(environment)
         self._nnfizer = NNFizer(environment)
 
+    @property
+    def mgr(self) -> FormulaManager:
+        return self.env.formula_manager
+
     def convert(self, formula: FNode) -> T_CNF:
         self._clauses = []
         pre_polarities = self._get_polarities(formula)
@@ -35,37 +39,11 @@ class PolarityCNFizer(DagWalker):
         tl: FNode = self.walk(formula, polarities=polarities)
         self._post_process(pre_polarities)
 
-        clauses = self._simplify_clauses(tl)
+        clauses = simplify_clauses(self._clauses, tl, self.mgr)
         return list(unique_everseen(clauses))
 
     def _get_polarities(self, formula: FNode) -> PolarityDict:
         return self._polarity_finder.find(formula)
-
-    def _simplify_clauses(self, tl) -> T_CNF:
-        if len(self._clauses) == 0:
-            return [tuple([tl])]
-        res = []
-        for clause in self._clauses:
-            simp = []
-            for lit in clause:
-                if lit.is_true() or self.negate(lit) in simp:
-                    # Prune clauses that are trivially TRUE
-                    simp = None
-                    break
-                elif lit == tl:
-                    # Prune clauses as ~tl -> l1 v ... v lk
-                    simp = None
-                    break
-                elif lit == self.negate(tl):
-                    # Simplify tl -> l1 v ... v lk
-                    # into l1 v ... v lk
-                    continue
-                elif not lit.is_false():
-                    # Prune FALSE literals
-                    simp.append(lit)
-            if simp:
-                res.append(tuple(unique_everseen(simp)))
-        return res
 
     def convert_as_formula(self, formula: FNode) -> FNode:
         clauses = self.convert(formula)

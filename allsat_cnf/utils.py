@@ -2,16 +2,19 @@ from dataclasses import dataclass
 from enum import Enum
 from itertools import filterfalse
 from pprint import pformat
-from typing import Iterable
+from typing import Any, Iterable
 
 import mathsat
 from pysmt.environment import get_env
 from pysmt.fnode import FNode
-from pysmt.shortcuts import Solver, get_atoms, substitute
+from pysmt.formula import FormulaManager
+from pysmt.shortcuts import Solver, get_atoms, is_sat, substitute
 from pysmt.simplifier import Simplifier as Simplifier_
 from pysmt.solvers.msat import MathSAT5Solver
-from pysmt.typing import PySMTType, BOOL, REAL
+from pysmt.typing import BOOL, REAL, PySMTType
 from pysmt.walkers import IdentityDagWalker
+
+from allsat_cnf.cnfizer import T_CNF
 
 
 @dataclass
@@ -224,6 +227,9 @@ def ta_is_correct(phi: FNode, ta: list[FNode], relevant_atoms: set[FNode]) -> tu
         if len(res_atoms & relevant_atoms) != 0:
             err = "mu: {}\nsubstituting {}\ngot: {}\nres_atoms {}".format(mu, subs, res, res_atoms)
             return False, err
+        if not is_sat(res):
+            err = "mu: {}\nsubstituting {}\ngot: {}".format(mu, subs, res)
+            return False, err
     return True, None
 
 
@@ -280,7 +286,7 @@ def get_literals(clause: FNode) -> list[FNode]:
     return clause.args()
 
 
-def negate(term, mgr=None):
+def negate(term: FNode, mgr=None):
     if mgr is None:
         mgr = get_env().formula_manager
     if term.is_not():
@@ -292,7 +298,7 @@ def negate(term, mgr=None):
     return mgr.Not(term)
 
 
-def unique_everseen(iterable, key=None):
+def unique_everseen(iterable: Iterable[Any], key=None):
     """
     Source: https://docs.python.org/3/library/itertools.html#itertools-recipes
     """
@@ -308,3 +314,30 @@ def unique_everseen(iterable, key=None):
             if k not in seen:
                 seen_add(k)
                 yield element
+
+
+def simplify_clauses(clauses: T_CNF, tl: FNode, mgr: FormulaManager) -> T_CNF:
+    if len(clauses) == 0:
+        return [tuple([tl])]
+    res = []
+    for clause in clauses:
+        simp = []
+        for lit in clause:
+            if lit.is_true() or negate(lit, mgr) in simp:
+                # Prune clauses that are trivially TRUE
+                simp = None
+                break
+            elif lit == tl:
+                # Prune clauses as ~tl -> l1 v ... v lk
+                simp = None
+                break
+            elif lit == negate(tl, mgr):
+                # Simplify tl -> l1 v ... v lk
+                # into l1 v ... v lk
+                continue
+            elif not lit.is_false():
+                # Prune FALSE literals
+                simp.append(lit)
+        if simp:
+            res.append(tuple(unique_everseen(simp)))
+    return res
