@@ -1,10 +1,10 @@
 import time
 
-from pysmt.shortcuts import Symbol
-
+from allsat_cnf.definitionuse_cnfize import DefinitionUseCnfizer
 from allsat_cnf.label_cnfizer import LabelCNFizer
 from allsat_cnf.polarity_cnfizer import PolarityCNFizer
 from allsat_cnf.utils import *
+from pysmt.shortcuts import Symbol
 
 boolean_atoms = []
 for i in range(ord("A"), ord("Z") + 1):
@@ -56,3 +56,14 @@ def make_example(formula, atoms=None):
             print("Warning: model counting not correct ({} vs {})".format(count_part, count_tot))
         print("{}: {}/{} ({:.02f}s)".format(cname, len(cnf_models), len(total_models), final_time_cnf))
         check_models(cnf_models, formula)
+
+    # do Definition-Use CNFization
+    cnfizer = DefinitionUseCnfizer()
+    cnf = cnfizer.convert_as_formula(formula)
+    cnf_atoms = cnf.get_atoms()
+    start_time = time.time()
+    cnf_models, count_part = get_allsat(cnf, atoms=cnf_atoms, solver_options=SolverOptions(use_ta=False))
+    final_time_cnf = time.time() - start_time
+    # model count won't be correct because we do enum with repetitions
+    print("DEF-USE: {}/{} ({:.02f}s)".format(len(cnf_models), len(total_models), final_time_cnf))
+    check_models([cnfizer.map_model_back(m, atoms) for m in cnf_models], formula)
