@@ -1,14 +1,13 @@
-import signal
 import subprocess
-import time
 from dataclasses import dataclass
 from multiprocessing import get_context
 from queue import Empty
-from typing import Iterator, TextIO
+from tempfile import TemporaryFile
+from typing import Iterator
 
 import psutil as psutil
-
 from allsat_cnf.utils import SolverOptions
+
 from .mode import Mode
 from .parsing import remove_prefix
 
@@ -50,37 +49,33 @@ def kill_process_and_children(timed_proc):
 
 def run_cmd_with_timeout(
         cmd: list[str],
-        stdin: TextIO | None = None,
+        cwd: str | None = None,
         timeout: int | None = None
 ) -> Iterator[str]:
     """
     Run a command with a timeout and yield its output line by line.
     """
-    process = subprocess.Popen(
-        cmd,
-        stdin=stdin,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        preexec_fn=lambda: signal.alarm(timeout),
-    )
-
     try:
-        start_time = time.time()
-        for line in iter(process.stdout.readline, ''):
-            yield line.rstrip()
-        process.stdout.close()
-        elapsed_time = time.time() - start_time
+        with TemporaryFile(mode='w+t') as f:
+            result = subprocess.run(
+                cmd,
+                cwd=cwd,
+                stdout=f,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=timeout,
+                check=False
+            )
+            # if result.returncode != 0:
+            #     raise RuntimeError(f"Process failed with exit code {result.returncode}")
 
-        if timeout is not None and elapsed_time > timeout - 1:
-            raise TimeoutError(f"Process timed out after {timeout} seconds")
+            # Yield lines from completed output
+            f.seek(0)
+            for line in f:
+                yield line.rstrip('\n')
 
-    except subprocess.TimeoutExpired as te:
-        process.kill()
-        raise TimeoutError(f"Process timed out after {timeout} seconds") from te
-
-    if process.returncode is not None and process.returncode != 0:
-        raise RuntimeError(f"Process failed with exit code {process.returncode}: {process.stderr}")
+    except subprocess.TimeoutExpired:
+        raise TimeoutError(f"Process timed out after {timeout} seconds")
 
 
 @dataclass

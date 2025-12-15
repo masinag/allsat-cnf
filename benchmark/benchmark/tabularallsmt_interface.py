@@ -2,8 +2,9 @@ import re
 from dataclasses import dataclass
 from tempfile import NamedTemporaryFile
 
+from allsat_cnf.utils import SolverOptions, get_solver_options_dict
 from pysmt.fnode import FNode
-from pysmt.shortcuts import write_smtlib, to_smtlib
+from pysmt.shortcuts import to_smtlib, write_smtlib
 
 from .run import run_cmd_with_timeout
 
@@ -24,9 +25,10 @@ class _Output:
 class TabularAllSMTInterface:
     """Adapter for TabularAllSMT"""
 
-    def __init__(self, ta_bin: str):
+    def __init__(self, ta_bin: str, solver_options: SolverOptions):
         self.ta_bin = ta_bin
         self.next_line_mc = False
+        self.solver_options_dict = get_solver_options_dict(solver_options)
 
     def projected_allsmt(self, formula: FNode, projected_vars: set[FNode], timeout: int | None = None) \
             -> int:
@@ -54,11 +56,11 @@ class TabularAllSMTInterface:
                 "--preprocessor.simplification=0",
                 "--preprocessor.toplevel_propagation=false",
                 "--dpll.allsat_minimize_model=true",
+                smt2_file,
             ]
             output = _Output(0)
-            with open(smt2_file, "r") as fr:
-                for line in run_cmd_with_timeout(cmd, stdin=fr, timeout=timeout):
-                    output = self._read_output_line(output, line)
+            for line in run_cmd_with_timeout(cmd, timeout=timeout):
+                output = self._read_output_line(output, line)
 
         return output
 

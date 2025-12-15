@@ -1,6 +1,5 @@
 import itertools
 from collections import defaultdict
-from typing import Iterable
 
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
@@ -48,23 +47,31 @@ class DefinitionUseCnfizer(DagWalker):
         clauses = simplify_clauses(clauses, tl, self.mgr)
         return list(unique_everseen(clauses))
 
-    def map_model_back(self, model: Iterable[FNode], atoms: Iterable[FNode]) -> set[FNode]:
+    def map_models_back(self, models: list[dict[FNode, bool]], atoms: list[FNode]) -> list(dict[FNode, bool]):
         """Maps a model over the introduced variables back to the original variables.
         :param model: The model to map.
         :param atoms: The original atoms.
         :return: The mapped model.
         """
-        model_as_dict = dict((lit.arg(0), False) if lit.is_not() else (lit, True) for lit in model)
-        original_model = set()
-        for atom in atoms:
-            k_plus, k_minus = self.key_var_pair(atom)
-            assert k_plus in model_as_dict and k_minus in model_as_dict
-            if model_as_dict[k_plus] and not model_as_dict[k_minus]:
-                original_model.add(atom)
-            elif not model_as_dict[k_plus] and model_as_dict[k_minus]:
-                original_model.add(self.mgr.Not(atom))
-            # else don't care
-        return original_model
+        i = self._introduced_variables
+        atoms_and_labels = [(atom, i[atom]) for atom in atoms]
+
+        mapped_models = []
+        for model in models:
+            original_model = dict()
+            for atom, (k_plus, k_minus) in atoms_and_labels:
+                try:
+                    k_plus_val = model[k_plus]
+                    k_minus_val = model[k_minus]
+                except KeyError as e:
+                    raise KeyError("Model: {}".format(model)) from e
+                if k_plus_val and not k_minus_val:
+                    original_model[atom] = True
+                elif not k_plus_val and k_minus_val:
+                    original_model[atom] = False
+                # else don't care
+            mapped_models.append(original_model)
+        return mapped_models
 
     def walk_symbol(self, formula: FNode, args: list[tuple[FNode, FNode]], **kwargs) -> tuple[FNode, FNode] | FNode:
         if formula.is_symbol(BOOL):

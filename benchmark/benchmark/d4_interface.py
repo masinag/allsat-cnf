@@ -4,12 +4,12 @@ from enum import Enum
 from tempfile import NamedTemporaryFile
 
 import networkx as nx
+from allsat_cnf.utils import get_clauses
 from matplotlib import pyplot as plt
 from networkx.drawing.nx_pydot import pydot_layout
 from pysmt.fnode import FNode
 
-from allsat_cnf.utils import get_clauses
-from .io.dimacs import pysmt_to_dimacs, dimacs_var_map
+from .io.dimacs import DimacsInterface, HeaderMode
 from .run import run_cmd_with_timeout
 
 
@@ -61,28 +61,28 @@ class D4Interface:
     def __init__(self, d4_bin: str):
         self.d4_bin = d4_bin
 
-    def projected_model_count(self, formula: FNode, projected_vars: set[FNode], tmp_dir: str | None,
+    def projected_model_count(self, formula: FNode, projected_vars: list[FNode], tmp_dir: str | None,
                               timeout: int | None) -> int:
         output, _ = self._invoke_d4(formula, projected_vars, self.MODE.COUNTING, tmp_dir=tmp_dir, timeout=timeout)
 
         return output.model_count
 
-    def compile(self, formula: FNode, projected_vars: set[FNode], nnf_file: str, tmp_dir: str | None,
+    def compile(self, formula: FNode, projected_vars: list[FNode], nnf_file: str, tmp_dir: str | None,
                 timeout: int | None) \
-            -> tuple[_D4Output, dict[FNode, int]]:
+            -> tuple[_D4Output, DimacsInterface]:
         return self._invoke_d4(formula, projected_vars, self.MODE.DDNNF, nnf_file=nnf_file, tmp_dir=tmp_dir,
                                timeout=timeout)
 
-    def _invoke_d4(self, formula: FNode, projected_vars: set[FNode], mode: MODE,
+    def _invoke_d4(self, formula: FNode, projected_vars: list[FNode], mode: MODE,
                    nnf_file: str | None = None,
                    tmp_dir: str | None = None,
-                   timeout: int | None = None) -> tuple[_D4Output, dict[FNode, int]]:
+                   timeout: int | None = None) -> tuple[_D4Output, DimacsInterface]:
+        dimacs = DimacsInterface(header_mode=HeaderMode.ZERO_TERMINATED)
         with NamedTemporaryFile(dir=tmp_dir, delete=False, delete_on_close=False) as f:
             dimacs_file = f.name
-            var_map = dimacs_var_map(formula, projected_vars)
 
             with open(dimacs_file, "w") as fw:
-                fw.writelines(pysmt_to_dimacs(formula, projected_vars, var_map))
+                fw.writelines(dimacs.pysmt_to_dimacs(formula, projected_vars))
 
             cmd = [self.d4_bin, "-i", str(dimacs_file)]
             if mode == self.MODE.DDNNF:
@@ -97,15 +97,14 @@ class D4Interface:
                 output = self._read_output_line(output, line)
 
             if mode == self.MODE.DDNNF:
-                self._fix_ddnnf(nnf_file, var_map, projected_vars)
+                self._fix_ddnnf(nnf_file, dimacs.lits_to_int_list(projected_vars))
 
-        assert output.num_vars == (nv := len(var_map)), f"{output.num_vars} != {nv}"
         assert output.num_clauses == (cc := len(get_clauses(formula))), f"{output.num_clauses} != {cc}"
         assert output.projected_vars == (pv := len(projected_vars)), f"{output.projected_vars} != {pv}"
 
-        return output, var_map
+        return output, dimacs
 
-    def _fix_ddnnf(self, nnf_file: str, var_map: dict[FNode, int], projected_vars: set[FNode]):
+    def _fix_ddnnf(self, nnf_file: str, projected_ids: list[int]):
         """
         The d-DNNF output by d4 can contain variables that are not in the projected variables set.
         However, it should be safe to simply remove them from the d-DNNF file.
@@ -113,7 +112,7 @@ class D4Interface:
         with open(nnf_file) as f:
             lines = f.readlines()
 
-        projected_ids = {var_map[v] for v in projected_vars}
+        projected_ids = set(projected_ids)
         ids_map = {v: i for i, v in enumerate(projected_ids, start=1)}
 
         with open(nnf_file, "w") as f:
@@ -158,20 +157,19 @@ class D4EnumeratorInterface:
     def __init__(self, enumerator_bin: str):
         self.enumerator_bin = enumerator_bin
 
-    def enumerate_paths(self, nnf_file: str, var_map: dict[FNode, int], projected_vars: set[FNode],
-                        timeout: int | None = None) -> tuple[int, int]:
+    def enumerate_paths(self, nnf_file: str, timeout: int | None = None) -> tuple[int, int]:
         cmd = [self.enumerator_bin, "model-enumeration", "--compact-free-vars", "--input", nnf_file]
 
         count, n_paths = 0, 0
-        projected_ids = {var_map[v] for v in projected_vars}
         for line in run_cmd_with_timeout(cmd, timeout=timeout):
-            c, n = self._read_output_line(line, projected_ids)
+            c, n = self._read_output_line(line)
             count += c
             n_paths += n
 
         return count, n_paths
 
-    def _read_output_line(self, line: str, projected_ids: set[int]) -> tuple[int, int]:
+    @staticmethod
+    def _read_output_line(line: str) -> tuple[int, int]:
         """
         Each line represents a model.
         Count the number K of "*" chars for each model, and increase the count by 2^K.
@@ -180,8 +178,7 @@ class D4EnumeratorInterface:
         """
         count, n_paths = 0, 0
         if line.startswith("v "):
-            # count stars only in the projected variables
-            k = sum(1 for var in find_stars(line))
+            k = sum(1 for _ in find_stars(line))
             count += 2 ** k
             n_paths += 1
 

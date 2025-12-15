@@ -21,7 +21,7 @@ from benchmark.run import get_options
 MC_CHECK_MSG = "Checking model count..."
 
 COUNTING_LOG = "Running d4 for model counting"
-BUILDING_LOG = "Running d4 for ddnnf building"
+ENUM_LOG = "Running d4 and decdnnf for path enumeration"
 
 
 def log_header(filename, i, input_files):
@@ -84,13 +84,14 @@ def main():
         phi_cnf, atoms = preprocess_formula(phi, preprocess_options)
         n_clauses = len(get_clauses(phi_cnf))
         try:
-            log(COUNTING_LOG, filename, i, input_files)
             time_init = time.time()
             mode = args.d4_mode
             if mode == "counting":
+                log(COUNTING_LOG, filename, i, input_files)
                 count = model_count_or_timeout(phi_cnf, atoms, solver_options, args.d4_path, args.tmp_dir)
                 n_paths = count
             elif mode == "enum":
+                log(ENUM_LOG, filename, i, input_files)
                 count, n_paths = enumerate_paths_or_timeout(phi_cnf, atoms, solver_options, args.d4_path,
                                                             args.decdnnf_path, args.tmp_dir)
             total_time = time.time() - time_init
@@ -122,7 +123,7 @@ def setup():
 def model_count_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions,
                            d4_path: str, tmp_dir: str | None) -> int:
     d4 = D4Interface(d4_path)
-    return d4.projected_model_count(phi, set(atoms), tmp_dir=tmp_dir, timeout=solver_options.timeout)
+    return d4.projected_model_count(phi, list(atoms), tmp_dir=tmp_dir, timeout=solver_options.timeout)
 
 
 def enumerate_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, d4_path: str,
@@ -132,10 +133,10 @@ def enumerate_paths_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_option
 
     with NamedTemporaryFile(dir=tmp_dir) as nnf_file:
         init_time = time.time()
-        _, var_map = d4.compile(phi, set(atoms), nnf_file=nnf_file.name, tmp_dir=tmp_dir,
+        _, _ = d4.compile(phi, list(atoms), nnf_file=nnf_file.name, tmp_dir=tmp_dir,
                                 timeout=solver_options.timeout)
         timeout = int(solver_options.timeout - (time.time() - init_time))
-        count, n_paths = d4enum.enumerate_paths(nnf_file.name, var_map, set(atoms), timeout)
+        count, n_paths = d4enum.enumerate_paths(nnf_file.name, timeout)
 
     return count, n_paths
 

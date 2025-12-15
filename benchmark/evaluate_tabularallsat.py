@@ -5,17 +5,17 @@ import time
 from datetime import datetime
 from typing import Iterable
 
-from pysmt.environment import reset_env, get_env
+from pysmt.environment import get_env, reset_env
 from pysmt.fnode import FNode
 
 from allsat_cnf.utils import SolverOptions, get_clauses
-from benchmark.tabularallsat_interface import TabularAllSATInterface
-from benchmark.io.file import get_output_filename, check_inputs_exist, write_result, get_input_files, \
-    read_formula_from_file, check_output_can_be_created, result_exists
+from benchmark.io.file import check_inputs_exist, check_output_can_be_created, get_input_files, get_output_filename, \
+    read_formula_from_file, result_exists, write_result
 from benchmark.mode import Mode
 from benchmark.parsing import arg_positive
 from benchmark.preprocess import preprocess_formula
 from benchmark.run import get_options
+from benchmark.tabularallsat_interface import TabularAllSATInterface
 
 MC_CHECK_MSG = "Checking model count..."
 
@@ -72,7 +72,7 @@ def main():
         phi = read_formula_from_file(filename)
         enum_timed_out = False
         count = None
-        n_models = None
+        models = []
 
         preprocess_options, solver_options = get_options(args)
         phi_cnf, atoms = preprocess_formula(phi, preprocess_options)
@@ -81,7 +81,7 @@ def main():
             log(RUNNING_LOG, filename, i, input_files)
             time_init = time.time()
 
-            n_models, count = get_allsat_or_timeout(phi_cnf, atoms, solver_options, args.tabularallsat_path)
+            models, count = get_allsat_or_timeout(phi_cnf, atoms, solver_options, args.tabularallsat_path)
             total_time = time.time() - time_init
         except TimeoutError:
             total_time = args.timeout
@@ -90,7 +90,7 @@ def main():
         res = {
             "filename": filename,
             "n_clauses": n_clauses,
-            "models": n_models,
+            "models": len(models),
             "model_count": count,
             "time": total_time,
             "enum_timed_out": enum_timed_out,
@@ -109,9 +109,9 @@ def setup():
 
 
 def get_allsat_or_timeout(phi: FNode, atoms: Iterable[FNode], solver_options: SolverOptions, ta_path: str) -> tuple[
-    int, int]:
-    ta = TabularAllSATInterface(ta_path)
-    return ta.projected_allsat(phi, set(atoms), solver_options.timeout)
+    list[dict[FNode, bool]], int]:
+    ta = TabularAllSATInterface(ta_path, solver_options)
+    return ta.projected_allsat(phi, list(atoms), solver_options.timeout)
 
 
 if __name__ == '__main__':
