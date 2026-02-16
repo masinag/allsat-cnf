@@ -41,7 +41,7 @@ benchmark = [
     "pandas",
     "psutil>=5.9.4",
     "wmipa @ git+https://github.com/unitn-sml/wmi-pa@0028b7757#egg=wmipa",
-    "wmibench @ git+https://github.com/unitn-sml/wmi-benchmarks#egg=wmibench",
+    "wmibench @ git+https://github.com/unitn-sml/wmi-benchmarks@8327da8#egg=wmibench",
 ]
 
 
